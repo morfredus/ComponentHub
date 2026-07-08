@@ -1,46 +1,66 @@
-# -----------------------------------------------------------------------------
-# 1. FICHIERS DE CONFIGURATION SENSIBLES ET SPECIFIQUES AU PROJET
-# -----------------------------------------------------------------------------
-# Fichier de configuration WiFi (sensible - NE PAS VERSIONNER)
+# =============================================================================
+# 1. SECRETS, CONFIGURATIONS LOCALES ET CRITIQUES (NE JAMAIS VERSIONNER)
+# =============================================================================
+# Configuration WiFi et secrets embarqués (Spécifique ESP32/PlatformIO)
 include/secrets.h
 include/wifi-config.h
 
+# Fichier de configuration locale (contient mots de passe, jetons, chemins)
+config.json
 
-# -----------------------------------------------------------------------------
-# 2. FICHIERS GENERES PAR COMPILATION ET OUTILS
-# -----------------------------------------------------------------------------
-#
-# FICHIERS ET DOSSIERS PLATFORMIO / ARDUINO IDE
-# ---------------------------------------------
-# PlatformIO
+# Fichier et dossiers sensibles spécifiques à l'utilisateur
+.morfredus/
+
+# Clés de sécurité et certificats (Filet de sécurité)
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+
+# =============================================================================
+# 2. CONFIGURATION ET CACHE DES ÉDITEURS / IDE (VS Code, etc.)
+# =============================================================================
+# Dossier de configuration de l'espace de travail VS Code (englobe tout)
+.vscode/
+.vs/
+*.code-workspace
+*.user
+
+# Fichiers d'autres IDE/Environnements (Eclipse, etc.)
+.classpath
+.project
+.settings
+
+
+# =============================================================================
+# 3. ENVIRONNEMENT DE COMPILATION C++ / EMBARQUÉ (PlatformIO, CMake, Arduino)
+# =============================================================================
+# Dossiers et cache PlatformIO
 .pio/
 .lib/
 .cache/
 
-# Dosssier personnel de l'utilisateur (sensible - NE PAS VERSIONNER)
-.morfredus/
-
-# Arduino IDE (fichiers temporaires ou specifiques a l'utilisateur)
-*.lss              # Fichiers de liste de compilation (Arduino IDE et autres)
-*.elf.map
-*.o
-
-# Dossiers de construction (temporaires, varient selon l'IDE/Outil)
-build/
+# Dossiers de construction et builds (génériques et spécifiques)
+/build/
+/build-*/
+/out/
 .build/
+build/
 tmp/
 temp/
 .arduino/
 arduino/
 hardware/
+CMakeUserPresets.json
 
-# Interface web générée (web_src/ -> web/ -> src/generated/, voir
-# tools/minify_web.py et tools/generate_web_assets.py) — jamais éditée à la
-# main, régénérée automatiquement avant chaque compilation.
-web/
-src/generated/
+# Fichiers d'objets, de listes et intermédiaires de compilation
+*.o
+*.lss
+*.elf.map
+*.suo
 
-# Fichiers compilés (binaires) pour le téléchargement
+# Artefacts compilés (Binaires et dumps)
 *.hex
 *.elf
 *.bin
@@ -48,42 +68,51 @@ src/generated/
 *.map
 *.eep
 *.sym
-*.suo
 
-# -----------------------------------------------------------------------------
-# 3. FICHIERS GENERES PAR L'IDE (Visual Studio Code & autres)
-# -----------------------------------------------------------------------------
-# Dossier de configuration local de l'espace de travail VS Code (englobe tout)
-.vscode/
 
-# Fichiers d'autres IDE/Environnements (Eclipse, etc.)
-.classpath
-.project
-.settings
-*.user
-*.code-workspace
+# =============================================================================
+# 4. COMPILATION DE L'INTERFACE WEB & DISTRIBUTION
+# =============================================================================
+# Distribution (artefacts générés par scripts/package-win.ps1)
+/dist/
 
-# -----------------------------------------------------------------------------
-# 4. FICHIERS ET ENVIRONNEMENTS PYTHON
-# -----------------------------------------------------------------------------
+# Interface web générée (web_src/ -> web/ -> src/generated/)
+# Jamais éditée à la main, régénérée automatiquement avant chaque compilation
+web/
+src/generated/
+
+
+# =============================================================================
+# 5. ENVIRONNEMENTS ET SCRIPTING PYTHON
+# =============================================================================
 # Environnements virtuels
 venv/
 env/
 VENV/
 ENV/
 
-# Byte-code Python et cache
-*.pyc
+# Byte-code Python, documentation et logs
 __pycache__/
+*.pyc
 *.log
 .Sphinx/
 
-# -----------------------------------------------------------------------------
-# 5. FICHIERS DE CACHE ET SYSTEME
-# -----------------------------------------------------------------------------
-# macOS
-.DS_Store
+
+# =============================================================================
+# 6. SYSTEME, LOGS ET DIVERS
+# =============================================================================
+# Logs téléchargés / cache
+*.gz
 
 # Windows
 Thumbs.db
 ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+# -----------------------------------------------------------------------------
+# NB : resources/app.ico et resources/logo.png SONT versionnés (nécessaires au
+# build de l'icône). config.example.json l'est aussi (modèle sans secret).
+# -----------------------------------------------------------------------------
