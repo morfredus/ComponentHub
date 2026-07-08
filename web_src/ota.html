@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Mise à jour</title><link rel="stylesheet" href="style.css"><style>
+.progress-wrap{visibility:hidden;margin-top:0.8rem;}
+.progress-bar{width:100%;height:1.2rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.progress-bar div{height:100%;width:0%;background:var(--accent);transition:width 0.15s ease;text-align:center;color:#fff;font-size:0.75rem;line-height:1.2rem;}
+#msg{min-height:1.4rem;margin:0.8rem 0 0;}
+</style></head><body><main><div class="card"><h2>Mise à jour firmware (OTA)</h2><p>Sélectionnez le fichier <code>firmware.bin</code> généré par PlatformIO.</p><form id="f"><input type="file" id="bin" accept=".bin"><button type="submit">Mettre à jour</button></form><div class="progress-wrap" id="progressWrap"><div class="progress-bar"><div id="progressBar">0%</div></div></div><p id="msg"></p></div></main><script src="menu.js"></script><script>
+document.getElementById('f').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var file = document.getElementById('bin').files[0];
+  var msg = document.getElementById('msg');
+  var progressWrap = document.getElementById('progressWrap');
+  var progressBar = document.getElementById('progressBar');
+  if (!file) { msg.textContent = 'Veuillez choisir un fichier .bin'; return; }
+
+  progressWrap.style.visibility = 'visible';
+  progressBar.style.width = '0%';
+  progressBar.textContent = '0%';
+  msg.textContent = 'Envoi en cours...';
+
+  var fd = new FormData();
+  fd.append('firmware', file, file.name);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/ota/update');
+
+  xhr.upload.onprogress = function (ev) {
+    if (!ev.lengthComputable) return;
+    var pct = Math.round((ev.loaded / ev.total) * 100);
+    progressBar.style.width = pct + '%';
+    progressBar.textContent = pct + '%';
+  };
+
+  xhr.onload = function () {
+    progressBar.style.width = '100%';
+    progressBar.textContent = '100%';
+    var ok = false;
+    try { ok = JSON.parse(xhr.responseText).ok; } catch (err) {}
+    if (ok) {
+      msg.textContent = 'Mise à jour réussie - redémarrage de l\'ESP32...';
+      waitForReboot();
+    } else {
+      msg.textContent = 'Échec de la mise à jour.';
+    }
+  };
+
+  xhr.onerror = function () { msg.textContent = 'Erreur réseau.'; };
+
+  xhr.send(fd);
+});
+
+function waitForReboot() {
+  var msg = document.getElementById('msg');
+  // Laisse le temps à l'ESP32 de redémarrer avant de sonder, puis attend
+  // qu'il réponde à nouveau pour revenir à l'accueil.
+  setTimeout(function () { pollUntilUp(msg); }, 3000);
+}
+
+function pollUntilUp(msg) {
+  fetch('/api/system', { cache: 'no-store' }).then(function (r) {
+    if (r.ok) {
+      msg.textContent = 'ESP32 redémarré - retour à l\'accueil...';
+      setTimeout(function () { window.location.href = '/'; }, 1000);
+    } else {
+      setTimeout(function () { pollUntilUp(msg); }, 1500);
+    }
+  }).catch(function () {
+    setTimeout(function () { pollUntilUp(msg); }, 1500);
+  });
+}
+</script></body></html>

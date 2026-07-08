@@ -1,0 +1,30 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Fichiers</title><link rel="stylesheet" href="style.css"></head><body><main><div class="card"><h2>Fichiers (LittleFS)</h2><form id="upload"><input type="file" id="file" name="file"><button type="submit">Envoyer</button></form><table id="tbl"><thead><tr><th>Nom</th><th>Taille</th><th></th></tr></thead><tbody></tbody></table></div></main><script src="menu.js"></script><script>
+function refresh() {
+  fetch('/api/files/list').then(function (r) { return r.json(); }).then(function (list) {
+    var tbody = document.querySelector('#tbl tbody');
+    tbody.innerHTML = '';
+    list.forEach(function (f) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + f.name + '</td><td>' + f.size + '</td><td>' +
+        '<a href="/api/files/download?path=' + encodeURIComponent(f.name) + '">télécharger</a> ' +
+        '<a href="#" data-path="' + f.name + '" class="del">supprimer</a></td>';
+      tbody.appendChild(tr);
+    });
+    document.querySelectorAll('.del').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        fetch('/api/files/delete?path=' + encodeURIComponent(a.dataset.path), { method: 'DELETE' }).then(refresh);
+      });
+    });
+  });
+}
+document.getElementById('upload').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var file = document.getElementById('file').files[0];
+  if (!file) return;
+  var fd = new FormData();
+  fd.append('file', file, file.name);
+  fetch('/api/files/upload', { method: 'POST', body: fd }).then(refresh);
+});
+refresh();
+</script></body></html>

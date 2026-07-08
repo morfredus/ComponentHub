@@ -1,0 +1,18 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Logs</title><link rel="stylesheet" href="style.css"></head><body><main><div class="card"><h2>Journal</h2><button id="clear">Vider</button><table id="tbl"><thead><tr><th>t (ms)</th><th>Niveau</th><th>Tag</th><th>Message</th></tr></thead><tbody></tbody></table></div></main><script src="menu.js"></script><script>
+function refresh() {
+  fetch('/api/logs').then(function (r) { return r.json(); }).then(function (list) {
+    var tbody = document.querySelector('#tbl tbody');
+    tbody.innerHTML = '';
+    list.forEach(function (e) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + e.t + '</td><td>' + e.level + '</td><td>' + e.tag + '</td><td>' + e.msg + '</td>';
+      tbody.appendChild(tr);
+    });
+  });
+}
+document.getElementById('clear').addEventListener('click', function () {
+  fetch('/api/logs', { method: 'DELETE' }).then(refresh);
+});
+refresh();
+setInterval(refresh, 3000);
+</script></body></html>
