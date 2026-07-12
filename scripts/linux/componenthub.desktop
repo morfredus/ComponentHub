@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=ComponentHub
+GenericName=Inventaire électronique
+GenericName[en]=Electronics inventory
+Comment=Mémoire technique d'atelier : composants, stock, emplacements, projets
+Comment[en]=Workshop technical memory: components, stock, locations, projects
+Exec=componenthub
+Icon=componenthub
+Terminal=false
+Categories=Utility;Electronics;Database;
+Keywords=inventaire;composants;electronique;stock;atelier;esp32;qrcode;
+StartupNotify=true
+StartupWMClass=ComponentHub

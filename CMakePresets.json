@@ -1,0 +1,52 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "linux",
+      "displayName": "ComponentHub (Linux x86_64 natif)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "linux-arm64",
+      "displayName": "ComponentHub (Linux ARM64 natif, ex. Raspberry Pi)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-arm64",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "linux-arm64-cross",
+      "displayName": "ComponentHub (Linux ARM64 croisé, depuis x86_64)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-arm64-cross",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64.cmake",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "mingw",
+      "displayName": "ComponentHub (Windows, MSYS2/MinGW)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-mingw",
+      "environment": {
+        "MSYSTEM": "MINGW64",
+        "CHERE_INVOKING": "1",
+        "MSYS2_PATH_TYPE": "inherit",
+        "PATH": "C:/msys64/mingw64/bin;C:/msys64/usr/bin;$penv{PATH}"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_COMPILER": "C:/msys64/mingw64/bin/c++.exe",
+        "CMAKE_MAKE_PROGRAM": "C:/msys64/mingw64/bin/ninja.exe",
+        "CMAKE_PREFIX_PATH": "C:/msys64/mingw64"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "linux", "configurePreset": "linux" },
+    { "name": "linux-arm64", "configurePreset": "linux-arm64" },
+    { "name": "linux-arm64-cross", "configurePreset": "linux-arm64-cross" },
+    { "name": "mingw", "configurePreset": "mingw" }
+  ]
+}

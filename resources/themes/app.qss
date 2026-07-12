@@ -1,0 +1,163 @@
+/*
+ * ComponentHub Desktop — feuille de style maître.
+ *
+ * Aucune couleur en dur : jetons @{nom} remplacés au chargement par le thème
+ * actif (light.theme / dark.theme). Cf. desktop/ui/Theme.cpp.
+ * Couleurs -> modifier le .theme ; métriques -> modifier ici.
+ */
+
+/* --- Base --------------------------------------------------------------- */
+QMainWindow, QDialog { background: @{bg}; }
+QWidget { font-family: 'Segoe UI', 'Noto Sans', 'Cantarell', sans-serif;
+          font-size: 13px; color: @{text}; }
+QToolTip { background: @{surface}; color: @{text}; border: 1px solid @{border}; padding: 4px 6px; }
+
+QLabel[muted="true"] { color: @{textMuted}; }
+QLabel#pageTitle { font-size: 20px; font-weight: 700; color: @{textStrong}; }
+QLabel[hint="true"] { color: @{textMuted}; font-size: 12px; }
+
+/* --- Barre latérale de navigation --------------------------------------- */
+QWidget#sidebar { background: @{sidebarBg}; border: none; }
+QLabel#brand { color: @{sidebarActiveText}; font-size: 16px; font-weight: 800; padding: 16px 16px 8px 16px; }
+QLabel#brandSub { color: @{textMuted}; font-size: 11px; padding: 0 16px 12px 16px; }
+
+QListWidget#nav { background: @{sidebarBg}; border: none; outline: none; padding: 6px; }
+QListWidget#nav::item {
+    color: @{sidebarText}; padding: 10px 12px; border-radius: 8px; margin: 2px 4px;
+}
+QListWidget#nav::item:hover    { background: @{sidebarActiveBg}; }
+QListWidget#nav::item:selected { background: @{sidebarActiveBg}; color: @{sidebarActiveText}; }
+
+/* --- Barre de menus ----------------------------------------------------- */
+QMenuBar { background: @{surface}; color: @{text}; border-bottom: 1px solid @{border}; }
+QMenuBar::item { background: transparent; padding: 6px 12px; }
+QMenuBar::item:selected { background: @{surfaceAlt}; }
+QMenuBar::item:pressed  { background: @{accent}; color: @{accentText}; }
+
+QMenu { background: @{surface}; color: @{text}; border: 1px solid @{border}; padding: 6px; }
+QMenu::item { padding: 6px 24px 6px 20px; border-radius: 6px; }
+QMenu::item:selected { background: @{accent}; color: @{accentText}; }
+QMenu::item:disabled { color: @{disabledText}; }
+QMenu::separator { height: 1px; background: @{border}; margin: 6px 8px; }
+QMenu::indicator { width: 16px; height: 16px; }
+
+/* --- Cartes ------------------------------------------------------------- */
+QFrame#card { background: @{surface}; border: 1px solid @{border}; border-radius: 10px; }
+QFrame#statTile { background: @{surface}; border: 1px solid @{border}; border-radius: 10px; }
+QLabel#statValue { font-size: 22px; font-weight: 700; color: @{textStrong}; }
+QLabel#statLabel { color: @{textMuted}; font-size: 11px; }
+
+/* --- Boutons ------------------------------------------------------------ */
+QPushButton {
+    background: @{accent}; color: @{accentText}; border: none;
+    border-radius: 6px; padding: 7px 16px; font-weight: 600;
+}
+QPushButton:hover    { background: @{accentHover}; }
+QPushButton:pressed  { background: @{accentPressed}; }
+QPushButton:disabled { background: @{disabledBg}; color: @{disabledText}; }
+
+/* Bouton secondaire (contour). */
+QPushButton[variant="ghost"] {
+    background: transparent; color: @{text}; border: 1px solid @{borderStrong};
+}
+QPushButton[variant="ghost"]:hover { border-color: @{accent}; color: @{accent}; }
+
+/* Bouton destructif. */
+QPushButton[variant="danger"] { background: @{danger}; color: #ffffff; }
+QPushButton[variant="danger"]:hover   { background: @{dangerHover}; }
+QPushButton[variant="danger"]:pressed { background: @{dangerPressed}; }
+
+QToolButton {
+    background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 5px;
+}
+QToolButton:hover { background: @{surfaceAlt}; border-color: @{border}; }
+
+/* --- Champs de saisie --------------------------------------------------- */
+QComboBox, QDateEdit, QLineEdit, QSpinBox, QDoubleSpinBox, QPlainTextEdit, QTextEdit {
+    background: @{surface}; color: @{text}; border: 1px solid @{borderStrong};
+    border-radius: 6px; padding: 5px 8px; min-height: 20px;
+    selection-background-color: @{accent}; selection-color: @{accentText};
+}
+QLineEdit:focus, QComboBox:focus, QDateEdit:focus, QSpinBox:focus,
+QDoubleSpinBox:focus, QPlainTextEdit:focus, QTextEdit:focus { border: 1px solid @{accent}; }
+QLineEdit:disabled, QComboBox:disabled { background: @{disabledBg}; color: @{disabledText}; }
+QComboBox QAbstractItemView {
+    background: @{surface}; color: @{text}; border: 1px solid @{border}; outline: none;
+    selection-background-color: @{accent}; selection-color: @{accentText};
+}
+QLineEdit#search { padding-left: 10px; }
+
+/* --- Boutons +/- des compteurs (QSpinBox / QDoubleSpinBox) --------------- *
+ * Dès qu'une feuille de style touche un QSpinBox, Qt cesse de dessiner les
+ * flèches « natives » et rend une zone par défaut minuscule et mal cadrée
+ * (d'où des boutons quasi impossibles à cliquer). On redéfinit donc
+ * explicitement des boutons haut/bas larges, sur toute la hauteur du champ. */
+QSpinBox, QDoubleSpinBox { padding-right: 26px; }   /* réserve la place des boutons */
+
+/* Pas de `height` fixé : Qt scinde alors tout seul la colonne de droite en
+ * deux moitiés cliquables (haut = +, bas = −). Fixer height:50% écrasait au
+ * contraire l'un des deux boutons (une seule flèche visible). */
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+    subcontrol-origin: border; subcontrol-position: top right;
+    width: 22px;
+    border-left: 1px solid @{borderStrong}; border-bottom: 1px solid @{borderStrong};
+    border-top-right-radius: 6px; background: @{surfaceAlt};
+}
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    subcontrol-origin: border; subcontrol-position: bottom right;
+    width: 22px;
+    border-left: 1px solid @{borderStrong};
+    border-bottom-right-radius: 6px; background: @{surfaceAlt};
+}
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,
+QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover { background: @{border}; }
+QSpinBox::up-button:pressed, QDoubleSpinBox::up-button:pressed,
+QSpinBox::down-button:pressed, QDoubleSpinBox::down-button:pressed { background: @{accent}; }
+/* Flèches : dès qu'un QSS cible le QSpinBox, Qt ne dessine plus les flèches
+ * natives — il faut fournir une image. On utilise deux petits PNG gris
+ * (lisibles sur fond clair comme sombre), centrés dans les boutons agrandis. */
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+    image: url(:/icons/spin-up.png); width: 12px; height: 12px;
+}
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
+    image: url(:/icons/spin-down.png); width: 12px; height: 12px;
+}
+
+/* --- Tableaux et arbres ------------------------------------------------- */
+QTreeWidget, QTableWidget, QTableView, QTreeView, QListWidget {
+    background: @{surface}; color: @{text}; border: 1px solid @{border}; border-radius: 8px;
+    outline: none; alternate-background-color: @{alt};
+    selection-background-color: @{selectionBg}; selection-color: @{selectionText};
+}
+QTableWidget::item, QTreeWidget::item, QListWidget::item { padding: 5px; }
+QHeaderView::section {
+    background: @{surface}; color: @{headerText}; font-weight: 600;
+    border: none; padding: 7px; border-bottom: 1px solid @{border}; border-right: 1px solid @{border};
+}
+QHeaderView::section:last { border-right: none; }
+QTableCornerButton::section { background: @{surface}; border: none; }
+
+/* --- Onglets (fiche composant, projets) --------------------------------- */
+QTabWidget::pane { border: 1px solid @{border}; border-radius: 10px; background: @{surface}; top: -1px; }
+QTabBar::tab { background: transparent; padding: 8px 16px; margin-right: 4px; color: @{textMuted}; border: none; }
+QTabBar::tab:selected { color: @{accent}; border-bottom: 2px solid @{accent}; font-weight: 600; }
+QTabBar::tab:hover { color: @{accent}; }
+
+/* --- Groupes ------------------------------------------------------------ */
+QGroupBox { border: 1px solid @{border}; border-radius: 8px; margin-top: 10px; padding-top: 8px; }
+QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 10px; padding: 0 4px; color: @{textMuted}; }
+
+/* --- Badges de statut (rendus via propriété dynamique) ------------------ */
+QLabel[badge="ok"]     { background: @{okBg};     color: @{ok};     border-radius: 9px; padding: 2px 8px; }
+QLabel[badge="warn"]   { background: @{warnBg};   color: @{warn};   border-radius: 9px; padding: 2px 8px; }
+QLabel[badge="danger"] { background: @{dangerBg}; color: @{danger}; border-radius: 9px; padding: 2px 8px; }
+QLabel[badge="muted"]  { background: @{surfaceAlt}; color: @{textMuted}; border-radius: 9px; padding: 2px 8px; }
+
+/* --- Barre de statut ---------------------------------------------------- */
+QStatusBar { background: @{surface}; border-top: 1px solid @{border}; color: @{textMuted}; }
+QScrollBar:vertical { background: transparent; width: 12px; margin: 0; }
+QScrollBar::handle:vertical { background: @{borderStrong}; border-radius: 6px; min-height: 30px; }
+QScrollBar::handle:vertical:hover { background: @{textMuted}; }
+QScrollBar::add-line, QScrollBar::sub-line { height: 0; }
+QScrollBar:horizontal { background: transparent; height: 12px; margin: 0; }
+QScrollBar::handle:horizontal { background: @{borderStrong}; border-radius: 6px; min-width: 30px; }

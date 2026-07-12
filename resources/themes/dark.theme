@@ -1,0 +1,49 @@
+# ComponentHub — thème sombre.
+# Format : token = valeur. Lignes vides et # ignorées. Injectés dans app.qss.
+# Contrastes pensés pour rester lisibles sur fond sombre (texte clair / fond foncé).
+
+# Fonds et surfaces
+bg            = #0f172a
+surface       = #1e293b
+surfaceAlt    = #24324a
+alt           = #1a2436
+
+# Bordures
+border        = #334155
+borderStrong  = #475569
+
+# Texte
+text          = #e2e8f0
+textStrong    = #f1f5f9
+textMuted     = #94a3b8
+
+# Accent (bleu de l'interface web, éclairci pour ressortir sur fond sombre)
+accent        = #3b82f6
+accentHover   = #60a5fa
+accentPressed = #2563eb
+accentText    = #ffffff
+
+# Sélection dans les tableaux
+selectionBg   = #2f4a6b
+selectionText = #f1f5f9
+headerText    = #94a3b8
+
+# États désactivés
+disabledBg    = #24324a
+disabledText  = #64748b
+
+# Statuts
+ok            = #22c55e
+okBg          = #14351f
+warn          = #f59e0b
+warnBg        = #3a2c10
+danger        = #ef4444
+dangerBg      = #3a1618
+dangerHover   = #f87171
+dangerPressed = #dc2626
+
+# Barre latérale de navigation
+sidebarBg         = #0b1220
+sidebarText       = #cbd5e1
+sidebarActiveBg   = #1e293b
+sidebarActiveText = #ffffff

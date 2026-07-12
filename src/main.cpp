@@ -1,37 +1,28 @@
-/**
- * main.cpp — Point d'entrée. Ne contient que l'enregistrement des modules
- * métier du projet ; toute la logique d'infrastructure vit dans App/services.
- */
+// ComponentHub Desktop — point d'entrée.
+#include <QApplication>
+#include <QStandardPaths>
+#include <QDir>
 
-#include <Arduino.h>
-#include "core/app.h"
-#include "project_config.h"
-#include "modules/inventory/inventory_module.h"
-#include "modules/document/document_module.h"
-#include "modules/project/project_module.h"
-#include "modules/importexport/importexport_module.h"
-#ifdef ENABLE_BOOT_LOG
-#include "modules/boot_log/boot_log.h"
-#endif
+#include "AppContext.h"
+#include "ui/MainWindow.h"
+#include "ui/Theme.h"
+#include "ui/Icons.h"
 
-static InventoryModule inventoryModule;
-static DocumentModule documentModule;
-static ProjectModule projectModule;
-static ImportExportModule importExportModule;
+int main(int argc, char* argv[]) {
+    QApplication app(argc, argv);
+    app.setApplicationName("ComponentHub");
+    app.setOrganizationName("morfredus");
 
-void setup() {
-    Serial.begin(115200);
+    // Dossier de données par utilisateur (mêmes fichiers JSON que l'ESP32).
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (dir.isEmpty()) dir = QDir::homePath() + "/.componenthub";
+    QDir().mkpath(dir);
 
-    app.modules.add(&inventoryModule);
-    app.modules.add(&documentModule);
-    app.modules.add(&projectModule);
-    app.modules.add(&importExportModule);
-#ifdef ENABLE_BOOT_LOG
-    app.modules.add(&bootLogModule);
-#endif
-    app.begin();
-}
+    Theme::instance().apply(Theme::savedMode());
 
-void loop() {
-    app.loop();
+    chdesktop::AppContext ctx(dir.toStdString());
+    MainWindow window(ctx);
+    window.setWindowIcon(icons::icon(icons::Glyph::Chip, QColor(Theme::instance().color("accent")), 32));
+    window.show();
+    return app.exec();
 }

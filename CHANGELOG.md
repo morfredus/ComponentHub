@@ -8,6 +8,146 @@ et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/)
 
 ## [Unreleased]
 
+## [1.5.1] — 2026-07-12
+
+### Ajouté
+- **Captures d'écran de l'application** dans la documentation : vue Inventaire,
+  fiche composant, Projets (nomenclature) et Import/Export dans le
+  [README](README.md) ; écran Réglages dans
+  [docs/BUILD_DESKTOP.md](docs/BUILD_DESKTOP.md). Images dans `docs/pictures/`.
+
+## [1.5.0] — 2026-07-12
+
+### Ajouté
+- **Barre de menus native** (Fichier · Aller à · Affichage · Aide), en
+  complément de la barre latérale — pour un accès à la souris **comme** au
+  clavier, conforme aux habitudes d'une application de bureau.
+  - **Fichier** : *Ouvrir le dossier de données*, *Quitter* (Ctrl+Q).
+  - **Aller à** : saut direct vers chaque section, raccourcis **Ctrl+1 … Ctrl+7**.
+  - **Affichage → Thème** : Système / Clair / Sombre, **synchronisé** avec les
+    Réglages et le thème de l'OS.
+  - **Aide** : *Aide* (**F1**) — guide « Bien démarrer » (sections, raccourcis,
+    emplacement des données) ; *À propos* (version, version de Qt, licence
+    GPL-3.0-only) ; *À propos de Qt*.
+- **Version affichée dans le titre de la fenêtre** (« ComponentHub 1.5.0 »),
+  lue depuis `CMake` (`CH_APP_VERSION`) — aucune valeur en dur.
+- **Styles QSS** pour `QMenuBar` / `QMenu` (accordés aux thèmes clair et sombre).
+
+## [1.4.2] — 2026-07-12
+
+### Modifié
+- **`ROADMAP.md` réécrit du point de vue bureau-maître** : « Déjà livré » reflète
+  désormais l'application Qt (et non le firmware embarqué PROGMEM/LittleFS) ;
+  nouvelle section **« Lien maître ↔ satellite »** regroupant le chantier de
+  l'API bureau ↔ ESP32 ; vision long terme recentrée (persistance JSON → SQLite
+  côté bureau).
+- **`docs/BUILD_DESKTOP.md`** : la formulation « cœur partagé avec l'ESP32 » est
+  corrigée — depuis la séparation, le bureau possède sa **propre copie** de
+  `src/domain/` (le format `.tar` reste interchangeable pour l'instant).
+
+## [1.4.1] — 2026-07-12
+
+### Modifié
+- **Consolidation du dépôt bureau : la documentation propre au firmware ESP32 a
+  été déplacée vers le dépôt `ComponentHub-ESP32`** (`ARCHITECTURE.md`,
+  `API.md`, `BOOT_LOG.md`, `WIFI_SETUP.md`, `pictures/` — captures de l'UI web
+  embarquée). Le dépôt bureau ne conserve que la doc qui le concerne :
+  [BUILD_DESKTOP.md](docs/BUILD_DESKTOP.md) et la décision d'architecture
+  [ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md). Liens `README`
+  et `ROADMAP` mis à jour en conséquence.
+
+## [1.4.0] — 2026-07-12
+
+### Modifié
+- **Séparation du firmware ESP32 dans un dépôt autonome — la version bureau
+  devient le projet maître, l'ESP32 un « satellite ».** Décision détaillée dans
+  [docs/ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md). En résumé :
+  la base de données de l'atelier ne peut pas rester détenue par l'ESP32-S3
+  (RAM/flash contraintes, croissance sur plusieurs années) et l'extension par
+  **carte SD est écartée pour fiabilité réduite** (corruption, faux contacts,
+  usure). La **base de référence vit donc côté bureau** (stockage fiable PC/RPi,
+  capacité et évolution — JSON → SQLite — non bridées). L'**ESP32 devient un
+  terminal mobile** de consultation/modification du stock (scan QR) qui, à
+  terme, **consulte et met à jour la base de la version bureau**. Concrètement,
+  le firmware est extrait vers le dépôt voisin `ComponentHub-ESP32`, avec **sa
+  propre copie** de `src/domain/` ; les deux projets évoluent désormais
+  séparément. Le format JSON / `.tar` reste interchangeable carte ↔ PC. Les
+  **deux builds sont vérifiés** (bureau CMake → `ComponentHub.exe`, firmware
+  PlatformIO → `firmware.bin`).
+- **Réorganisation du dépôt : l'application de bureau devient le projet
+  principal, à la racine** (structure et workflow calqués sur SiteWatch).
+  Le cœur métier `src/domain/` vit à la racine ; il était référencé par le
+  firmware ESP32 (source unique) jusqu'à la séparation ci-dessus. Les deux
+  builds sont vérifiés (desktop CMake depuis la racine, firmware PlatformIO).
+- **Workflow de compilation et de packaging aligné sur SiteWatch** :
+  `CMakePresets.json` (mingw / linux / linux-arm64 / cross) et tâches VS Code
+  à la racine, mêmes commandes de build ; scripts `scripts/windows/` (build
+  VS Code, déploiement DLL, **ZIP autonome**) et `scripts/linux/` (**paquet
+  `.deb`**, **AppImage**, installation bureau) ; icône d'application
+  (`resources/logo.png`, `app.ico`).
+
+### Ajouté
+- **Application de bureau** : portage natif **Qt 6 / C++17**
+  compilable sur **Windows, Linux (x86_64) et Raspberry Pi (ARM64)** via CMake,
+  affranchi de la contrainte mémoire de l'ESP32. Réutilise tel quel le cœur
+  métier (`src/domain/` : services, CSV, import/export) — seuls le stockage
+  fichier (nlohmann/json, **même format JSON que l'ESP32**) et l'interface Qt
+  sont spécifiques. Écrans : Inventaire (recherche/filtres/fiche complète avec
+  documents et mouvements de stock), Catégories, Emplacements (hiérarchie),
+  Projets (nomenclature + manquants), Import/Export (CSV par table + sauvegarde
+  `.tar` **interchangeable avec l'ESP32**), Réglages. Thème clair/sombre suivant
+  l'OS, icônes vectorielles teintées, accents et « € » corrects (UTF-8).
+
+### Ajouté (interface bureau)
+- **Référentiels administrables** (`Référentiels` dans la navigation) : listes de
+  valeurs normalisées (Types de composants, Fabricants, Boîtiers, Fournisseurs,
+  Technologies, États, Mots-clés) pour une nomenclature homogène. Par référentiel :
+  ajouter, renommer, supprimer, réordonner, **fusionner** des doublons, importer/
+  exporter en CSV. Pour les référentiels **liés à un champ** (type, fabricant,
+  fournisseur, état), renommage et fusion **propagent la mise à jour aux
+  composants** concernés. Le champ *Type* de la fiche composant est proposé depuis
+  le référentiel avec **ajout inline** (« le type X n'existe pas, l'ajouter ? »).
+  Le fichier `referentials.json` est inclus dans la sauvegarde `.tar` complète.
+- **Recherche globale** : la recherche de l'inventaire balaie désormais **tous**
+  les champs texte (référence, désignation, type, fabricant, caractéristiques,
+  fournisseur, notes…) et gère plusieurs mots (ET logique), sans avoir à choisir
+  un champ. Amélioration partagée avec le firmware ESP32.
+
+### Corrigé (interface bureau)
+- **Inventaire** : tri par colonnes au clic sur l'en-tête, avec tri
+  **numérique** correct pour Qté et Prix (« 10 » après « 9 », prix comparé sur
+  la valeur et non le texte).
+- **Fiche composant** : boutons +/− des compteurs (quantité, seuils, prix) à la
+  **zone cliquable élargie et clairement délimitée** — le rendu Qt par défaut,
+  altéré dès qu'une feuille de style cible un `QSpinBox`, produisait des boutons
+  minuscules et mal cadrés. Boutons pleine hauteur + flèches PNG teintées.
+
+## [1.3.0]
+
+### Ajouté
+- **Export/import des tables secondaires** : catégories, emplacements (avec la
+  hiérarchie — `parentId` + chemin lisible « Atelier > Armoire A > Tiroir »)
+  et projets disposent chacun d'un export et d'un import CSV réimportable à
+  l'identique (l'`id` interne est conservé, préservant les références croisées).
+- **Sauvegarde / restauration complète de la base** en une archive TAR
+  (`componenthub_backup.tar`) embarquant **tout** l'atelier — toutes les tables
+  (composants, catégories, emplacements, mouvements de stock, documents,
+  projets, nomenclatures) **et** les fichiers uploadés (datasheets PDF,
+  photos…), à l'octet près. Le format à privilégier pour récupérer
+  intégralement l'atelier après un incident. Archive bâtie/diffusée en flux
+  (empreinte RAM minime, sans limite de taille autre que le système de
+  fichiers) ; restauration en multipart avec vérification du format et
+  écriture atomique par fichier. La
+  restauration écrase les données actuelles et demande une confirmation
+  (écriture atomique tmp+rename par table). Nouvelles routes `/api/backup`,
+  `/api/restore`, `/api/{categories,locations,projects}/{export,import}`.
+
+### Corrigé
+- **Encodage des CSV exportés** : ajout d'un BOM UTF-8 en tête de fichier pour
+  que les tableurs (Excel/LibreOffice sous Windows) affichent correctement le
+  signe « € » et les caractères accentués, au lieu de caractères corrompus.
+  Un BOM éventuel est ignoré à la réimportation.
+
 ### Modifié
 - Bandeau supérieur **figé (sticky)** : l'en-tête de navigation et la zone de
   statut inline (messages, confirmations, progression) restent collés en haut

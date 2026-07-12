@@ -1,0 +1,9 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/">
+    <file>themes/app.qss</file>
+    <file>themes/light.theme</file>
+    <file>themes/dark.theme</file>
+    <file>icons/spin-up.png</file>
+    <file>icons/spin-down.png</file>
+</qresource>
+</RCC>

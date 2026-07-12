@@ -1,0 +1,2 @@
+// Icône de l'exécutable Windows (Explorer, barre des tâches).
+IDI_ICON1 ICON "app.ico"

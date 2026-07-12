@@ -2,6 +2,8 @@
 
 namespace domain {
 
+const char* const kUtf8Bom = "\xEF\xBB\xBF";
+
 std::vector<std::vector<std::string>> parseCsv(const std::string& text, char delimiter) {
     std::vector<std::vector<std::string>> rows;
     std::vector<std::string> row;
@@ -9,6 +11,15 @@ std::vector<std::vector<std::string>> parseCsv(const std::string& text, char del
     bool inQuotes = false;
     size_t i = 0;
     size_t n = text.size();
+
+    // Ignore un BOM UTF-8 en tête de fichier : les tableurs (Excel, LibreOffice)
+    // le rajoutent souvent à l'enregistrement en UTF-8. Sans ce saut, les trois
+    // octets se retrouveraient collés au premier en-tête ("\xEF\xBB\xBFid"),
+    // faisant échouer la reconnaissance de colonnes à la réimportation.
+    if (n >= 3 && (unsigned char)text[0] == 0xEF &&
+        (unsigned char)text[1] == 0xBB && (unsigned char)text[2] == 0xBF) {
+        i = 3;
+    }
 
     auto endField = [&]() { row.push_back(field); field.clear(); };
     auto endRow = [&]() { endField(); rows.push_back(row); row.clear(); };

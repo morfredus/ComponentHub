@@ -21,8 +21,12 @@ id_ed25519*
 # =============================================================================
 # 2. CONFIGURATION ET CACHE DES ÉDITEURS / IDE (VS Code, etc.)
 # =============================================================================
-# Dossier de configuration de l'espace de travail VS Code (englobe tout)
-.vscode/
+# Dossier de configuration de l'espace de travail VS Code : on ignore tout SAUF
+# les fichiers de workflow partagés (build/déploiement, façon SiteWatch).
+.vscode/*
+!.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/extensions.json
 .vs/
 *.code-workspace
 *.user
@@ -47,6 +51,12 @@ id_ed25519*
 /out/
 .build/
 build/
+# Application bureau (Qt/CMake) — répertoires de build et de packaging
+build-mingw/
+build-arm64/
+build-arm64-cross/
+dist/
+.cache/
 tmp/
 temp/
 .arduino/

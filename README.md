@@ -1,131 +1,138 @@
 # ComponentHub
 
-La mémoire technique d'un atelier électronique : inventaire de composants,
-modules, outils et consommables, emplacements personnalisables, projets et
-leur nomenclature, documentation attachée, import/export — le tout piloté
-depuis un navigateur, sans application ni compte à créer.
+![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
+![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
+![Qt](https://img.shields.io/badge/Qt-6-41CD52?logo=qt)
+![Build](https://img.shields.io/badge/CMake-3.21+-064F8C?logo=cmake)
 
-Ce n'est pas un simple inventaire : l'objectif est de retrouver en un clic,
-pour n'importe quel composant, son stock, son emplacement, ses datasheets,
-et les projets qui l'utilisent.
+**La mémoire technique d'un atelier électronique** : inventaire de composants,
+modules, outils et consommables ; stock et mouvements ; emplacements
+hiérarchiques ; documentation attachée ; projets et leur nomenclature.
 
-## Fonctionnalités
+Ce n'est pas un simple inventaire : l'objectif est de retrouver en un clic, pour
+n'importe quel composant, son stock, son emplacement, ses datasheets et les
+projets qui l'utilisent.
 
-- **Inventaire unifié** — composants, modules, outils et consommables dans
-  la même base, filtrables par type, catégorie, statut de validation
-  (icônes façon signalisation : 🟡 à tester, 🚧 en validation, 🟢 validé,
-  🛑 défectueux, 📦 archivé) ou stock faible.
-- **Fiche composant complète** — référence, fabricant, caractéristiques
-  électriques, prix/fournisseur, dates d'achat/réception, garantie, état,
-  provenance, notes. Catégorie, emplacement et interface se choisissent
-  dans une liste existante ou se créent à la volée en tapant une nouvelle
-  valeur.
-- **Emplacements hiérarchiques** — arborescence libre (ex. *Atelier > Armoire
-  A > Tiroir A12 > Sachet 3*), personnalisable sans limite de profondeur.
-- **Catégories** — liste plate gérée séparément (page dédiée, comme
-  Emplacements/Projets), alimentée automatiquement à mesure qu'elles sont
-  saisies sur une fiche composant.
-- **Menu d'actions par composant** (⋮) — Modifier, Mouvement, Documents,
-  Dupliquer, Supprimer, prêt à accueillir Photos et QR Code.
-- **Mouvements de stock** — entrée/sortie/correction/inventaire, historique
-  complet par composant, alerte automatique sous le seuil minimum.
-- **Projets** — fiche projet (version, firmware, dépôt Git) et nomenclature :
-  composants de l'inventaire **ou** éléments pas encore possédés (marqués
-  « à acheter »), vérification de disponibilité en un coup d'œil, et
-  impression / export PDF de la liste des composants nécessaires et du reste
-  à acheter.
-- **Documentation** — datasheets, manuels, schémas, pinouts ou liens utiles
-  attachés à un composant ou un projet.
-- **Import / Export CSV** — format natif (sauvegarde complète,
-  réimportable) et format compatible [Bomist](https://bomist.com/)
-  (rapprochement par référence, résolution automatique des emplacements).
-- **Tableau de bord (Labo)** — état détaillé de l'inventaire en un coup
-  d'œil : références, pièces, stock faible, liste d'achats, composants à
-  tester, projets, dates des derniers import/export/sauvegarde.
-- Interface web responsive, sans rechargement de page, sans popup
-  bloquant — uniquement des messages inline dans une zone dédiée.
-- **Menu principal plat** (Labo, Inventaire, Projets, Paramètres, Système —
-  pas de sous-menu déroulant) : Paramètres et Système regroupent leurs
-  sous-pages dans une barre d'onglets, pensée pour rester navigable plus tard
-  au bouton rotatif (souris/tactile aujourd'hui, contrôle physique demain —
-  voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#principe-dinterface--navigation-pilotable)).
+![Vue Inventaire de ComponentHub](docs/pictures/inventaire.png)
 
-## Plateforme
+ComponentHub est une **application de bureau Qt / C++17**, native sur
+**Windows, Linux (x86_64) et Raspberry Pi (ARM64)**. C'est le **projet maître**,
+détenteur de la base de données de référence de l'atelier — sur un stockage
+fiable, sans les limites mémoire de l'ESP32. Un **firmware ESP32**, développé
+désormais dans un **dépôt séparé** (`ComponentHub-ESP32`, voisin de celui-ci),
+en devient un **satellite** : terminal mobile de consultation/modification du
+stock (scan QR) qui, à terme, consulte la base de cette version bureau. Le
+pourquoi de cette séparation est détaillé dans
+[docs/ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md).
 
-Développé pour un **ESP32-S3-WROOM-1-N16R8**, sous **PlatformIO**
-(framework Arduino). Le cœur métier (`src/domain/`) n'a aucune dépendance
-ESP32/Arduino — voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour le
-détail de cette séparation, pensée pour permettre un futur portage
-Raspberry Pi / Linux sans réécriture majeure.
+## Cœur métier
 
-## Démarrage rapide
+Le cœur métier [`src/domain/`](src/domain/) — entités, services (inventaire,
+projets, documents, import/export), CSV — ne dépend ni de Qt ni d'Arduino. Le
+firmware ESP32 en possède **sa propre copie** dans son dépôt : les deux projets,
+autrefois issus d'un cœur commun, évoluent maintenant séparément.
 
-```bash
-cp include/secrets_example.h include/secrets.h   # identifiants WiFi de développement (optionnel)
-pio run                                          # compile le firmware (régénère l'UI embarquée automatiquement)
-pio run --target upload                          # téléverse — firmware ET interface web en une seule fois
+Le **format des fichiers JSON reste identique** entre bureau et firmware, et les
+**sauvegardes `.tar` (tout compris) sont interchangeables** carte ↔ PC.
+
+| | Application bureau (ce dépôt) | Firmware ESP32 (dépôt séparé) |
+|---|---|---|
+| Build | CMake + Qt 6 | PlatformIO (Arduino) |
+| Stockage | fichiers JSON (nlohmann/json) | fichiers JSON (LittleFS) |
+| Interface | Qt Widgets (thème clair/sombre) | web embarquée (PROGMEM) |
+
+## Aperçu
+
+**Fiche composant** — tout sur un composant (général, caractéristiques, achat/
+stock, documents, notes) :
+
+![Fiche composant](docs/pictures/fiche-composant.png)
+
+**Projets** — nomenclature (BOM) et calcul des composants manquants :
+
+![Projets et nomenclature](docs/pictures/projets.png)
+
+**Import / Export** — sauvegarde complète `.tar` (interchangeable avec l'ESP32)
+et CSV par table :
+
+![Import / Export](docs/pictures/import-export.png)
+
+## Compilation (bureau)
+
+Dépendances : CMake ≥ 3.21, un compilateur C++17, Ninja, **Qt 6 (Widgets)**,
+**nlohmann-json**.
+
+### Windows (MSYS2 / MinGW)
+
+```sh
+cmake --preset mingw
+cmake --build --preset mingw
+# -> build-mingw/ComponentHub.exe (DLL Qt + MinGW déployées automatiquement)
 ```
 
-L'interface web (`web_src/`) est **embarquée dans le firmware** (PROGMEM),
-pas servie depuis LittleFS : un simple `pio run --target upload` met à jour
-le firmware et l'UI ensemble, sans étape séparée (`uploadfs`) et surtout
-**sans jamais effacer l'inventaire**, qui reste seul sur LittleFS. Voir
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#interface-web-embarquée-progmem)
-pour le détail.
+Sous VS Code : les tâches **CMake: Build (MinGW)** et **ComponentHub: Run**
+(`.vscode/tasks.json`) font la même chose en un raccourci.
 
-Au premier démarrage, si aucun réseau WiFi n'est encore connu, l'ESP32
-ouvre un portail de configuration — voir
-[docs/WIFI_SETUP.md](docs/WIFI_SETUP.md) pour le déroulé complet.
+### Linux (x86_64) / Raspberry Pi (ARM64)
+
+```sh
+cmake --preset linux        # ou linux-arm64 sur Raspberry Pi
+cmake --build --preset linux
+```
+
+## Paquets distribuables
+
+Comme SiteWatch, les scripts de packaging sont à la racine, dans `scripts/` :
+
+```sh
+# Windows : ZIP autonome (exe + DLL + plugins Qt)
+powershell -ExecutionPolicy Bypass -File scripts\windows\package-win.ps1
+
+# Linux : paquet Debian (.deb, lié au Qt du système)
+scripts/linux/package-deb.sh
+
+# Linux : AppImage autonome (Qt embarqué)
+scripts/linux/package-appimage.sh
+
+# Linux : intégration au menu du bureau (binaire déjà compilé)
+scripts/linux/install.sh
+```
+
+Les artefacts sont produits dans `dist/`.
+
+## Structure du dépôt
+
+```
+ComponentHub/
+├── CMakeLists.txt          application bureau (cible principale)
+├── CMakePresets.json       presets mingw / linux / linux-arm64 / cross
+├── cmake/toolchains/       toolchain de cross-compilation ARM64
+├── scripts/{windows,linux}/ compilation VS Code + packaging (zip, deb, AppImage)
+├── resources/              app.qrc, thèmes (light/dark), icône (logo.png, app.ico)
+├── src/
+│   ├── domain/             cœur métier PARTAGÉ (aucune dépendance Qt/Arduino)
+│   ├── ui/                 interface Qt (Theme, Icons, pages, dialogues)
+│   ├── storage/            dépôts fichier JSON (desktop)
+│   ├── platform/           archive .tar, horloge
+│   └── main.cpp
+├── docs/
+├── VERSION                 version de l'application bureau
+└── LICENSE
+```
+
+> Le firmware ESP32 vit dans un dépôt distinct (`ComponentHub-ESP32`) et n'est
+> plus inclus ici.
 
 ## Documentation
 
 | Document | Contenu |
 |---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture en couches (Core / Domain / Storage / Modules / Web), portabilité, flux de démarrage |
-| [docs/API.md](docs/API.md) | Référence complète de l'API REST (inventaire, emplacements, stock, documents, projets, import/export) |
-| [docs/WIFI_SETUP.md](docs/WIFI_SETUP.md) | Configuration WiFi, portail captif, premier démarrage |
-| [docs/BOOT_LOG.md](docs/BOOT_LOG.md) | Module optionnel de journal de redémarrage (diagnostic crash/watchdog) |
-| [ROADMAP.md](ROADMAP.md) | Feuille de route (court / moyen / long terme, vision) |
+| [docs/BUILD_DESKTOP.md](docs/BUILD_DESKTOP.md) | Détails de compilation multi-plateforme (bureau) |
+| [docs/ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md) | Décision : version bureau maître, ESP32 satellite |
 | [CHANGELOG.md](CHANGELOG.md) | Historique des versions |
 
-## Structure du projet
-
-```
-ComponentHub/
-├── platformio.ini
-├── include/
-│       board_config.h        brochage
-│       project_config.h      réglages globaux (nom du projet, fonctionnalités activées...)
-│       secrets_example.h     modèle pour include/secrets.h (gitignored)
-├── src/
-│   │   main.cpp               point d'entrée : enregistrement des modules
-│   ├── core/                  App, Module, ModuleManager — orchestration uniquement
-│   ├── api/api_router/        WebRouter — façade de routage HTTP (ESPAsyncWebServer)
-│   ├── services/              WiFi, Web, OTA, Storage, Config, Log, SystemInfo, mDNS, Time,
-│   │                          WebAssets (interface web embarquée, voir plus bas)
-│   ├── domain/                cœur métier pur (aucune dépendance Arduino/ESP32) :
-│   │                          entités (dont Category), interfaces de dépôt,
-│   │                          InventoryService, ProjectService, DocumentService,
-│   │                          ImportExportService
-│   ├── storage/                dépôts JSON/LittleFS (implémentent les interfaces de domain/)
-│   └── modules/                modules métier (glue domaine <-> HTTP) :
-│       ├── inventory/          composants, emplacements, catégories, mouvements de stock
-│       ├── project/            projets et nomenclature
-│       ├── document/           documentation attachée
-│       ├── importexport/       import/export CSV
-│       └── boot_log/           optionnel — journal de redémarrage
-├── web_src/                    interface web (HTML/CSS/JS), à modifier ici
-├── web/                        généré par tools/minify_web.py, ne pas éditer
-├── src/generated/               généré par tools/generate_web_assets.py, ne pas éditer —
-│                                tableaux PROGMEM compilés dans le firmware
-├── docs/
-└── tools/
-        build_info.py          génère les infos de build (date, commit, version)
-        minify_web.py          web_src/ -> web/
-        generate_web_assets.py web/ -> src/generated/web_assets_data.cpp (PROGMEM)
-        release.py             pipeline de release complet
-        version_generator.py   génère VERSION
-```
+> La documentation propre au firmware (architecture embarquée, API REST, WiFi,
+> boot log) a été déplacée dans le dépôt `ComponentHub-ESP32`.
 
 ## Licence
 

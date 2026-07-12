@@ -17,13 +17,28 @@ bool InventoryService::_matches(const Component& c, const ComponentFilter& filte
     if (filter.hasKind && c.kind != filter.kind) return false;
 
     if (!filter.query.empty()) {
+        // Recherche « universelle » : l'utilisateur n'a pas à savoir dans quel
+        // champ se trouve l'info. On balaie TOUS les champs texte indexables du
+        // composant (référence, désignation, type, fabricant, catégorie,
+        // caractéristiques, fournisseur, notes...). Chaque mot de la requête
+        // doit être trouvé quelque part (recherche multi-termes, ET logique).
+        const std::string haystack = _toLower(
+            c.name + " " + c.reference + " " + c.manufacturer + " " + c.description + " " +
+            c.category + " " + c.subcategory + " " + c.type + " " + c.voltage + " " +
+            c.current + " " + c.interfaceType + " " + c.protocols + " " + c.i2cAddress + " " +
+            c.frequency + " " + c.compatibility + " " + c.supplier + " " + c.state + " " +
+            c.origin + " " + c.warranty + " " + c.notes);
+
         std::string q = _toLower(filter.query);
-        auto contains = [&](const std::string& field) {
-            return _toLower(field).find(q) != std::string::npos;
-        };
-        if (!(contains(c.name) || contains(c.reference) || contains(c.manufacturer) ||
-              contains(c.category) || contains(c.supplier) || contains(c.notes))) {
-            return false;
+        size_t start = 0;
+        while (start < q.size()) {
+            size_t end = q.find(' ', start);
+            if (end == std::string::npos) end = q.size();
+            if (end > start) {
+                const std::string term = q.substr(start, end - start);
+                if (haystack.find(term) == std::string::npos) return false;
+            }
+            start = end + 1;
         }
     }
     return true;

@@ -1,0 +1,48 @@
+# ComponentHub — thème clair.
+# Format : token = valeur. Lignes vides et # ignorées. Injectés dans app.qss.
+
+# Fonds et surfaces
+bg            = #f5f6f8
+surface       = #ffffff
+surfaceAlt    = #eef1f5
+alt           = #f7f8fa
+
+# Bordures
+border        = #e2e8f0
+borderStrong  = #cbd5e1
+
+# Texte
+text          = #1f2328
+textStrong    = #0f172a
+textMuted     = #64748b
+
+# Accent
+accent        = #2563eb
+accentHover   = #1d4ed8
+accentPressed = #1e40af
+accentText    = #ffffff
+
+# Sélection dans les tableaux
+selectionBg   = #e8f1fb
+selectionText = #0f172a
+headerText    = #64748b
+
+# États désactivés
+disabledBg    = #e9ecef
+disabledText  = #9ca3af
+
+# Statuts
+ok            = #16a34a
+okBg          = #e7f6ec
+warn          = #b45309
+warnBg        = #fef3e2
+danger        = #dc2626
+dangerBg      = #fde8e8
+dangerHover   = #b91c1c
+dangerPressed = #991b1b
+
+# Barre latérale de navigation
+sidebarBg         = #e9edf2
+sidebarText       = #334155
+sidebarActiveBg   = #ffffff
+sidebarActiveText = #2563eb

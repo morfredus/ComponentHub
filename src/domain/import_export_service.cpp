@@ -90,6 +90,18 @@ std::string ImportExportService::_locationName(Id id) const {
     return loc ? loc->name : "";
 }
 
+std::string ImportExportService::_locationPath(Id id, const std::map<Id, Location>& byId) const {
+    std::string path;
+    int guard = 0;  // borne anti-boucle si un parentId corrompu formait un cycle
+    while (id != kNoId && guard++ < 64) {
+        auto it = byId.find(id);
+        if (it == byId.end()) break;
+        path = path.empty() ? it->second.name : (it->second.name + " > " + path);
+        id = it->second.parentId;
+    }
+    return path;
+}
+
 std::string ImportExportService::exportCsv(CsvFormat format) const {
     return format == CsvFormat::Bomist ? _exportBomist() : _exportNative();
 }
@@ -205,6 +217,137 @@ ImportResult ImportExportService::_importNative(const std::string& csv) {
     }
 
     _components.saveAll(toSave);
+    return result;
+}
+
+// ---------------------------------------------------------------------------
+// Tables secondaires : catégories, emplacements (hiérarchie), projets.
+// Chaque CSV porte l'`id` interne : au réimport, une ligne dont l'id existe
+// déjà met à jour l'entrée correspondante, sinon elle est (re)créée avec cet
+// id — ce qui préserve les références croisées (composant -> emplacement,
+// nomenclature -> composant/projet) lors d'une restauration table par table.
+// ---------------------------------------------------------------------------
+
+std::string ImportExportService::exportCategoriesCsv() const {
+    std::string out = joinCsvRow({"id", "name"}) + "\n";
+    for (auto& c : _categories.findAll()) {
+        out += joinCsvRow({intStr(c.id), c.name}) + "\n";
+    }
+    return out;
+}
+
+std::string ImportExportService::exportLocationsCsv() const {
+    std::map<Id, Location> byId;
+    for (auto& l : _locations.findAll()) byId[l.id] = l;
+
+    std::string out = joinCsvRow({"id", "name", "parentId", "path"}) + "\n";
+    for (auto& kv : byId) {
+        const Location& l = kv.second;
+        out += joinCsvRow({intStr(l.id), l.name, intStr(l.parentId), _locationPath(l.id, byId)}) + "\n";
+    }
+    return out;
+}
+
+std::string ImportExportService::exportProjectsCsv() const {
+    std::string out = joinCsvRow({
+        "id", "name", "description", "version", "firmware", "gitRepo", "status", "notes"
+    }) + "\n";
+    for (auto& p : _projects.findAll()) {
+        out += joinCsvRow({
+            intStr(p.id), p.name, p.description, p.version, p.firmware, p.gitRepo, p.status, p.notes
+        }) + "\n";
+    }
+    return out;
+}
+
+ImportResult ImportExportService::importCategoriesCsv(const std::string& csv) {
+    ImportResult result;
+    auto rows = parseCsv(csv, ';');
+    if (rows.empty()) return result;
+    auto idx = headerIndex(rows[0]);
+
+    std::map<Id, bool> existingIds;
+    for (auto& c : _categories.findAll()) existingIds[c.id] = true;
+
+    for (size_t r = 1; r < rows.size(); r++) {
+        auto& row = rows[r];
+        if (isBlankRow(row)) continue;
+
+        std::string name = cell(row, idx, "name");
+        if (name.empty()) {
+            result.failed++;
+            result.errors.push_back("ligne " + intStr((int)r + 1) + ": nom manquant");
+            continue;
+        }
+        Category c;
+        c.id = parseIntSafe(cell(row, idx, "id"));
+        c.name = name;
+        if (c.id != kNoId && existingIds.count(c.id)) result.updated++; else result.created++;
+        _categories.save(c);
+    }
+    return result;
+}
+
+ImportResult ImportExportService::importLocationsCsv(const std::string& csv) {
+    ImportResult result;
+    auto rows = parseCsv(csv, ';');
+    if (rows.empty()) return result;
+    auto idx = headerIndex(rows[0]);
+
+    std::map<Id, bool> existingIds;
+    for (auto& l : _locations.findAll()) existingIds[l.id] = true;
+
+    for (size_t r = 1; r < rows.size(); r++) {
+        auto& row = rows[r];
+        if (isBlankRow(row)) continue;
+
+        std::string name = cell(row, idx, "name");
+        if (name.empty()) {
+            result.failed++;
+            result.errors.push_back("ligne " + intStr((int)r + 1) + ": nom manquant");
+            continue;
+        }
+        Location l;
+        l.id = parseIntSafe(cell(row, idx, "id"));
+        l.name = name;
+        l.parentId = parseIntSafe(cell(row, idx, "parentId"));  // colonne « path » ignorée (dérivée)
+        if (l.id != kNoId && existingIds.count(l.id)) result.updated++; else result.created++;
+        _locations.save(l);
+    }
+    return result;
+}
+
+ImportResult ImportExportService::importProjectsCsv(const std::string& csv) {
+    ImportResult result;
+    auto rows = parseCsv(csv, ';');
+    if (rows.empty()) return result;
+    auto idx = headerIndex(rows[0]);
+
+    std::map<Id, bool> existingIds;
+    for (auto& p : _projects.findAll()) existingIds[p.id] = true;
+
+    for (size_t r = 1; r < rows.size(); r++) {
+        auto& row = rows[r];
+        if (isBlankRow(row)) continue;
+
+        std::string name = cell(row, idx, "name");
+        if (name.empty()) {
+            result.failed++;
+            result.errors.push_back("ligne " + intStr((int)r + 1) + ": nom manquant");
+            continue;
+        }
+        Project p;
+        p.id = parseIntSafe(cell(row, idx, "id"));
+        p.name = name;
+        p.description = cell(row, idx, "description");
+        p.version = cell(row, idx, "version");
+        p.firmware = cell(row, idx, "firmware");
+        p.gitRepo = cell(row, idx, "gitRepo");
+        p.status = cell(row, idx, "status");
+        p.notes = cell(row, idx, "notes");
+        if (p.id != kNoId && existingIds.count(p.id)) result.updated++; else result.created++;
+        _projects.save(p);
+    }
     return result;
 }
 
