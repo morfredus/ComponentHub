@@ -8,6 +8,15 @@ et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/)
 
 ## [Unreleased]
 
+## [1.5.2] — 2026-07-12
+
+### Corrigé
+- **Paquet Debian (`scripts/linux/package-deb.sh`)** : la création du raccourci
+  `.desktop` échouait avec « No such file or directory » car le dossier
+  `usr/share/applications/` n'était pas créé avant la redirection `>`. Ajout
+  d'un `install -d` explicite. Le `.deb` se construit à nouveau (testé sur
+  Raspberry Pi, ARM64).
+
 ## [1.5.1] — 2026-07-12
 
 ### Ajouté

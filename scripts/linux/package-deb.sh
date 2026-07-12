@@ -95,6 +95,9 @@ PKGDIR="$ROOT/dist/deb/${CMD}_${VERSION}_${ARCH}"
 rm -rf "$PKGDIR"
 install -Dm755 "$BINARY" "$PKGDIR/usr/bin/$CMD"
 
+# La redirection `>` ne crée pas les dossiers parents : on prépare le dossier
+# des raccourcis .desktop avant d'y écrire (sans quoi « No such file or directory »).
+install -d "$PKGDIR/usr/share/applications"
 sed "s|^Exec=.*|Exec=/usr/bin/$CMD|" "$SCRIPT_DIR/componenthub.desktop" \
     > "$PKGDIR/usr/share/applications/$CMD.desktop"
 chmod 644 "$PKGDIR/usr/share/applications/$CMD.desktop"
