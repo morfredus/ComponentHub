@@ -55,6 +55,15 @@ built on a shared core, now **evolve separately**. This layered separation
 The desktop app stores each table as a JSON file and can back up the whole
 workshop into a single `.tar` archive.
 
+## Network supervision & updates
+
+ComponentHub announces its presence on the local network and exposes live metrics
+(**morfBeacon** module) so it can be watched from a central dashboard, and checks
+GitHub for updates (**morfUpdate** module, from the Help menu). These shared
+modules are vendored in the project (`third_party/morf/`) and compiled into the
+binary — nothing external to install. See
+[docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)*.
+
 ## Overview
 
 **Component sheet** — everything about a component (general, characteristics,
@@ -150,6 +159,7 @@ ComponentHub/
 | [docs/fr/USER_MANUAL.md](docs/fr/USER_MANUAL.md) *(FR)* | Application user manual, to get productive quickly |
 | [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md) *(FR)* | Multi-platform build reference |
 | [docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md) *(FR)* | Layered architecture (domain / storage / UI) |
+| [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)* | LAN supervision (presence + metrics) and update checking |
 | [docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md) *(FR)* | Decision: desktop master, ESP32 satellite |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, portability rules |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |

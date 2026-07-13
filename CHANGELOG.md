@@ -8,6 +8,18 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.6.0] — 2026-07-13
+
+### Added
+- **LAN supervision (morfBeacon) and update check (morfUpdate).** ComponentHub now
+  announces its presence on the local network (UDP heartbeat, port 45454) and
+  exposes live metrics over a small local HTTP endpoint (`/status`, port 8787), so
+  it can be watched from a central dashboard (RaspberryDashboard). It also checks
+  GitHub Releases for a newer version — silently at startup, and on demand via
+  **Help → "Check for updates…"**. Both are shared modules vendored under
+  `third_party/morf/` (compiled into the binary, no external dependency). See
+  [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)*.
+
 ## [1.5.4] — 2026-07-12
 
 ### Changed

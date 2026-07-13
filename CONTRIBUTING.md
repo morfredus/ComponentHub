@@ -60,6 +60,13 @@ Keeping these boundaries is what makes the project easy to maintain: you can
 change the UI without touching the logic, and change storage (JSON → SQLite one
 day) without touching either.
 
+**Vendored common modules (`third_party/morf/`).** The LAN supervision
+(morfBeacon) and update-check (morfUpdate) libraries are **copies**, compiled into
+the binary. Do **not** edit them under `third_party/`: change the source in the
+`morfBeacon_travail` / `morfUpdate_travail` repositories, then resync with
+`scripts/sync-morf.ps1` (or `scripts/sync-morf.sh`). See
+[docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)*.
+
 ## 3. Building and running
 
 See the step-by-step guide (beginners included, all three OSes):

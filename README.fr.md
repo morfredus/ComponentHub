@@ -50,6 +50,15 @@ séparation en couches (domaine ⟷ stockage ⟷ interface) est décrite dans
 L'application bureau stocke chaque table dans un fichier JSON et sauvegarde tout
 l'atelier dans une archive `.tar` unique.
 
+## Supervision réseau et mises à jour
+
+ComponentHub annonce sa présence sur le réseau local et expose ses métriques
+(module **morfBeacon**), pour être suivi depuis un tableau de bord central, et
+vérifie les mises à jour depuis GitHub (module **morfUpdate**, menu Aide). Ces
+modules communs sont inclus dans le projet (`third_party/morf/`) et compilés dans
+l'exécutable — rien d'externe à installer. Voir
+[docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md).
+
 ## Aperçu
 
 **Fiche composant** — tout sur un composant (général, caractéristiques, achat/

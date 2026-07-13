@@ -143,8 +143,26 @@ Chaque table est un fichier JSON dans le dossier de données de l'utilisateur
 **sauvegarde `.tar`** (menu Import/Export) emballe tout cela en un seul fichier,
 restaurable à tout moment.
 
+## Modules communs : supervision réseau et mises à jour
+
+Deux petites bibliothèques partagées avec les autres applications de l'atelier
+sont **vendorées** dans `third_party/morf/` (compilées dans l'exécutable, sans
+dépendance externe) :
+
+- **morfBeacon** (`third_party/morf/beacon/`) — annonce la présence de l'appli sur
+  le réseau (heartbeat UDP) et expose ses métriques (`/status` HTTP), pour le
+  RaspberryDashboard. Câblé dans `src/main.cpp`.
+- **morfUpdate** (`third_party/morf/update/`) — vérifie les *releases* GitHub.
+  Câblé dans `src/ui/MainWindow` (menu Aide + vérification au démarrage).
+
+Comme le reste, ces modules ne remontent jamais dans les couches supérieures :
+l'interface (`src/ui/`, `src/main.cpp`) les utilise, le cœur métier les ignore.
+Détails et maintenance : [SUPERVISION_ET_MAJ.md](SUPERVISION_ET_MAJ.md).
+
 ## Pour aller plus loin
 
+- Supervision réseau et mises à jour :
+  [SUPERVISION_ET_MAJ.md](SUPERVISION_ET_MAJ.md).
 - Pourquoi le bureau est le maître et l'ESP32 un satellite :
   [ADR-0001](ADR-0001-desktop-maitre-esp32-satellite.md).
 - Compiler le projet : [GETTING_STARTED.md](GETTING_STARTED.md) et
