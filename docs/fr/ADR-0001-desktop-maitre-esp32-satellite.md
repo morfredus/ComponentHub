@@ -3,7 +3,7 @@
 - **Statut** : accepté
 - **Date** : 2026-07-12
 - **Version** : 1.4.0 (bureau et firmware)
-- **Portée** : les deux dépôts — `ComponentHub_travail` (bureau) et
+- **Portée** : les deux dépôts — `ComponentHub` (bureau) et
   `ComponentHub-ESP32` (firmware), désormais séparés.
 
 > Un ADR (*Architecture Decision Record*) fige **pourquoi** une décision a été

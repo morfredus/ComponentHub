@@ -20,6 +20,6 @@ function Sync-One($name, $srcDir, $dstDir) {
     Write-Output "OK  $name  (version $v)"
 }
 
-Sync-One "morfBeacon" "$srcBase\morfBeacon_travail" "$root\third_party\morf\beacon"
-Sync-One "morfUpdate" "$srcBase\morfUpdate_travail" "$root\third_party\morf\update"
+Sync-One "morfBeacon" "$srcBase\morfBeacon" "$root\third_party\morf\beacon"
+Sync-One "morfUpdate" "$srcBase\morfUpdate" "$root\third_party\morf\update"
 Write-Output "Synchronisation terminee. Le CMakeLists vendore n'est pas modifie."

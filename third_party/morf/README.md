@@ -18,7 +18,7 @@ c'est compilé avec le même toolchain et le même Qt que l'application.
 ## Mise à jour
 
 Ne pas éditer le code ici : la **source de vérité** est dans les dépôts voisins
-`morfBeacon_travail` / `morfUpdate_travail`. Pour resynchroniser :
+`morfBeacon` / `morfUpdate`. Pour resynchroniser :
 
 ```sh
 # Windows

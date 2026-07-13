@@ -24,6 +24,6 @@ sync_one() {
   echo "OK  $name  (version $(cat "$dstdir/VERSION"))"
 }
 
-sync_one morfBeacon "$SRC_BASE/morfBeacon_travail" "$ROOT/third_party/morf/beacon"
-sync_one morfUpdate "$SRC_BASE/morfUpdate_travail" "$ROOT/third_party/morf/update"
+sync_one morfBeacon "$SRC_BASE/morfBeacon" "$ROOT/third_party/morf/beacon"
+sync_one morfUpdate "$SRC_BASE/morfUpdate" "$ROOT/third_party/morf/update"
 echo "Synchronisation terminée. Le CMakeLists vendoré n'est pas modifié."

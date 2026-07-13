@@ -1,6 +1,6 @@
 # morfUpdate — copie vendorée (détection de mises à jour).
 #
-# Source de vérité : dépôt morfUpdate_travail. Ce dossier en est une copie
+# Source de vérité : dépôt morfUpdate. Ce dossier en est une copie
 # synchronisée par scripts/sync-morf.(ps1|sh). NE PAS éditer le code ici :
 # modifier dans le dépôt puis resynchroniser. Version vendorée : voir VERSION.
 #
