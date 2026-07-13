@@ -43,7 +43,7 @@ Il faut **git** (l'outil qui télécharge le dépôt). Installez-le si besoin (v
 chaque section ci-dessous), puis :
 
 ```sh
-git clone https://github.com/morfredus/ComponentHub_travail.git ComponentHub
+git clone https://github.com/morfredus/ComponentHub.git ComponentHub
 cd ComponentHub
 ```
 
@@ -68,7 +68,7 @@ C'est **tout**. Vous avez le compilateur, CMake, Ninja, Qt 6 et nlohmann-json.
 ### 2. Récupérer le code
 
 ```sh
-git clone https://github.com/morfredus/ComponentHub_travail.git ComponentHub
+git clone https://github.com/morfredus/ComponentHub.git ComponentHub
 cd ComponentHub
 ```
 
@@ -98,7 +98,7 @@ un Raspberry Pi OS **64 bits** (`uname -m` doit afficher `aarch64`).
 sudo apt update
 sudo apt install git cmake ninja-build g++ qt6-base-dev nlohmann-json3-dev
 
-git clone https://github.com/morfredus/ComponentHub_travail.git ComponentHub
+git clone https://github.com/morfredus/ComponentHub.git ComponentHub
 cd ComponentHub
 
 cmake --preset linux-arm64
@@ -144,7 +144,7 @@ Répondez « oui » (Entrée) aux questions d'installation.
 ### 4. Récupérer le code et compiler
 
 ```sh
-git clone https://github.com/morfredus/ComponentHub_travail.git ComponentHub
+git clone https://github.com/morfredus/ComponentHub.git ComponentHub
 cd ComponentHub
 cmake --preset mingw
 cmake --build --preset mingw

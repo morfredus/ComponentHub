@@ -63,7 +63,7 @@ day) without touching either.
 **Vendored common modules (`third_party/morf/`).** The LAN supervision
 (morfBeacon) and update-check (morfUpdate) libraries are **copies**, compiled into
 the binary. Do **not** edit them under `third_party/`: change the source in the
-`morfBeacon_travail` / `morfUpdate_travail` repositories, then resync with
+`morfBeacon` / `morfUpdate` repositories, then resync with
 `scripts/sync-morf.ps1` (or `scripts/sync-morf.sh`). See
 [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)*.
 
