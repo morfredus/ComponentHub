@@ -1,6 +1,6 @@
-// Archive TAR (ustar, fichiers normaux) — format identique à celui produit par
-// le firmware ESP32 (noms de fichiers relatifs, sans « / » initial), donc les
-// sauvegardes .tar sont interchangeables entre l'ESP32 et le desktop.
+// Archive TAR (ustar, fichiers normaux) : noms de fichiers relatifs (sans « / »
+// initial), un fichier régulier par table de données. Sert aux sauvegardes
+// complètes de l'atelier.
 #pragma once
 #include <string>
 #include <vector>

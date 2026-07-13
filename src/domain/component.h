@@ -1,9 +1,8 @@
 /**
  * Component — Fiche complète d'un composant électronique (cœur métier).
  *
- * Type de valeur pur : aucune dépendance Arduino/ESP32/LittleFS. Les couches
- * storage/ (persistance) et modules/inventory/ (HTTP) se chargent de le
- * convertir vers/depuis leurs formats respectifs (JSON fichier, JSON API).
+ * Type de valeur pur : aucune dépendance plateforme. La couche storage/
+ * (persistance) se charge de le convertir vers/depuis son format (JSON fichier).
  */
 
 #pragma once

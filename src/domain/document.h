@@ -2,9 +2,8 @@
  * Document — Pièce jointe "documentation" (datasheet, manuel, schéma,
  * pinout, lien utile...) rattachée à un composant ou à un projet.
  *
- * `url` pointe soit vers un lien externe (http...), soit vers un fichier
- * déjà présent sur LittleFS (chemin renvoyé par le gestionnaire de fichiers
- * existant, /api/files/*) : aucun pipeline d'upload dédié n'est dupliqué ici.
+ * `url` pointe soit vers un lien externe (http...), soit vers un fichier local
+ * (chemin sur le disque) : aucun pipeline d'upload dédié n'est dupliqué ici.
  */
 
 #pragma once

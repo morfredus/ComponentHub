@@ -20,6 +20,12 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+# --- Modules communs « morf » (copies vendorées dans third_party/) ---------
+# Autonome : aucune dépendance à un dépôt externe, compilé dans l'exécutable.
+# Voir third_party/morf/README.md. Resynchro : scripts/sync-morf.(ps1|sh).
+add_subdirectory(third_party/morf/beacon)
+add_subdirectory(third_party/morf/update)
+
 # =====================================================================
 # Cœur portable : le domaine (src/domain/) + le stockage fichier desktop.
 # Ne dépend NI de Qt NI d'Arduino.
@@ -61,7 +67,7 @@ add_executable(ComponentHub WIN32
     src/ui/SettingsPage.cpp
     ${CH_APP_RESOURCES}
 )
-target_link_libraries(ComponentHub PRIVATE componenthub_core Qt6::Widgets)
+target_link_libraries(ComponentHub PRIVATE componenthub_core Qt6::Widgets morfBeacon::morfBeacon morfUpdate::morfUpdate morfUpdate::Widgets)
 target_compile_definitions(ComponentHub PRIVATE CH_APP_VERSION="${CH_VERSION}")
 if(MSVC)
     target_compile_options(ComponentHub PRIVATE /utf-8)

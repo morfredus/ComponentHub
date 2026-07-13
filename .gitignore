@@ -31,6 +31,9 @@ id_ed25519*
 *.code-workspace
 *.user
 
+# Configuration locale de Claude Code (permissions propres à la machine)
+.claude/settings.local.json
+
 # Fichiers d'autres IDE/Environnements (Eclipse, etc.)
 .classpath
 .project

@@ -1,10 +1,10 @@
 // ComponentHub Desktop — implémentations fichier des interfaces de dépôt du
 // domaine (src/domain/repositories.h, project_repositories.h,
-// document_repository.h). Chaque dépôt lit/écrit un fichier JSON au format
-// commun avec l'ESP32 (voir JsonStore.h).
+// document_repository.h). Chaque dépôt lit/écrit un fichier JSON (voir
+// JsonStore.h).
 //
-// Ces classes sont le SEUL équivalent desktop de src/storage/ : le reste du
-// cœur (services, CSV, import/export) est compilé tel quel depuis src/domain/.
+// Le reste du cœur (services, CSV, import/export) vit dans src/domain/,
+// indépendant de la plateforme.
 #pragma once
 
 #include <string>

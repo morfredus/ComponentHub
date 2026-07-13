@@ -1,5 +1,5 @@
-// Test de fumée (headless) : vérifie que le domaine partagé compile et tourne
-// sur PC, et que le stockage JSON round-trip correctement (accents + €).
+// Test de fumée (headless) : vérifie que le domaine compile et tourne sur PC,
+// et que le stockage JSON round-trip correctement (accents + €).
 // Non inclus dans l'application finale.
 #include <cstdio>
 #include <filesystem>

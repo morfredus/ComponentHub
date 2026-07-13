@@ -24,8 +24,7 @@ json toJson(const Component& c) {
     };
 }
 
-// Lecture tolérante : chaque champ a un défaut si absent/typé autrement, comme
-// les `obj["x"] | defaut` d'ArduinoJson côté ESP32.
+// Lecture tolérante : chaque champ a un défaut si absent ou d'un autre type.
 std::string str(const json& o, const char* k, const char* def = "") {
     auto it = o.find(k);
     return (it != o.end() && it->is_string()) ? it->get<std::string>() : std::string(def);

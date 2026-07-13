@@ -7,7 +7,7 @@
  * (« component_types », « manufacturers »...), `value` est la valeur affichée,
  * `position` son ordre dans la liste.
  *
- * Type de valeur pur, sans dépendance plateforme : partagé bureau / ESP32.
+ * Type de valeur pur, sans dépendance plateforme.
  */
 #pragma once
 #include <string>

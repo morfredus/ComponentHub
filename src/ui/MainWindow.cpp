@@ -1,5 +1,8 @@
 #include "ui/MainWindow.h"
 
+#include <morfupdate/UpdateDialog.h>
+
+#include <QTimer>
 #include <QListWidget>
 #include <QStackedWidget>
 #include <QHBoxLayout>
@@ -74,6 +77,18 @@ MainWindow::MainWindow(chdesktop::AppContext& ctx, QWidget* parent)
 
     nav_->setCurrentRow(0);
     statusBar()->showMessage("Données : " + QString::fromStdString(ctx_.dir()));
+
+    // Vérification silencieuse des mises à jour, peu après l'affichage de l'UI.
+    QTimer::singleShot(2000, this, [this]{ checkForUpdates(false); });
+}
+
+void MainWindow::checkForUpdates(bool manual) {
+    morfupdate::morfUpdateConfig cfg;
+    cfg.owner          = "morfredus";
+    cfg.repo           = "ComponentHub";
+    cfg.currentVersion = CH_APP_VERSION;
+    // manual : affiche aussi « à jour » et les erreurs ; démarrage : silencieux.
+    morfupdate::checkAndNotify(this, "ComponentHub", cfg, /*silentIfUpToDate=*/!manual);
 }
 
 void MainWindow::buildSidebar() {
@@ -172,6 +187,10 @@ void MainWindow::buildMenuBar() {
     auto* help = helpMenu->addAction("&Aide");
     help->setShortcut(QKeySequence::HelpContents);  // F1
     connect(help, &QAction::triggered, this, &MainWindow::showHelpDialog);
+
+    auto* updates = helpMenu->addAction("Rechercher les mises à &jour…");
+    connect(updates, &QAction::triggered, this, [this]{ checkForUpdates(true); });
+
     helpMenu->addSeparator();
     auto* about = helpMenu->addAction("À &propos de ComponentHub");
     about->setMenuRole(QAction::AboutRole);
@@ -244,8 +263,8 @@ void MainWindow::showHelpDialog() {
         "<p>Toutes vos tables sont des fichiers JSON dans votre dossier de données"
         " personnel (menu <i>Fichier → Ouvrir le dossier de données</i>, chemin aussi"
         " rappelé en bas de la fenêtre). Pensez à la <b>sauvegarde <code>.tar</code></b>"
-        " (section Import/Export) : elle emporte tout l'atelier en un fichier, et se"
-        " restaure aussi bien ici que sur le firmware ESP32.</p>");
+        " (section Import/Export) : elle emporte tout l'atelier en un seul fichier,"
+        " à ranger en lieu sûr et à restaurer quand vous voulez.</p>");
 
     QDialog dlg(this);
     dlg.setWindowTitle("Aide — ComponentHub");

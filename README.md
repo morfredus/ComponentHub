@@ -1,139 +1,173 @@
 # ComponentHub
 
-![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
+*Read in another language: **English** (this document) · [Français](README.fr.md).*
+
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
 ![Qt](https://img.shields.io/badge/Qt-6-41CD52?logo=qt)
 ![Build](https://img.shields.io/badge/CMake-3.21+-064F8C?logo=cmake)
+![License](https://img.shields.io/badge/License-GPL--3.0--only-blue)
 
-**La mémoire technique d'un atelier électronique** : inventaire de composants,
-modules, outils et consommables ; stock et mouvements ; emplacements
-hiérarchiques ; documentation attachée ; projets et leur nomenclature.
+**The technical memory of an electronics workshop**: inventory of components,
+modules, tools and consumables; stock and movements; hierarchical locations;
+attached documentation; projects and their bill of materials.
 
-Ce n'est pas un simple inventaire : l'objectif est de retrouver en un clic, pour
-n'importe quel composant, son stock, son emplacement, ses datasheets et les
-projets qui l'utilisent.
+This is more than a plain inventory: the goal is to find, in one click and for
+any component, its stock, its physical location, its datasheets and the projects
+that use it.
 
-![Vue Inventaire de ComponentHub](docs/pictures/inventaire.png)
+![ComponentHub — Inventory view](docs/pictures/inventaire.png)
 
-ComponentHub est une **application de bureau Qt / C++17**, native sur
-**Windows, Linux (x86_64) et Raspberry Pi (ARM64)**. C'est le **projet maître**,
-détenteur de la base de données de référence de l'atelier — sur un stockage
-fiable, sans les limites mémoire de l'ESP32. Un **firmware ESP32**, développé
-désormais dans un **dépôt séparé** (`ComponentHub-ESP32`, voisin de celui-ci),
-en devient un **satellite** : terminal mobile de consultation/modification du
-stock (scan QR) qui, à terme, consulte la base de cette version bureau. Le
-pourquoi de cette séparation est détaillé dans
-[docs/ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md).
+ComponentHub is a **Qt / C++17 desktop application**, native on **Windows, Linux
+(x86_64) and Raspberry Pi (ARM64)**. It is the **master project**, the holder of
+the workshop's reference database — on reliable storage, free of the ESP32's
+memory limits. An **ESP32 firmware**, now developed in a **separate repository**
+(`ComponentHub-ESP32`, a sibling of this one), becomes a **satellite**: a mobile
+terminal to browse and update stock (QR scanning) that will eventually read the
+desktop database. The rationale for this split is documented in
+[docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md) *(FR)*.
 
-## Cœur métier
+## Get started in 3 minutes
 
-Le cœur métier [`src/domain/`](src/domain/) — entités, services (inventaire,
-projets, documents, import/export), CSV — ne dépend ni de Qt ni d'Arduino. Le
-firmware ESP32 en possède **sa propre copie** dans son dépôt : les deux projets,
-autrefois issus d'un cœur commun, évoluent maintenant séparément.
+Never compiled a program before? This is a good place to start — and it is
+**exactly as simple on Linux/Raspberry Pi as on Windows** (often faster). Follow
+the step-by-step guide:
+**[docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md)** *(FR)*.
 
-Le **format des fichiers JSON reste identique** entre bureau et firmware, et les
-**sauvegardes `.tar` (tout compris) sont interchangeables** carte ↔ PC.
+Once the app is running, the beginner's user manual is here:
+**[docs/fr/USER_MANUAL.md](docs/fr/USER_MANUAL.md)** *(FR)*.
 
-| | Application bureau (ce dépôt) | Firmware ESP32 (dépôt séparé) |
-|---|---|---|
-| Build | CMake + Qt 6 | PlatformIO (Arduino) |
-| Stockage | fichiers JSON (nlohmann/json) | fichiers JSON (LittleFS) |
-| Interface | Qt Widgets (thème clair/sombre) | web embarquée (PROGMEM) |
+> **Documentation language.** By GitHub convention, the root files (this README,
+> `CHANGELOG`, `ROADMAP`, `CONTRIBUTING`) are in English. The in-depth guides
+> under `docs/` are currently written in **French only** — see
+> [docs/en/README.md](docs/en/README.md) for an English index with links.
 
-## Aperçu
+## Business core
 
-**Fiche composant** — tout sur un composant (général, caractéristiques, achat/
-stock, documents, notes) :
+The business core [`src/domain/`](src/domain/) — entities, services (inventory,
+projects, documents, import/export), CSV — depends on neither Qt nor Arduino. The
+ESP32 firmware keeps **its own copy** in its repository: the two projects, once
+built on a shared core, now **evolve separately**. This layered separation
+(domain ⟷ storage ⟷ UI) is described in
+[docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md) *(FR)* and in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
-![Fiche composant](docs/pictures/fiche-composant.png)
+The desktop app stores each table as a JSON file and can back up the whole
+workshop into a single `.tar` archive.
 
-**Projets** — nomenclature (BOM) et calcul des composants manquants :
+## Network supervision & updates
 
-![Projets et nomenclature](docs/pictures/projets.png)
+ComponentHub announces its presence on the local network and exposes live metrics
+(**morfBeacon** module) so it can be watched from a central dashboard, and checks
+GitHub for updates (**morfUpdate** module, from the Help menu). These shared
+modules are vendored in the project (`third_party/morf/`) and compiled into the
+binary — nothing external to install. See
+[docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)*.
 
-**Import / Export** — sauvegarde complète `.tar` (interchangeable avec l'ESP32)
-et CSV par table :
+## Overview
+
+**Component sheet** — everything about a component (general, characteristics,
+purchase/stock, documents, notes):
+
+![Component sheet](docs/pictures/fiche-composant.png)
+
+**Projects** — bill of materials (BOM) and computation of missing components:
+
+![Projects and BOM](docs/pictures/projets.png)
+
+**Import / Export** — full `.tar` backup and per-table CSV:
 
 ![Import / Export](docs/pictures/import-export.png)
 
-## Compilation (bureau)
+## Building (desktop)
 
-Dépendances : CMake ≥ 3.21, un compilateur C++17, Ninja, **Qt 6 (Widgets)**,
-**nlohmann-json**.
+Dependencies: CMake ≥ 3.21, a C++17 compiler, Ninja, **Qt 6 (Widgets)**,
+**nlohmann-json**. Detailed, beginner-friendly walkthrough:
+[docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) *(FR)*; multi-platform
+reference: [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md) *(FR)*.
 
 ### Windows (MSYS2 / MinGW)
 
 ```sh
 cmake --preset mingw
 cmake --build --preset mingw
-# -> build-mingw/ComponentHub.exe (DLL Qt + MinGW déployées automatiquement)
+# -> build-mingw/ComponentHub.exe (Qt + MinGW DLLs deployed automatically)
 ```
 
-Sous VS Code : les tâches **CMake: Build (MinGW)** et **ComponentHub: Run**
-(`.vscode/tasks.json`) font la même chose en un raccourci.
+In VS Code, the **CMake: Build (MinGW)** and **ComponentHub: Run** tasks
+(`.vscode/tasks.json`) do the same in one shortcut.
 
 ### Linux (x86_64) / Raspberry Pi (ARM64)
 
 ```sh
-cmake --preset linux        # ou linux-arm64 sur Raspberry Pi
+cmake --preset linux        # or linux-arm64 on Raspberry Pi
 cmake --build --preset linux
 ```
 
-## Paquets distribuables
+## Distributable packages
 
-Comme SiteWatch, les scripts de packaging sont à la racine, dans `scripts/` :
+Packaging scripts live in `scripts/`:
 
 ```sh
-# Windows : ZIP autonome (exe + DLL + plugins Qt)
+# Windows: self-contained ZIP (exe + DLLs + Qt plugins)
 powershell -ExecutionPolicy Bypass -File scripts\windows\package-win.ps1
 
-# Linux : paquet Debian (.deb, lié au Qt du système)
+# Linux: Debian package (.deb, linked to the system Qt)
 scripts/linux/package-deb.sh
 
-# Linux : AppImage autonome (Qt embarqué)
+# Linux: self-contained AppImage (bundled Qt)
 scripts/linux/package-appimage.sh
 
-# Linux : intégration au menu du bureau (binaire déjà compilé)
+# Linux: desktop menu integration (already-built binary)
 scripts/linux/install.sh
 ```
 
-Les artefacts sont produits dans `dist/`.
+Artifacts are produced in `dist/`.
 
-## Structure du dépôt
+## Repository layout
 
 ```
 ComponentHub/
-├── CMakeLists.txt          application bureau (cible principale)
-├── CMakePresets.json       presets mingw / linux / linux-arm64 / cross
-├── cmake/toolchains/       toolchain de cross-compilation ARM64
-├── scripts/{windows,linux}/ compilation VS Code + packaging (zip, deb, AppImage)
-├── resources/              app.qrc, thèmes (light/dark), icône (logo.png, app.ico)
+├── CMakeLists.txt          desktop application (main target)
+├── CMakePresets.json       presets: mingw / linux / linux-arm64 / cross
+├── cmake/toolchains/       ARM64 cross-compilation toolchain
+├── scripts/{windows,linux}/ VS Code build + packaging (zip, deb, AppImage)
+├── resources/              app.qrc, themes (light/dark), icon (logo.png, app.ico)
 ├── src/
-│   ├── domain/             cœur métier PARTAGÉ (aucune dépendance Qt/Arduino)
-│   ├── ui/                 interface Qt (Theme, Icons, pages, dialogues)
-│   ├── storage/            dépôts fichier JSON (desktop)
-│   ├── platform/           archive .tar, horloge
+│   ├── domain/             business core (no Qt/Arduino dependency)
+│   ├── ui/                 Qt interface (Theme, Icons, pages, dialogs)
+│   ├── storage/            JSON file repositories (desktop)
+│   ├── platform/           .tar archive, clock
 │   └── main.cpp
 ├── docs/
-├── VERSION                 version de l'application bureau
+│   ├── fr/                 documentation (French, reference language)
+│   ├── en/                 English index (points to fr/ for now)
+│   └── pictures/           screenshots
+├── CONTRIBUTING.md         project philosophy and contribution rules
+├── VERSION                 desktop application version
 └── LICENSE
 ```
 
-> Le firmware ESP32 vit dans un dépôt distinct (`ComponentHub-ESP32`) et n'est
-> plus inclus ici.
+> The ESP32 firmware lives in a separate repository (`ComponentHub-ESP32`) and is
+> no longer included here.
 
 ## Documentation
 
-| Document | Contenu |
+| Document | Contents |
 |---|---|
-| [docs/BUILD_DESKTOP.md](docs/BUILD_DESKTOP.md) | Détails de compilation multi-plateforme (bureau) |
-| [docs/ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md) | Décision : version bureau maître, ESP32 satellite |
-| [CHANGELOG.md](CHANGELOG.md) | Historique des versions |
+| [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) *(FR)* | Clone, install the tools, build and run — step by step, every OS, beginners included |
+| [docs/fr/USER_MANUAL.md](docs/fr/USER_MANUAL.md) *(FR)* | Application user manual, to get productive quickly |
+| [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md) *(FR)* | Multi-platform build reference |
+| [docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md) *(FR)* | Layered architecture (domain / storage / UI) |
+| [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)* | LAN supervision (presence + metrics) and update checking |
+| [docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md) *(FR)* | Decision: desktop master, ESP32 satellite |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, portability rules |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [docs/en/README.md](docs/en/README.md) | English documentation index |
 
-> La documentation propre au firmware (architecture embarquée, API REST, WiFi,
-> boot log) a été déplacée dans le dépôt `ComponentHub-ESP32`.
+> The firmware-specific documentation (embedded architecture, REST API, WiFi,
+> boot log) lives in the `ComponentHub-ESP32` repository.
 
-## Licence
+## License
 
-Distribué sous [licence GPL-3.0-only](LICENSE).
+Distributed under the [GPL-3.0-only license](LICENSE).

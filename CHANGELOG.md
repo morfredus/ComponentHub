@@ -1,390 +1,407 @@
-# Journal des modifications
+# Changelog
 
-Toutes les évolutions notables du projet sont consignées dans ce fichier.
+All notable changes to the project are recorded in this file.
 
-Le format s'inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
-et le projet suit le [versionnage sémantique](https://semver.org/lang/fr/)
-(`VERSION` à la racine).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
+file at the repository root).
 
 ## [Unreleased]
 
+## [1.6.0] — 2026-07-13
+
+### Added
+- **LAN supervision (morfBeacon) and update check (morfUpdate).** ComponentHub now
+  announces its presence on the local network (UDP heartbeat, port 45454) and
+  exposes live metrics over a small local HTTP endpoint (`/status`, port 8787), so
+  it can be watched from a central dashboard (RaspberryDashboard). It also checks
+  GitHub Releases for a newer version — silently at startup, and on demand via
+  **Help → "Check for updates…"**. Both are shared modules vendored under
+  `third_party/morf/` (compiled into the binary, no external dependency). See
+  [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)*.
+
+## [1.5.4] — 2026-07-12
+
+### Changed
+- **Dropped the "business core shared with the ESP32" wording** from source-file
+  headers, user-facing strings and docs. Since the split, the desktop keeps its
+  own copy of `src/domain/` and evolves independently, so claims of a *shared*
+  core/logic or a *common* file format no longer apply. References that document
+  the *separation itself* (satellite role, separate repository, ADR-0001) are
+  kept on purpose. Also removed stray embedded-only mentions (LittleFS,
+  ArduinoJson, `/api/files/*`) from domain comments.
+- **Data-folder paths in the docs made universal**: the account name is now shown
+  as a `<compte>` placeholder, with a note clarifying that `morfredus` is the
+  application's *publisher* folder (the same on every machine, from the app's
+  organization name), not the user's account name.
+
+## [1.5.3] — 2026-07-12
+
+### Changed
+- **Documentation overhaul and internationalization.** By GitHub convention, the
+  root documents are now in **English** (`README.md`, `CHANGELOG.md`,
+  `ROADMAP.md`); a French `README.fr.md` is kept for French speakers. The
+  in-depth guides moved under `docs/fr/` (French, the reference language), with
+  an English index at `docs/en/README.md` linking to them until translated.
+
+### Added
+- **`CONTRIBUTING.md`** — project philosophy, the layered domain/storage/UI
+  separation, and a strict **portability policy**: cross-platform libraries
+  only, no OS-proprietary dependency, and no `#ifdef _WIN32 / #else / #endif`
+  for behavior (the sole exception is isolated in `src/platform/` and must render
+  identically on the three OSes).
+- **`docs/fr/GETTING_STARTED.md`** — a step-by-step, beginner-friendly guide to
+  clone, install the tools, build and run on Windows, Linux and Raspberry Pi.
+- **`docs/fr/USER_MANUAL.md`** — a beginner's user manual for the application.
+- **`docs/fr/ARCHITECTURE.md`** — the desktop app's layered architecture and how
+  to read the code.
+
 ## [1.5.2] — 2026-07-12
 
-### Corrigé
-- **Paquet Debian (`scripts/linux/package-deb.sh`)** : la création du raccourci
-  `.desktop` échouait avec « No such file or directory » car le dossier
-  `usr/share/applications/` n'était pas créé avant la redirection `>`. Ajout
-  d'un `install -d` explicite. Le `.deb` se construit à nouveau (testé sur
-  Raspberry Pi, ARM64).
+### Fixed
+- **Debian package (`scripts/linux/package-deb.sh`)**: creating the `.desktop`
+  shortcut failed with "No such file or directory" because
+  `usr/share/applications/` was not created before the `>` redirection. Added an
+  explicit `install -d`. The `.deb` builds again (tested on Raspberry Pi,
+  ARM64).
 
 ## [1.5.1] — 2026-07-12
 
-### Ajouté
-- **Captures d'écran de l'application** dans la documentation : vue Inventaire,
-  fiche composant, Projets (nomenclature) et Import/Export dans le
-  [README](README.md) ; écran Réglages dans
-  [docs/BUILD_DESKTOP.md](docs/BUILD_DESKTOP.md). Images dans `docs/pictures/`.
+### Added
+- **Application screenshots** in the documentation: Inventory view, component
+  sheet, Projects (BOM) and Import/Export in the README; the Settings screen in
+  `docs/fr/BUILD_DESKTOP.md`. Images under `docs/pictures/`.
 
 ## [1.5.0] — 2026-07-12
 
-### Ajouté
-- **Barre de menus native** (Fichier · Aller à · Affichage · Aide), en
-  complément de la barre latérale — pour un accès à la souris **comme** au
-  clavier, conforme aux habitudes d'une application de bureau.
-  - **Fichier** : *Ouvrir le dossier de données*, *Quitter* (Ctrl+Q).
-  - **Aller à** : saut direct vers chaque section, raccourcis **Ctrl+1 … Ctrl+7**.
-  - **Affichage → Thème** : Système / Clair / Sombre, **synchronisé** avec les
-    Réglages et le thème de l'OS.
-  - **Aide** : *Aide* (**F1**) — guide « Bien démarrer » (sections, raccourcis,
-    emplacement des données) ; *À propos* (version, version de Qt, licence
-    GPL-3.0-only) ; *À propos de Qt*.
-- **Version affichée dans le titre de la fenêtre** (« ComponentHub 1.5.0 »),
-  lue depuis `CMake` (`CH_APP_VERSION`) — aucune valeur en dur.
-- **Styles QSS** pour `QMenuBar` / `QMenu` (accordés aux thèmes clair et sombre).
+### Added
+- **Native menu bar** (File · Go to · View · Help), in addition to the sidebar —
+  for mouse **and** keyboard access, in line with desktop conventions.
+  - **File**: *Open the data folder*, *Quit* (Ctrl+Q).
+  - **Go to**: jump straight to each section, shortcuts **Ctrl+1 … Ctrl+7**.
+  - **View → Theme**: System / Light / Dark, **synchronized** with Settings and
+    the OS theme.
+  - **Help**: *Help* (**F1**) — a "Getting started" guide (sections, shortcuts,
+    data location); *About* (version, Qt version, GPL-3.0-only license); *About
+    Qt*.
+- **Version shown in the window title** ("ComponentHub 1.5.0"), read from CMake
+  (`CH_APP_VERSION`) — no hard-coded value.
+- **QSS styles** for `QMenuBar` / `QMenu` (matching the light and dark themes).
 
 ## [1.4.2] — 2026-07-12
 
-### Modifié
-- **`ROADMAP.md` réécrit du point de vue bureau-maître** : « Déjà livré » reflète
-  désormais l'application Qt (et non le firmware embarqué PROGMEM/LittleFS) ;
-  nouvelle section **« Lien maître ↔ satellite »** regroupant le chantier de
-  l'API bureau ↔ ESP32 ; vision long terme recentrée (persistance JSON → SQLite
-  côté bureau).
-- **`docs/BUILD_DESKTOP.md`** : la formulation « cœur partagé avec l'ESP32 » est
-  corrigée — depuis la séparation, le bureau possède sa **propre copie** de
-  `src/domain/` (le format `.tar` reste interchangeable pour l'instant).
+### Changed
+- **`ROADMAP.md` rewritten from the desktop-master viewpoint**: "Already
+  shipped" now reflects the Qt application (not the embedded PROGMEM/LittleFS
+  firmware); a new **"Master ↔ satellite link"** section groups the desktop ↔
+  ESP32 API work; the long-term vision is recentered (JSON → SQLite persistence
+  on the desktop).
+- **`docs/fr/BUILD_DESKTOP.md`**: the "core shared with the ESP32" wording is
+  corrected — since the split, the desktop keeps **its own copy** of
+  `src/domain/` (the `.tar` format remains interchangeable for now).
 
 ## [1.4.1] — 2026-07-12
 
-### Modifié
-- **Consolidation du dépôt bureau : la documentation propre au firmware ESP32 a
-  été déplacée vers le dépôt `ComponentHub-ESP32`** (`ARCHITECTURE.md`,
-  `API.md`, `BOOT_LOG.md`, `WIFI_SETUP.md`, `pictures/` — captures de l'UI web
-  embarquée). Le dépôt bureau ne conserve que la doc qui le concerne :
-  [BUILD_DESKTOP.md](docs/BUILD_DESKTOP.md) et la décision d'architecture
-  [ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md). Liens `README`
-  et `ROADMAP` mis à jour en conséquence.
+### Changed
+- **Desktop repository consolidation: the firmware-specific documentation moved
+  to the `ComponentHub-ESP32` repository** (`ARCHITECTURE.md`, `API.md`,
+  `BOOT_LOG.md`, `WIFI_SETUP.md`, `pictures/` — screenshots of the embedded web
+  UI). The desktop repository keeps only the documents that concern it:
+  `BUILD_DESKTOP.md` and the architecture decision `ADR-0001`. `README` and
+  `ROADMAP` links updated accordingly.
 
 ## [1.4.0] — 2026-07-12
 
-### Modifié
-- **Séparation du firmware ESP32 dans un dépôt autonome — la version bureau
-  devient le projet maître, l'ESP32 un « satellite ».** Décision détaillée dans
-  [docs/ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md). En résumé :
-  la base de données de l'atelier ne peut pas rester détenue par l'ESP32-S3
-  (RAM/flash contraintes, croissance sur plusieurs années) et l'extension par
-  **carte SD est écartée pour fiabilité réduite** (corruption, faux contacts,
-  usure). La **base de référence vit donc côté bureau** (stockage fiable PC/RPi,
-  capacité et évolution — JSON → SQLite — non bridées). L'**ESP32 devient un
-  terminal mobile** de consultation/modification du stock (scan QR) qui, à
-  terme, **consulte et met à jour la base de la version bureau**. Concrètement,
-  le firmware est extrait vers le dépôt voisin `ComponentHub-ESP32`, avec **sa
-  propre copie** de `src/domain/` ; les deux projets évoluent désormais
-  séparément. Le format JSON / `.tar` reste interchangeable carte ↔ PC. Les
-  **deux builds sont vérifiés** (bureau CMake → `ComponentHub.exe`, firmware
-  PlatformIO → `firmware.bin`).
-- **Réorganisation du dépôt : l'application de bureau devient le projet
-  principal, à la racine** (structure et workflow calqués sur SiteWatch).
-  Le cœur métier `src/domain/` vit à la racine ; il était référencé par le
-  firmware ESP32 (source unique) jusqu'à la séparation ci-dessus. Les deux
-  builds sont vérifiés (desktop CMake depuis la racine, firmware PlatformIO).
-- **Workflow de compilation et de packaging aligné sur SiteWatch** :
-  `CMakePresets.json` (mingw / linux / linux-arm64 / cross) et tâches VS Code
-  à la racine, mêmes commandes de build ; scripts `scripts/windows/` (build
-  VS Code, déploiement DLL, **ZIP autonome**) et `scripts/linux/` (**paquet
-  `.deb`**, **AppImage**, installation bureau) ; icône d'application
-  (`resources/logo.png`, `app.ico`).
+### Changed
+- **The ESP32 firmware is split into a standalone repository — the desktop app
+  becomes the master project, the ESP32 a "satellite".** Full decision in
+  `ADR-0001`. In short: the workshop database cannot stay held by the ESP32-S3
+  (constrained RAM/flash, growth over several years) and expanding it via an **SD
+  card is ruled out for reduced reliability** (corruption, loose contacts,
+  wear). The **reference database therefore lives on the desktop** (reliable
+  PC/RPi storage, capacity and evolution — JSON → SQLite — unconstrained). The
+  **ESP32 becomes a mobile terminal** for browsing/editing stock (QR scanning)
+  that will eventually **read and update the desktop database**. Concretely, the
+  firmware is extracted to the sibling repository `ComponentHub-ESP32`, with
+  **its own copy** of `src/domain/`; the two projects now evolve separately. The
+  JSON / `.tar` format stays interchangeable between board and PC. Both builds
+  are verified (desktop CMake → `ComponentHub.exe`, firmware PlatformIO →
+  `firmware.bin`).
+- **Repository reorganization: the desktop application becomes the main project,
+  at the root.** The `src/domain/` business core lives at the root; it was
+  referenced by the ESP32 firmware (single source) until the split above.
+- **Build and packaging workflow**: `CMakePresets.json` (mingw / linux /
+  linux-arm64 / cross) and VS Code tasks at the root, same build commands;
+  `scripts/windows/` (VS Code build, DLL deployment, **self-contained ZIP**) and
+  `scripts/linux/` (**`.deb`**, **AppImage**, desktop install) scripts;
+  application icon (`resources/logo.png`, `app.ico`).
 
-### Ajouté
-- **Application de bureau** : portage natif **Qt 6 / C++17**
-  compilable sur **Windows, Linux (x86_64) et Raspberry Pi (ARM64)** via CMake,
-  affranchi de la contrainte mémoire de l'ESP32. Réutilise tel quel le cœur
-  métier (`src/domain/` : services, CSV, import/export) — seuls le stockage
-  fichier (nlohmann/json, **même format JSON que l'ESP32**) et l'interface Qt
-  sont spécifiques. Écrans : Inventaire (recherche/filtres/fiche complète avec
-  documents et mouvements de stock), Catégories, Emplacements (hiérarchie),
-  Projets (nomenclature + manquants), Import/Export (CSV par table + sauvegarde
-  `.tar` **interchangeable avec l'ESP32**), Réglages. Thème clair/sombre suivant
-  l'OS, icônes vectorielles teintées, accents et « € » corrects (UTF-8).
+### Added
+- **Desktop application**: native **Qt 6 / C++17** port, buildable on
+  **Windows, Linux (x86_64) and Raspberry Pi (ARM64)** via CMake, freed from the
+  ESP32's memory constraint. Reuses the business core as-is (`src/domain/`:
+  services, CSV, import/export) — only the file storage (nlohmann/json, **same
+  JSON format as the ESP32**) and the Qt interface are specific. Screens:
+  Inventory (search/filters/full sheet with documents and stock movements),
+  Categories, Locations (hierarchy), Projects (BOM + missing), Import/Export (CSV
+  per table + `.tar` backup **interchangeable with the ESP32**), Settings.
+  Light/dark theme following the OS, tinted vector icons, correct accents and
+  "€" (UTF-8).
 
-### Ajouté (interface bureau)
-- **Référentiels administrables** (`Référentiels` dans la navigation) : listes de
-  valeurs normalisées (Types de composants, Fabricants, Boîtiers, Fournisseurs,
-  Technologies, États, Mots-clés) pour une nomenclature homogène. Par référentiel :
-  ajouter, renommer, supprimer, réordonner, **fusionner** des doublons, importer/
-  exporter en CSV. Pour les référentiels **liés à un champ** (type, fabricant,
-  fournisseur, état), renommage et fusion **propagent la mise à jour aux
-  composants** concernés. Le champ *Type* de la fiche composant est proposé depuis
-  le référentiel avec **ajout inline** (« le type X n'existe pas, l'ajouter ? »).
-  Le fichier `referentials.json` est inclus dans la sauvegarde `.tar` complète.
-- **Recherche globale** : la recherche de l'inventaire balaie désormais **tous**
-  les champs texte (référence, désignation, type, fabricant, caractéristiques,
-  fournisseur, notes…) et gère plusieurs mots (ET logique), sans avoir à choisir
-  un champ. Amélioration partagée avec le firmware ESP32.
+### Added (desktop UI)
+- **Administrable reference lists** (`Reference lists` in the navigation):
+  normalized value lists (Component types, Manufacturers, Packages, Suppliers,
+  Technologies, States, Keywords) for a consistent nomenclature. Per list: add,
+  rename, delete, reorder, **merge** duplicates, import/export as CSV. For lists
+  **bound to a field** (type, manufacturer, supplier, state), rename and merge
+  **propagate the update to the affected components**. The component sheet's
+  *Type* field is offered from the reference list with **inline add** ("type X
+  does not exist, add it?"). The `referentials.json` file is included in the full
+  `.tar` backup.
+- **Global search**: the inventory search now sweeps **all** text fields
+  (reference, designation, type, manufacturer, characteristics, supplier,
+  notes…) and handles several words (logical AND), without picking a field.
 
-### Corrigé (interface bureau)
-- **Inventaire** : tri par colonnes au clic sur l'en-tête, avec tri
-  **numérique** correct pour Qté et Prix (« 10 » après « 9 », prix comparé sur
-  la valeur et non le texte).
-- **Fiche composant** : boutons +/− des compteurs (quantité, seuils, prix) à la
-  **zone cliquable élargie et clairement délimitée** — le rendu Qt par défaut,
-  altéré dès qu'une feuille de style cible un `QSpinBox`, produisait des boutons
-  minuscules et mal cadrés. Boutons pleine hauteur + flèches PNG teintées.
+### Fixed (desktop UI)
+- **Inventory**: column sorting on header click, with correct **numeric** sort
+  for Qty and Price ("10" after "9", price compared on value not text).
+- **Component sheet**: the +/− buttons of the spin boxes (quantity, thresholds,
+  price) get an **enlarged, clearly delimited click area** — the default Qt
+  rendering, degraded as soon as a stylesheet targets a `QSpinBox`, produced tiny
+  misaligned buttons. Full-height buttons + tinted PNG arrows.
 
 ## [1.3.0]
 
-### Ajouté
-- **Export/import des tables secondaires** : catégories, emplacements (avec la
-  hiérarchie — `parentId` + chemin lisible « Atelier > Armoire A > Tiroir »)
-  et projets disposent chacun d'un export et d'un import CSV réimportable à
-  l'identique (l'`id` interne est conservé, préservant les références croisées).
-- **Sauvegarde / restauration complète de la base** en une archive TAR
-  (`componenthub_backup.tar`) embarquant **tout** l'atelier — toutes les tables
-  (composants, catégories, emplacements, mouvements de stock, documents,
-  projets, nomenclatures) **et** les fichiers uploadés (datasheets PDF,
-  photos…), à l'octet près. Le format à privilégier pour récupérer
-  intégralement l'atelier après un incident. Archive bâtie/diffusée en flux
-  (empreinte RAM minime, sans limite de taille autre que le système de
-  fichiers) ; restauration en multipart avec vérification du format et
-  écriture atomique par fichier. La
-  restauration écrase les données actuelles et demande une confirmation
-  (écriture atomique tmp+rename par table). Nouvelles routes `/api/backup`,
+### Added
+- **Export/import of secondary tables**: categories, locations (with the
+  hierarchy — `parentId` + readable path "Workshop > Cabinet A > Drawer") and
+  projects each get a CSV export and a CSV import that re-imports identically
+  (the internal `id` is preserved, keeping cross-references intact).
+- **Full database backup / restore** in a single TAR archive
+  (`componenthub_backup.tar`) carrying **everything** in the workshop — all
+  tables (components, categories, locations, stock movements, documents,
+  projects, BOMs) **and** the uploaded files (datasheets, PDFs, photos…),
+  byte for byte. The format to prefer to fully recover the workshop after an
+  incident. Archive built/streamed on the fly (minimal RAM footprint, no size
+  limit other than the filesystem); restore in multipart with format check and
+  atomic per-file write. Restore overwrites the current data and asks for
+  confirmation (atomic tmp+rename per table). New routes `/api/backup`,
   `/api/restore`, `/api/{categories,locations,projects}/{export,import}`.
 
-### Corrigé
-- **Encodage des CSV exportés** : ajout d'un BOM UTF-8 en tête de fichier pour
-  que les tableurs (Excel/LibreOffice sous Windows) affichent correctement le
-  signe « € » et les caractères accentués, au lieu de caractères corrompus.
-  Un BOM éventuel est ignoré à la réimportation.
+### Fixed
+- **Encoding of exported CSVs**: added a UTF-8 BOM at the start of the file so
+  spreadsheets (Excel/LibreOffice on Windows) correctly display "€" and accented
+  characters instead of garbled text. An existing BOM is ignored on re-import.
 
-### Modifié
-- Bandeau supérieur **figé (sticky)** : l'en-tête de navigation et la zone de
-  statut inline (messages, confirmations, progression) restent collés en haut
-  de la fenêtre au défilement. Une confirmation de suppression déclenchée en
-  bas d'une longue liste est ainsi toujours visible, sans remonter la page. La
-  zone de statut ne réserve plus d'espace quand elle est vide (`display:none`
-  au lieu de simplement masquée).
-- Page Inventaire : la barre d'outils (recherche, filtres, « stock faible »,
-  bouton Ajouter) et les **en-têtes de colonnes** restent eux aussi figés,
-  empilés sous le bandeau — la liste défile sous des repères toujours
-  visibles. Les hauteurs du bandeau et de la barre d'outils sont mesurées à
-  l'exécution (variables CSS `--topbar-h` / `--inv-toolbar-h`) pour un
-  empilement exact malgré leurs hauteurs variables.
+### Changed
+- Top banner **sticky**: the navigation header and the inline status area
+  (messages, confirmations, progress) stay pinned at the top of the window when
+  scrolling. A delete confirmation triggered at the bottom of a long list is thus
+  always visible, without scrolling back up. The status area no longer reserves
+  space when empty (`display:none` instead of merely hidden).
+- Inventory page: the toolbar (search, filters, "low stock", Add button) and the
+  **column headers** also stay pinned, stacked under the banner — the list
+  scrolls under always-visible markers. The banner and toolbar heights are
+  measured at runtime (CSS variables `--topbar-h` / `--inv-toolbar-h`) for exact
+  stacking despite their variable heights.
 
 ## [1.2.0]
 
-Version mineure consolidant en une version stable les évolutions et
-correctifs livrés par petites touches en 1.1.1 → 1.1.10 : gestion des
-catégories, nomenclature de projet enrichie (éléments hors inventaire,
-vérification de disponibilité, impression/PDF), refonte de la navigation
-(menu plat + onglets), tableau de bord, et divers correctifs. Le détail par
-incrément figure ci-dessous.
+Minor version consolidating into one stable release the changes and fixes
+shipped in small touches across 1.1.1 → 1.1.10: category management, enriched
+project BOM (off-inventory items, availability check, printing/PDF), navigation
+rework (flat menu + tabs), dashboard, and various fixes. The per-increment detail
+is below.
 
 ## [1.1.10]
 
-### Corrigé
-- Menu d'actions ⋮ de l'inventaire : s'ouvre désormais **vers le haut** sur
-  les dernières lignes quand la place manque en dessous — plus de
-  débordement en bas de page ni de barre de défilement parasite.
-- Collision de routage : `GET /api/projects/bom` (et `/missing`) était capté
-  par le handler de liste `GET /api/projects` (ESPAsyncWebServer fait
-  correspondre par préfixe), renvoyant la liste des projets au lieu de la
-  nomenclature — d'où des lignes vides (« undefined ») et un ajout/retrait
-  sans effet. Les routes spécifiques sont enregistrées avant la générique.
+### Fixed
+- Inventory `⋮` action menu: now opens **upward** on the last rows when space is
+  missing below — no more overflow at the bottom of the page or spurious
+  scrollbar.
+- Routing collision: `GET /api/projects/bom` (and `/missing`) was captured by
+  the list handler `GET /api/projects` (ESPAsyncWebServer matches by prefix),
+  returning the project list instead of the BOM — hence empty ("undefined") rows
+  and an add/remove with no effect. Specific routes are registered before the
+  generic one.
 
 ## [1.1.9]
 
-### Corrigé
-- mDNS ré-annoncé proprement à chaque reconnexion WiFi (`MDNS.end()` avant
-  `MDNS.begin()`) — un second `begin()` pouvait laisser le répondeur muet.
-  L'accès `componenthub.local` reste tributaire du client (voir
-  `docs/WIFI_SETUP.md` : sous Windows, souvent Bonjour requis ; l'accès par
-  IP est toujours fiable).
-- Assets web embarqués servis avec `Cache-Control: no-cache` : évite qu'un
-  navigateur serve un ancien HTML/JS après une mise à jour du firmware
-  (URLs stables mais contenu variable d'une version à l'autre).
+### Fixed
+- mDNS re-announced cleanly on every WiFi reconnection (`MDNS.end()` before
+  `MDNS.begin()`) — a second `begin()` could leave the responder silent. Access
+  via `componenthub.local` still depends on the client (see `WIFI_SETUP.md`: on
+  Windows, Bonjour is often required; access by IP is always reliable).
+- Embedded web assets served with `Cache-Control: no-cache`: prevents a browser
+  from serving stale HTML/JS after a firmware update (stable URLs but content
+  varying from one version to the next).
 
 ## [1.1.8]
 
-### Ajouté
-- Nomenclature de projet — éléments **hors inventaire** : ajout à un projet
-  d'un élément non encore possédé (nom libre), automatiquement compté
-  « à acheter ». Le champ d'ajout accepte un composant de l'inventaire
-  (suggestions) ou un nouveau nom.
-- Nomenclature de projet — **vérification de disponibilité** : résumé global
-  et colonne d'état par ligne (✅ dispo / 🛒 à acheter).
-- Nomenclature de projet — **impression / export PDF** : page imprimable
-  (composants nécessaires + « Reste à acheter » avec coût estimé), via
-  l'impression navigateur ou « Enregistrer en PDF ».
+### Added
+- Project BOM — **off-inventory** items: add to a project an item not yet owned
+  (free name), automatically counted "to buy". The add field accepts an
+  inventory component (suggestions) or a new name.
+- Project BOM — **availability check**: global summary and a per-row status
+  column (✅ available / 🛒 to buy).
+- Project BOM — **printing / PDF export**: printable page (needed components +
+  "Left to buy" with estimated cost), via browser printing or "Save as PDF".
 
 ## [1.1.7]
 
-### Modifié
-- Navigation par **onglets** : les sections Paramètres et Système présentent
-  leurs sous-pages via une barre d'onglets persistante (injectée sur chaque
-  page de la section, onglet courant mis en évidence), en remplacement des
-  gros boutons.
+### Changed
+- **Tab** navigation: the Settings and System sections present their sub-pages
+  via a persistent tab bar (injected on each page of the section, current tab
+  highlighted), replacing the large buttons.
 
 ## [1.1.6]
 
-### Modifié
-- Page d'accueil (menu `Labo`) titrée « Tableau de bord » et débarrassée de
-  son cartouche de bienvenue redondant — l'état de l'inventaire est affiché
-  directement.
+### Changed
+- Home page (the `Lab` menu) titled "Dashboard" and stripped of its redundant
+  welcome card — the inventory status is shown directly.
 
 ## [1.1.5]
 
-### Ajouté
-- Sections `Paramètres` (Emplacements / Catégories / Import-Export) et
-  `Système` (Fichiers / Mise à jour / Logs, plus Debug si `ENABLE_BOOT_LOG`
-  est actif ; `/system` conserve ses informations système) regroupant leurs
-  sous-pages.
+### Added
+- `Settings` (Locations / Categories / Import-Export) and `System` (Files /
+  Update / Logs, plus Debug if `ENABLE_BOOT_LOG` is active; `/system` keeps its
+  system information) sections grouping their sub-pages.
 
 ## [1.1.4]
 
-### Modifié
-- Menu principal aplati à 5 entrées (Labo, Inventaire, Projets, Paramètres,
-  Système) — sous-menus déroulants écartés pour rester navigable plus tard
-  au bouton rotatif (voir `docs/ARCHITECTURE.md`, navigation « pilotable »).
+### Changed
+- Main menu flattened to 5 entries (Lab, Inventory, Projects, Settings, System)
+  — dropdown submenus dropped to stay navigable later with a rotary knob (see
+  `ARCHITECTURE.md`, "steerable" navigation).
 
 ## [1.1.3]
 
-### Ajouté
-- Formulaire composant — champ **Interface** avec suggestions courantes
-  (I2C, SPI, UART, USB, GPIO, PWM, Analogique, CAN, 1-Wire, Bluetooth, WiFi,
-  Ethernet, RS232, RS485, JTAG, SWD), tout en restant libre.
-- Formulaire composant — champ **Catégorie** alimenté par la liste gérée
-  côté serveur, plutôt que par les seuls composants affichés.
+### Added
+- Component form — **Interface** field with common suggestions (I2C, SPI, UART,
+  USB, GPIO, PWM, Analog, CAN, 1-Wire, Bluetooth, WiFi, Ethernet, RS232, RS485,
+  JTAG, SWD), while remaining free-text.
+- Component form — **Category** field populated from the server-managed list,
+  rather than from the displayed components only.
 
 ## [1.1.2]
 
-### Ajouté
-- Formulaire composant — champ **Emplacement** éditable : champ texte +
-  suggestions (chemins existants), avec création à la volée d'un nouvel
-  emplacement racine si le texte saisi ne correspond à aucun chemin connu.
+### Added
+- Component form — editable **Location** field: text field + suggestions
+  (existing paths), with on-the-fly creation of a new root location if the typed
+  text matches no known path.
 
 ## [1.1.1]
 
-### Ajouté
-- Entité `Category` (liste plate, sans hiérarchie) : page d'administration
-  `/categories`, API `/api/inventory/categories`, et création automatique
-  dès qu'un composant est enregistré avec une catégorie inconnue.
+### Added
+- `Category` entity (flat list, no hierarchy): admin page `/categories`, API
+  `/api/inventory/categories`, and automatic creation whenever a component is
+  saved with an unknown category.
 
 ## [1.1.0]
 
-### Ajouté
-- Menu d'actions ⋮ par ligne de l'inventaire (Modifier, Mouvement,
-  Documents, Photos, QR Code, Dupliquer, Supprimer), à la place des 4
-  boutons fixes — prévu pour absorber de futures actions sans reprendre la
-  mise en page. Photos et QR Code affichent un message "bientôt
-  disponible" (fonctionnalités pas encore construites).
-- Icônes de statut de validation (🟡 à tester, 🚧 en validation, 🟢 validé,
-  🛑 défectueux, 📦 archivé) à la place du texte, dans la colonne Statut et
-  les listes déroulantes — libellé complet conservé en infobulle.
-- Filtre par statut sur la page Inventaire (manquait pour que la tuile
-  "à tester" du tableau de bord pointe vers une vue utile).
+### Added
+- Per-row `⋮` action menu on the inventory (Edit, Movement, Documents, Photos,
+  QR Code, Duplicate, Delete), replacing the 4 fixed buttons — designed to absorb
+  future actions without redoing the layout. Photos and QR Code show a "coming
+  soon" message (features not yet built).
+- Validation status icons (🟡 to test, 🚧 in validation, 🟢 validated, 🛑 faulty,
+  📦 archived) instead of text, in the Status column and the drop-downs — full
+  label kept as a tooltip.
+- Status filter on the Inventory page (was missing so the "to test" dashboard
+  tile could point to a useful view).
 
-### Modifié — architecture : interface web embarquée en PROGMEM
-- L'UI (`web_src/`) n'est plus servie depuis LittleFS : elle est désormais
-  compilée dans le firmware (PROGMEM), régénérée automatiquement avant
-  chaque build (`tools/minify_web.py` puis `tools/generate_web_assets.py`,
-  chaînés via `extra_scripts`). `pio run --target upload` met donc à jour
-  firmware et interface web en une seule fois — une mise à jour OTA aussi.
-  LittleFS ne contient plus que les données réelles de l'inventaire et les
-  documents utilisateur (uploadés via `/api/files/upload`), plus jamais
-  effacés par une mise à jour de l'UI. Voir
-  `docs/ARCHITECTURE.md#interface-web-embarquée-progmem`.
-- Nouveau service `src/services/web_assets/` (`WebAssets::find`/`send`) :
-  seule couche à connaître la table d'assets générée.
-- Renommage du dossier de sortie de minification `data/` → `web/`.
+### Changed — architecture: embedded web UI in PROGMEM
+- The UI (`web_src/`) is no longer served from LittleFS: it is now compiled into
+  the firmware (PROGMEM), regenerated automatically before each build
+  (`tools/minify_web.py` then `tools/generate_web_assets.py`, chained via
+  `extra_scripts`). `pio run --target upload` therefore updates firmware and web
+  UI at once — an OTA update too. LittleFS then holds only the real inventory
+  data and user documents (uploaded via `/api/files/upload`), never again erased
+  by a UI update. See `ARCHITECTURE.md#embedded-web-ui-progmem`.
+- New service `src/services/web_assets/` (`WebAssets::find`/`send`): the only
+  layer that knows the generated asset table.
+- Renamed the minification output folder `data/` → `web/`.
 
-### Retiré
-- `tools/sync_web.py` et `tools/package_web.py` : le problème qu'ils
-  contournaient (perte de données lors d'une mise à jour de l'UI) n'existe
-  plus structurellement, ces outils n'ont donc plus d'objet.
+### Removed
+- `tools/sync_web.py` and `tools/package_web.py`: the problem they worked around
+  (data loss on a UI update) no longer exists structurally, so these tools are
+  moot.
 
 ## [1.0.0]
 
-Premier inventaire fonctionnel de ComponentHub. Le projet part de la base
-ESP32-Foundation (services WiFi/OTA/stockage/logs) et y construit, par-dessus,
-un cœur métier dédié à la gestion d'un atelier électronique.
+First functional ComponentHub inventory. The project starts from the
+ESP32-Foundation base (WiFi/OTA/storage/logs services) and builds, on top, a
+business core dedicated to managing an electronics workshop.
 
-### Ajouté — cœur métier (`src/domain/`)
-- Domaine indépendant de la plateforme (aucune dépendance Arduino/ESP32) :
-  entités `Component`, `Location`, `StockMovement`, `Project`,
-  `ProjectComponent`, `Document`, interfaces de dépôt, et les services
-  `InventoryService`, `ProjectService`, `DocumentService`,
-  `ImportExportService`. Pensé pour un futur portage Raspberry Pi/Linux sans
-  réécriture majeure (voir `docs/ARCHITECTURE.md`).
-- Persistance JSON sur LittleFS (`src/storage/`), écritures atomiques
-  (fichier temporaire + renommage) et détection explicite de fichier
-  corrompu au lieu d'un vidage silencieux de l'inventaire.
+### Added — business core (`src/domain/`)
+- Platform-independent domain (no Arduino/ESP32 dependency): entities
+  `Component`, `Location`, `StockMovement`, `Project`, `ProjectComponent`,
+  `Document`, repository interfaces, and the services `InventoryService`,
+  `ProjectService`, `DocumentService`, `ImportExportService`. Designed for a
+  future Raspberry Pi/Linux port without major rewrite (see `ARCHITECTURE.md`).
+- JSON persistence on LittleFS (`src/storage/`), atomic writes (temp file +
+  rename) and explicit corrupt-file detection instead of a silent wipe of the
+  inventory.
 
-### Ajouté — inventaire
-- Fiche composant complète (référence, fabricant, caractéristiques
-  électriques, prix/fournisseur, dates, garantie, état, provenance, notes),
-  avec un champ `kind` (composant / module / outil / consommable) traitant
-  ces familles comme des facettes filtrables du même inventaire plutôt que
-  des systèmes séparés.
-- Emplacements hiérarchiques personnalisables (arborescence libre).
-- Mouvements de stock (entrée/sortie/correction/inventaire) avec historique
-  par composant, et détection automatique du stock sous le seuil minimum.
-- Workflow "pièces récupérées" : mode récupération dans le formulaire
-  d'ajout, qui conserve provenance/emplacement/état d'un ajout à l'autre.
-- Recherche instantanée et filtres (type, catégorie, statut, stock faible).
+### Added — inventory
+- Complete component sheet (reference, manufacturer, electrical characteristics,
+  price/supplier, dates, warranty, state, provenance, notes), with a `kind`
+  field (component / module / tool / consumable) treating these families as
+  filterable facets of the same inventory rather than separate systems.
+- Customizable hierarchical locations (free tree).
+- Stock movements (in/out/correction/inventory) with per-component history, and
+  automatic detection of stock below the minimum threshold.
+- "Recovered parts" workflow: recovery mode in the add form, keeping
+  provenance/location/state from one addition to the next.
+- Instant search and filters (type, category, status, low stock).
 
-### Ajouté — projets
-- Fiche projet (version, firmware, dépôt Git, statut) et nomenclature de
-  composants nécessaires, avec calcul immédiat des quantités manquantes par
-  rapport au stock réel.
+### Added — projects
+- Project sheet (version, firmware, Git repo, status) and BOM of needed
+  components, with immediate computation of missing quantities against real
+  stock.
 
-### Ajouté — documentation attachée
-- Datasheets, manuels, schémas, pinouts ou liens utiles, rattachables à un
-  composant ou un projet (réutilise le gestionnaire de fichiers existant
-  plutôt que de dupliquer un pipeline d'upload).
+### Added — attached documentation
+- Datasheets, manuals, schematics, pinouts or useful links, attachable to a
+  component or a project (reuses the existing file manager rather than
+  duplicating an upload pipeline).
 
-### Ajouté — import / export
-- Export/import CSV au format natif (sauvegarde complète, réimportable) et
-  au format compatible [Bomist](https://bomist.com/) (rapprochement par
-  référence, résolution/création automatique des emplacements par nom).
-- Suivi des dates de dernier import / export / sauvegarde, exposé sur le
-  tableau de bord.
+### Added — import / export
+- CSV export/import in the native format (full, re-importable backup) and in the
+  [Bomist](https://bomist.com/)-compatible format (matching by reference,
+  automatic location resolution/creation by name).
+- Tracking of the last import / export / backup dates, exposed on the dashboard.
 
-### Ajouté — interface web
-- Bascule du serveur web synchrone (`WebServer`) vers **ESPAsyncWebServer**,
-  seule couche (`web_manager`, `api_router`, `ota_manager`) à connaître ce
-  choix — le reste du framework (WiFi, stockage, logs) reste inchangé.
-- Nouveau tableau de bord (page **Labo**, page d'accueil) : état détaillé de
-  l'inventaire (références, pièces, valeur, stock faible, liste d'achats en
-  attente, composants à tester, projets, dates import/export/sauvegarde) et
-  accès rapide aux actions courantes.
-- Pages Inventaire, Emplacements, Projets, Import/Export.
-- Mise en page limitée à 1060px (menu compris), formulaires de saisie
-  réorganisés en grille responsive (moins de défilement vertical, jamais de
-  défilement horizontal).
-- Remplacement des popups bloquants (`alert`/`confirm`) par une zone de
-  statut inline partagée (confirmations, messages de succès/erreur,
-  progression réelle de l'import/export via `XMLHttpRequest`), réservée en
-  permanence dans la mise en page pour ne jamais décaler l'interface.
-- Pied de page (nom du projet + version) sur toutes les pages.
+### Added — web UI
+- Switch from the synchronous web server (`WebServer`) to **ESPAsyncWebServer**,
+  the only layer (`web_manager`, `api_router`, `ota_manager`) that knows this
+  choice — the rest of the framework (WiFi, storage, logs) unchanged.
+- New dashboard (the **Lab** page, home page): detailed inventory status
+  (references, parts, value, low stock, pending shopping list, components to
+  test, projects, import/export/backup dates) and quick access to common
+  actions.
+- Inventory, Locations, Projects, Import/Export pages.
+- Layout capped at 1060px (menu included), input forms reorganized into a
+  responsive grid (less vertical scrolling, never horizontal scrolling).
+- Replacement of blocking popups (`alert`/`confirm`) with a shared inline status
+  area (confirmations, success/error messages, real import/export progress via
+  `XMLHttpRequest`), permanently reserved in the layout so it never shifts the
+  interface.
+- Footer (project name + version) on every page.
 
-### Corrigé
-- Import CSV : le rapprochement et la mise à jour se faisaient ligne par
-  ligne, chacune relisant/réécrivant tout le fichier JSON des composants et
-  rescannant les emplacements — un coût quadratique ayant provoqué un reset
-  watchdog (tâche bloquée ~150s) lors de l'import d'un fichier de 39 lignes.
-  Le rapprochement se fait désormais entièrement en mémoire à partir d'un
-  seul instantané disque, avec une écriture en lot (`saveAll`).
-- Risque de perte de données : `pio run --target uploadfs` reflashe toute la
-  partition LittleFS (donc l'inventaire) à chaque mise à jour de
-  l'interface web. Ajout de `tools/sync_web.py`, qui pousse les fichiers web
-  un par un via l'API HTTP existante sans jamais toucher aux données ;
-  `tools/minify_web.py` avertit désormais avant de proposer `uploadfs`.
+### Fixed
+- CSV import: matching and updating were done row by row, each re-reading/
+  re-writing the whole components JSON file and rescanning locations — a
+  quadratic cost that caused a watchdog reset (task blocked ~150s) when importing
+  a 39-line file. Matching is now done entirely in memory from a single disk
+  snapshot, with a batched write (`saveAll`).
+- Data-loss risk: `pio run --target uploadfs` reflashes the whole LittleFS
+  partition (hence the inventory) on each web UI update. Added `tools/sync_web.py`,
+  which pushes the web files one by one via the existing HTTP API without ever
+  touching the data; `tools/minify_web.py` now warns before offering `uploadfs`.
 
-### Retiré
-- `examples/` et `src/modules/example_module/` (démonstrations génériques
-  de la base ESP32-Foundation, sans usage dans ComponentHub).
-- `docs/INTEGRATION_GUIDE.md` (guide générique "démarrer un nouveau projet
-  depuis le framework") et les captures d'écran génériques de
-  `docs/pictures/` — contenu propre à ESP32-Foundation, sans rapport avec
-  l'interface réelle de ComponentHub.
+### Removed
+- `examples/` and `src/modules/example_module/` (generic demos of the
+  ESP32-Foundation base, unused in ComponentHub).
+- `docs/INTEGRATION_GUIDE.md` (generic "start a new project from the framework"
+  guide) and the generic screenshots in `docs/pictures/` — content specific to
+  ESP32-Foundation, unrelated to the real ComponentHub interface.

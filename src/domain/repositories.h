@@ -1,9 +1,8 @@
 /**
  * Interfaces de dépôt (Repository) — seule porte d'accès à la persistance
- * vue depuis le domaine. Aucune implémentation ici : voir src/storage/ pour
- * la version ESP32 (fichiers JSON sur LittleFS). Un portage Raspberry Pi/
- * Linux n'a besoin de ré-implémenter que ces trois interfaces (ex: SQLite),
- * sans toucher à InventoryService.
+ * vue depuis le domaine. Aucune implémentation ici : voir src/storage/
+ * (fichiers JSON). Changer de moteur de stockage (ex. SQLite) ne demande que
+ * de ré-implémenter ces interfaces, sans toucher à InventoryService.
  */
 
 #pragma once

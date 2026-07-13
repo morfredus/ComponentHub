@@ -1,10 +1,7 @@
 // ComponentHub Desktop — persistance JSON.
 //
-// Réplique EXACTEMENT le format de fichier de la version ESP32
-// (src/storage/json_store_util.h) : chaque table est un fichier
+// Format de fichier : chaque table est un fichier
 //   { "nextId": <int>, "items": [ {...}, ... ] }
-// Conséquence voulue : les fichiers de données et les sauvegardes TAR sont
-// interchangeables entre l'ESP32 et cette application de bureau.
 //
 // Seule cette couche connaît nlohmann/json ; le domaine (src/domain/) ne voit
 // que des std::vector<Component> etc.
@@ -42,8 +39,7 @@ inline json load(const std::string& path) {
 }
 
 // Écriture atomique : fichier temporaire puis rename par-dessus l'original —
-// une coupure en cours d'écriture laisse le fichier existant intact (même
-// principe que la version ESP32).
+// une coupure en cours d'écriture laisse le fichier existant intact.
 inline bool save(const std::string& path, const json& doc) {
     const std::filesystem::path target = fsPath(path);
     const std::filesystem::path tmp = fsPath(path + ".tmp");

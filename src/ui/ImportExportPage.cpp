@@ -27,9 +27,8 @@ ImportExportPage::ImportExportPage(chdesktop::AppContext& ctx, QWidget* parent)
     // --- Sauvegarde complète -------------------------------------------------
     auto* backupBox = new QGroupBox("Sauvegarde complète (tout compris)");
     auto* bl = new QVBoxLayout(backupBox);
-    bl->addWidget(uikit::hint("Archive .tar de toutes les tables de données — format identique à "
-                              "l'ESP32, donc une sauvegarde faite sur la carte se restaure ici et "
-                              "inversement."));
+    bl->addWidget(uikit::hint("Archive .tar réunissant toutes les tables de données et les fichiers "
+                              "joints — un seul fichier pour tout sauvegarder puis tout restaurer."));
     auto* brow = new QHBoxLayout;
     auto* doBackup = uikit::button("Sauvegarder…", icons::Glyph::Backup);
     auto* doRestore = uikit::button("Restaurer…", icons::Glyph::Restore, "danger");

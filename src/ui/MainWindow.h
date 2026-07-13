@@ -24,6 +24,7 @@ private:
     void syncThemeMenu();
     void showAboutDialog();
     void showHelpDialog();
+    void checkForUpdates(bool manual);   // manual=true : entrée de menu ; false : au démarrage (silencieux)
 
     chdesktop::AppContext& ctx_;
     QListWidget*    nav_ = nullptr;

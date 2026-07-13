@@ -3,8 +3,8 @@
  *
  * Ne connaît que les interfaces de dépôt (IComponentRepository,
  * ILocationRepository, IStockMovementRepository), jamais leur implémentation
- * (LittleFS, SQLite, fichiers plats...). C'est la classe à porter telle
- * quelle sur Raspberry Pi/Linux/Windows.
+ * (fichiers JSON, SQLite...). Indépendant de la plateforme (Windows, Linux,
+ * Raspberry Pi).
  */
 
 #pragma once

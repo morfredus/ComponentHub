@@ -1,5 +1,5 @@
 /**
- * Identifiants partagés du domaine — aucune dépendance Arduino/ESP32 ici.
+ * Identifiants du domaine — aucune dépendance plateforme ici.
  */
 
 #pragma once

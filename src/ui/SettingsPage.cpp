@@ -45,8 +45,7 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     // --- Données ---
     auto* data = new QGroupBox("Données");
     auto* dv = new QVBoxLayout(data);
-    dv->addWidget(uikit::hint("Dossier où sont stockées les tables JSON (mêmes fichiers que "
-                              "l'ESP32 : compatibles avec les sauvegardes TAR)."));
+    dv->addWidget(uikit::hint("Dossier où sont stockées les tables JSON de l'inventaire."));
     auto* row = new QHBoxLayout;
     auto* path = new QLineEdit(QString::fromStdString(ctx_.dir()));
     path->setReadOnly(true);
