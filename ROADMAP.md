@@ -1,131 +1,122 @@
-# Feuille de route — ComponentHub
+# Roadmap — ComponentHub
 
-Cette feuille de route est indicative : elle liste, par horizon, les
-fonctionnalités déduites du cahier des charges et des limites déjà identifiées
-en cours de développement. L'ordre à l'intérieur d'un horizon n'est pas figé.
+This roadmap is indicative: it lists, by horizon, the features derived from the
+specification and from the limits identified during development. Order within a
+horizon is not fixed.
 
-Elle couvre le **projet maître** (l'application de bureau, ce dépôt). Le
-firmware **satellite** ESP32 vit dans le dépôt `ComponentHub-ESP32` et a sa
-propre feuille de route ; les points qui concernent le lien entre les deux sont
-regroupés dans la section [Lien maître ↔ satellite](#lien-maître--satellite-esp32).
+It covers the **master project** (the desktop application, this repository). The
+**satellite** ESP32 firmware lives in the `ComponentHub-ESP32` repository and
+has its own roadmap; items about the link between the two are grouped under
+[Master ↔ satellite link](#master--satellite-link-esp32).
 
-## Principes du projet
+## Project principles
 
-ComponentHub est conçu autour de quelques principes simples :
+ComponentHub is built around a few simple principles:
 
-- les données utilisateur ne sont jamais écrasées par une mise à jour ;
-- le cœur métier (`src/domain/`) reste indépendant de la plateforme ;
-- **la version bureau est le maître** : elle détient la base de référence, sur
-  un stockage fiable et sans les limites mémoire de l'ESP32 (voir
-  [docs/ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md)) ; l'ESP32
-  est un satellite de consultation/saisie ;
-- l'interface est pensée pour fonctionner aussi bien à la souris qu'au clavier
-  ou au tactile ;
-- les fonctionnalités sont développées pour résoudre un besoin réel dans
-  l'atelier avant d'être généralisées.
+- user data is never overwritten by an update;
+- the business core (`src/domain/`) stays independent of the platform;
+- **the desktop app is the master**: it holds the reference database, on
+  reliable storage and free of the ESP32's memory limits (see
+  [docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md)); the
+  ESP32 is a browsing/entry satellite;
+- the interface is meant to work equally well with mouse, keyboard and touch;
+- features are built to solve a real workshop need before being generalized.
 
-## Déjà livré (jusqu'à v1.4.x)
+## Already shipped (up to v1.5.x)
 
-Socle fonctionnel de l'atelier, pour situer le reste :
+The functional base of the workshop, to put the rest in context:
 
-- **Application de bureau Qt 6 / C++17**, native sur **Windows, Linux (x86_64)
-  et Raspberry Pi (ARM64)** via CMake — voir
-  [docs/BUILD_DESKTOP.md](docs/BUILD_DESKTOP.md).
-- Cœur métier indépendant de la plateforme (`src/domain/`) ; persistance en
-  **fichiers JSON** (nlohmann/json), écriture atomique, dans le dossier de
-  configuration utilisateur.
-- Inventaire unifié (composants / modules / outils / consommables), fiche
-  complète, **recherche globale** (tous les champs texte, plusieurs mots) et
-  filtres.
-- Emplacements hiérarchiques ; catégories gérées (liste dédiée + création à la
-  volée) ; **référentiels administrables** (types, fabricants, boîtiers,
-  fournisseurs… avec fusion de doublons et propagation aux composants).
-- Mouvements de stock avec historique et alerte de seuil.
-- Projets et nomenclature : composants de l'inventaire **ou** éléments hors
-  inventaire (« à acheter »), calcul des composants manquants.
-- Documentation attachée (datasheets, liens…) aux composants et projets.
-- Import / export CSV (format natif et compatible Bomist) ; **sauvegarde /
-  restauration complète** de la base en archive `.tar`, encore
-  **interchangeable avec le firmware ESP32**.
-- Thème clair/sombre suivant l'OS.
-- **Séparation bureau / firmware** : l'ESP32 est devenu un dépôt satellite
-  autonome (`ComponentHub-ESP32`).
+- **Qt 6 / C++17 desktop application**, native on **Windows, Linux (x86_64) and
+  Raspberry Pi (ARM64)** via CMake — see
+  [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md).
+- Platform-independent business core (`src/domain/`); persistence in **JSON
+  files** (nlohmann/json), atomic writes, in the user's configuration folder.
+- Unified inventory (components / modules / tools / consumables), full sheet,
+  **global search** (all text fields, several words) and filters.
+- Hierarchical locations; managed categories (dedicated list + on-the-fly
+  creation); **administrable reference lists** (types, manufacturers, suppliers,
+  packages… with **duplicate merging** and propagation to components).
+- Stock movements with history and low-threshold alert.
+- Projects and bill of materials: inventory components **or** off-inventory
+  items ("to buy"), with computation of the *missing* components.
+- Attached documentation (datasheets, links…) on components and projects.
+- CSV import/export (native and Bomist formats); **full backup / restore** of
+  the database in a single `.tar` archive.
+- Light/dark theme following the OS; native menu bar (File · Go to · View ·
+  Help), version shown in the window title.
 
-## Court terme
+## Short term
 
-Fonctionnalités déjà amorcées ou naturellement prioritaires.
+Features already started or naturally next.
 
-- **Photos** — plusieurs images par fiche (photo constructeur, réelle,
-  rangement, brochage, étiquette). Réutiliser le système de documents existant
-  (catégorie « photo ») avec un affichage en vignettes.
-- **QR Codes** — génération d'un QR encodant le lien vers la fiche d'un
-  composant ou le contenu d'un tiroir, affichage imprimable. Base du scan
-  « ouvrir la fiche / voir le contenu » (côté satellite notamment).
-- **Intégrité référentielle** — suppression en cascade ou nettoyage des
-  références orphelines : supprimer un composant devrait aussi retirer ses
-  mouvements de stock et documents ; supprimer un emplacement / une catégorie
-  devrait mettre à jour (ou bloquer) les composants qui les référencent.
+- **Photos** — several images per sheet (manufacturer photo, real photo,
+  storage, pinout, label). Reuse the existing document system (a "photo"
+  category) with a thumbnail display.
+- **QR codes** — generate a QR encoding the link to a component sheet or the
+  content of a drawer, printable. The basis for "scan → open the sheet / see the
+  content" (especially on the satellite).
+- **Referential integrity** — cascade deletion or orphan cleanup: deleting a
+  component should also remove its stock movements and documents; deleting a
+  location / category should update (or block) the components that reference it.
 
-## Moyen terme
+## Medium term
 
-Fonctions du cahier des charges cohérentes avec l'architecture actuelle.
+Specification features consistent with the current architecture.
 
-- **Impression d'étiquettes** — export vers DYMO puis Brother P-Touch :
-  étiquette contenant nom, référence, QR Code et emplacement.
-- **Checklist de validation** par composant (alimentation testée, brochage
-  vérifié, bibliothèque validée, exemple fonctionnel, datasheet ajoutée, photo
-  réalisée, emplacement attribué) — enrichit le champ « statut » actuel.
-- **Liste d'achats complète** — au-delà de la détection du stock faible :
-  fournisseur préféré, prix moyen, quantité à commander, génération d'une liste
-  dédiée.
-- **Bibliothèques par module** — bibliothèques Arduino / ESP-IDF / PlatformIO,
-  exemples, snippets et remarques personnelles rattachés à un composant.
-- **Historique étendu** — au-delà des mouvements de stock déjà tracés :
-  modifications de fiche, changements d'emplacement et de quantité.
-- **Sous-catégorie gérée** comme entité (à l'image de Catégorie), plutôt que
-  champ texte libre.
-- **Import CSV — encodage** : détection / conversion Windows-1252 en plus de
-  l'UTF-8 aujourd'hui exigé (ex. export tableur « CSV séparé par ; »).
+- **Label printing** — export to DYMO then Brother P-Touch: a label with name,
+  reference, QR code and location.
+- **Validation checklist** per component (power tested, pinout checked, library
+  validated, working example, datasheet added, photo taken, location assigned) —
+  enriches the current "status" field.
+- **Full shopping list** — beyond low-stock detection: preferred supplier,
+  average price, quantity to order, generation of a dedicated list.
+- **Per-module libraries** — Arduino / ESP-IDF / PlatformIO libraries, examples,
+  snippets and personal notes attached to a component.
+- **Extended history** — beyond stock movements: sheet edits, location and
+  quantity changes.
+- **Managed sub-category** as an entity (like Category), instead of a free-text
+  field.
+- **CSV import — encoding**: detect/convert Windows-1252 in addition to the UTF-8
+  required today (e.g. a spreadsheet "CSV separated by ;").
 
-## Lien maître ↔ satellite (ESP32)
+## Master ↔ satellite link (ESP32)
 
-Chantier structurant ouvert par la séparation des deux projets (voir
-[docs/ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md)). Tant qu'il
-n'existe pas, le satellite fonctionne encore de façon autonome avec sa propre
-base (format JSON / `.tar` interchangeable).
+The structural project opened by the split of the two repositories (see
+[docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md)). Until it
+exists, the satellite still works standalone with its own database (the JSON /
+`.tar` format remains interchangeable).
 
-- **Consolider le bureau** comme maître avant tout : c'est ici que vit la base
-  de référence, sur stockage fiable.
-- **Transformer l'ESP32 en satellite** au sens plein : consultation et
-  modification du stock, scan de QR codes au plus près des tiroirs — sans
-  détenir la source de vérité.
-- **Définir le protocole / l'API** par lequel le satellite consulte et met à
-  jour la base du maître (lien réseau). Prérequis déjà en place : nom mDNS du
-  satellite distinct (`componenthub-esp32.local`) pour éviter tout télescopage
-  avec le futur service du bureau.
+- **Consolidate the desktop app** as the master first: this is where the
+  reference database lives, on reliable storage.
+- **Turn the ESP32 into a true satellite**: browse and edit stock, scan QR
+  codes near the drawers — without holding the source of truth.
+- **Define the protocol / API** through which the satellite reads and updates
+  the master's database (network link). Prerequisite already in place: the
+  satellite has a distinct mDNS name (`componenthub-esp32.local`) to avoid any
+  name collision with the future desktop service.
 
-## Long terme / Vision
+## Long term / Vision
 
-Portabilité et écosystème — ce pour quoi l'architecture a été pensée dès le
-départ.
+Portability and ecosystem — what the architecture was designed for from the
+start.
 
-- **Moteur de persistance évolutif côté bureau** — le stockage n'étant plus
-  bridé par l'ESP32, le passage des fichiers JSON à **SQLite** (requêtes,
-  volumétrie, historique) devient possible sans contrainte embarquée ; seules
-  les implémentations des interfaces de dépôt (`src/domain/`) changent.
-- **Interface tactile + contrôle physique** — bouton rotatif / façade dédiée,
-  notamment sur le satellite (tourner = déplacer le focus, appuyer = valider).
-- **Périphériques d'acquisition** — lecteur de codes-barres, RFID / NFC, caméra
-  et reconnaissance automatique, ajoutés sans modifier le cœur (encapsulés
-  derrière des interfaces, comme le reste de la plateforme).
-- **Sauvegarde & synchronisation** — export SQLite, sauvegarde vers un NAS,
-  synchronisation multi-postes, API REST publique.
-- **Profils de domaine** — le moteur devra pouvoir être adapté à différents
-  domaines (électronique, photographie, atelier, cuisine, modélisme…) sans
-  modification du cœur métier.
+- **Evolving persistence engine on the desktop** — storage no longer being
+  constrained by the ESP32, moving from JSON files to **SQLite** (queries,
+  volume, history) becomes possible without embedded constraints; only the
+  repository interface implementations (`src/domain/`) change.
+- **Touch interface + physical control** — rotary knob / dedicated front panel,
+  notably on the satellite (turn = move focus, press = confirm).
+- **Acquisition peripherals** — barcode reader, RFID / NFC, camera and automatic
+  recognition, added without touching the core (encapsulated behind interfaces,
+  like the rest of the platform).
+- **Backup & synchronization** — SQLite export, backup to a NAS, multi-station
+  sync, public REST API.
+- **Domain profiles** — the engine should adapt to different domains
+  (electronics, photography, workshop, cooking, modeling…) without changing the
+  business core.
 
 ---
 
-Voir [CHANGELOG.md](CHANGELOG.md) pour ce qui a déjà été livré, et
-[docs/ADR-0001](docs/ADR-0001-desktop-maitre-esp32-satellite.md) pour la
-séparation bureau / ESP32 et les rôles maître / satellite.
+See [CHANGELOG.md](CHANGELOG.md) for what has already shipped, and
+[docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md) for the
+desktop/ESP32 split and the master/satellite roles.

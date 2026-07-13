@@ -37,7 +37,7 @@ foreach ($d in 'platforms','styles','imageformats','tls','networkinformation','g
 }
 
 # Documents
-foreach ($f in 'LICENSE','README.md','CHANGELOG.md','VERSION') {
+foreach ($f in 'LICENSE','README.md','README.fr.md','CHANGELOG.md','VERSION') {
     $src = Join-Path $root $f
     if (Test-Path $src) { Copy-Item $src $dist }
 }

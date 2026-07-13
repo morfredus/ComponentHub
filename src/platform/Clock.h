@@ -1,5 +1,4 @@
-// Horodatage ISO 8601 local — équivalent desktop du time_manager de l'ESP32,
-// utilisé pour dater les mouvements de stock.
+// Horodatage ISO 8601 local, utilisé pour dater les mouvements de stock.
 #pragma once
 
 #include <ctime>

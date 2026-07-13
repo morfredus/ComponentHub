@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
     app.setApplicationName("ComponentHub");
     app.setOrganizationName("morfredus");
 
-    // Dossier de données par utilisateur (mêmes fichiers JSON que l'ESP32).
+    // Dossier de données par utilisateur.
     QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     if (dir.isEmpty()) dir = QDir::homePath() + "/.componenthub";
     QDir().mkpath(dir);

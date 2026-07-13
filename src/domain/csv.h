@@ -1,6 +1,6 @@
 /**
  * Utilitaires CSV génériques (RFC 4180 simplifié) — aucune dépendance
- * Arduino/ESP32. Gère les champs cités ("...") pouvant contenir le
+ * plateforme. Gère les champs cités ("...") pouvant contenir le
  * délimiteur, un guillemet (échappé en "") ou un retour à la ligne.
  */
 

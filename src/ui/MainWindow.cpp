@@ -244,8 +244,8 @@ void MainWindow::showHelpDialog() {
         "<p>Toutes vos tables sont des fichiers JSON dans votre dossier de données"
         " personnel (menu <i>Fichier → Ouvrir le dossier de données</i>, chemin aussi"
         " rappelé en bas de la fenêtre). Pensez à la <b>sauvegarde <code>.tar</code></b>"
-        " (section Import/Export) : elle emporte tout l'atelier en un fichier, et se"
-        " restaure aussi bien ici que sur le firmware ESP32.</p>");
+        " (section Import/Export) : elle emporte tout l'atelier en un seul fichier,"
+        " à ranger en lieu sûr et à restaurer quand vous voulez.</p>");
 
     QDialog dlg(this);
     dlg.setWindowTitle("Aide — ComponentHub");

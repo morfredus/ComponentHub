@@ -3,8 +3,8 @@
 // données pour l'interface : chaque écran reçoit une référence à AppContext.
 //
 // Les services (InventoryService, ProjectService, DocumentService,
-// ImportExportService) sont ceux de src/domain/, compilés tels quels : toute
-// la logique métier est partagée avec la version ESP32.
+// ImportExportService) sont ceux du cœur métier src/domain/, indépendant de la
+// plateforme (ni Qt, ni système de fichiers embarqué).
 #pragma once
 
 #include <string>
@@ -46,7 +46,7 @@ public:
     ProjectComponentRepository projectComponents;
     ReferentialRepository      referentials;
 
-    // Services métier partagés (src/domain/).
+    // Services métier du domaine (src/domain/).
     domain::InventoryService    inventory;
     domain::ProjectService      projects_service;
     domain::DocumentService     documents_service;
