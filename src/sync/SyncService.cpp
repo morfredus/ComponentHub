@@ -61,6 +61,7 @@ void SyncService::loadState() {
             json j; in >> j;
             deviceId_ = j.value("deviceId", std::string());
             lastSeq_  = j.value("lastSeq", (std::int64_t)0);
+            journalId_ = j.value("journalId", std::string());
             if (j.contains("pushWatermarks") && j["pushWatermarks"].is_object())
                 for (auto it = j["pushWatermarks"].begin(); it != j["pushWatermarks"].end(); ++it)
                     pushWatermarks_[it.key()] = it.value().get<std::int64_t>();
@@ -75,7 +76,8 @@ void SyncService::loadState() {
 void SyncService::saveState() const {
     json wm = json::object();
     for (const auto& [type, seq] : pushWatermarks_) wm[type] = seq;
-    json j{{"deviceId", deviceId_}, {"lastSeq", lastSeq_}, {"pushWatermarks", wm}};
+    json j{{"deviceId", deviceId_}, {"lastSeq", lastSeq_},
+           {"journalId", journalId_}, {"pushWatermarks", wm}};
     std::ofstream out(statePath_, std::ios::trunc);
     out << j.dump(2);
 }
@@ -93,6 +95,10 @@ bool SyncService::testConnection(const SyncConfig& cfg, std::string& info, int t
 }
 
 SyncOutcome SyncService::sync(const SyncConfig& cfg) {
+    return syncOnce(cfg, /*mayReset=*/true);
+}
+
+SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
     SyncOutcome out;
     const std::string url = base(cfg);
     const auto headers = authHeaders(cfg);
@@ -141,6 +147,7 @@ SyncOutcome SyncService::sync(const SyncConfig& cfg) {
 
     // 3) PULL depuis le curseur, avec pagination et dispatch par type.
     std::int64_t since = lastSeq_;
+    bool firstPull = true;
     for (;;) {
         auto gr = chnet::httpGet(changesUrl + "?since=" + std::to_string(since) + "&limit=500", headers);
         if (!gr.ok)           { out.error = gr.error; return out; }
@@ -149,6 +156,24 @@ SyncOutcome SyncService::sync(const SyncConfig& cfg) {
         bool hasMore = false;
         try {
             json j = json::parse(gr.body);
+
+            // Détection d'époque : si le journal du hub a changé (dossier déplacé /
+            // réinitialisé), notre curseur et nos repères de push ne valent plus.
+            // On réinitialise et on relance une synchro complète, une seule fois.
+            if (firstPull) {
+                firstPull = false;
+                const std::string remoteJournal = j.value("journalId", std::string());
+                if (mayReset && !journalId_.empty() && !remoteJournal.empty()
+                    && remoteJournal != journalId_) {
+                    journalId_ = remoteJournal;
+                    lastSeq_ = 0;
+                    pushWatermarks_.clear();
+                    saveState();
+                    return syncOnce(cfg, /*mayReset=*/false);  // full push + full pull
+                }
+                if (!remoteJournal.empty()) journalId_ = remoteJournal;
+            }
+
             for (const auto& ch : j.value("changes", json::array())) {
                 SyncRecord rec = fromEnvelope(ch);
                 auto it = byType_.find(rec.type);

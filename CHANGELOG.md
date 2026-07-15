@@ -8,6 +8,16 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.7.1] — 2026-07-15
+
+### Fixed
+- **Synchronization now recovers automatically if the hub's journal is reset**
+  (its data folder moved or wiped). The client tracks the hub's journal identity
+  (`journalId`); when it changes, it **resets its cursor and re-synchronizes
+  fully**, instead of silently missing changes. Fixes the case where a deletion
+  made on one machine wasn't propagated to the others after the hub's data was
+  relocated. Requires HomeServerHub ≥ 0.2.5.
+
 ## [1.7.0] — 2026-07-15
 
 ### Added

@@ -51,6 +51,13 @@ synchronisent leur lien/chemin, pas le fichier binaire lui-même.
 La synchronisation est **incrémentale** : seules les entités modifiées depuis le
 dernier envoi sont transmises — une synchro « à vide » ne transfère rien.
 
+## Robustesse : réinitialisation du hub
+
+Si le hub voit son dossier de données **déplacé ou réinitialisé** (son journal
+repart de zéro), ComponentHub le **détecte automatiquement** à la synchro
+suivante et **re-synchronise tout** — vous n'avez rien à faire, plus besoin de
+supprimer un fichier d'état à la main. (Nécessite HomeServerHub ≥ 0.2.5.)
+
 ## Identifiants et migration
 
 Depuis la v1.7, chaque entité possède un identifiant permanent **UUID** (au lieu

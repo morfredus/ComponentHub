@@ -46,6 +46,8 @@ public:
     bool testConnection(const SyncConfig& cfg, std::string& info, int timeoutMs = 0);
 
     // Cycle complet : PUSH de l'état local puis PULL depuis le curseur.
+    // Détecte un changement d'« époque » du journal du hub (dossier déplacé /
+    // réinitialisé) et remet le curseur à zéro automatiquement le cas échéant.
     SyncOutcome sync(const SyncConfig& cfg);
 
     const std::string& deviceId() const { return deviceId_; }
@@ -54,6 +56,7 @@ public:
 private:
     void loadState();
     void saveState() const;
+    SyncOutcome syncOnce(const SyncConfig& cfg, bool mayReset);
 
     std::vector<domain::ISyncableRepository*> repos_;
     std::map<std::string, domain::ISyncableRepository*> byType_; // dispatch au PULL
@@ -61,6 +64,7 @@ private:
     std::string deviceId_;
     std::int64_t lastSeq_ = 0;                                   // curseur de PULL
     std::map<std::string, std::int64_t> pushWatermarks_;         // repère de PUSH par table
+    std::string journalId_;                                      // époque du journal hub connue
 };
 
 } // namespace chsync
