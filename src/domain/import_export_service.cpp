@@ -111,8 +111,12 @@ ImportResult ImportExportService::importCsv(const std::string& csv, CsvFormat fo
 }
 
 std::string ImportExportService::_exportNative() const {
+    // Colonnes d'enveloppe (uuid/createdAt/updatedAt/rev) ajoutées après `id`
+    // pour un round-trip fidèle (sauvegarde/restauration + identité de synchro).
+    // Un ancien CSV sans ces colonnes reste importable (voir _importNative).
     std::string out = joinCsvRow({
-        "id", "kind", "name", "reference", "manufacturer", "description", "category", "subcategory", "type",
+        "id", "createdAt", "updatedAt", "rev",
+        "kind", "name", "reference", "manufacturer", "description", "category", "subcategory", "type",
         "voltage", "current", "interfaceType", "protocols", "i2cAddress", "frequency", "pinCount", "compatibility",
         "price", "supplier", "purchaseDate", "receptionDate", "warranty", "state", "status", "origin", "notes",
         "location", "quantity", "minStock", "idealStock"
@@ -120,7 +124,8 @@ std::string ImportExportService::_exportNative() const {
 
     for (auto& c : _components.findAll()) {
         out += joinCsvRow({
-            intStr(c.id), toString(c.kind), c.name, c.reference, c.manufacturer, c.description, c.category,
+            c.id, c.meta.createdAt, c.meta.updatedAt, std::to_string(c.meta.rev),
+            toString(c.kind), c.name, c.reference, c.manufacturer, c.description, c.category,
             c.subcategory, c.type, c.voltage, c.current, c.interfaceType, c.protocols, c.i2cAddress,
             c.frequency, intStr(c.pinCount), c.compatibility, formatPriceFr(c.price), c.supplier,
             c.purchaseDate, c.receptionDate, c.warranty, c.state, c.status, c.origin, c.notes,
@@ -159,6 +164,9 @@ ImportResult ImportExportService::_importNative(const std::string& csv) {
     // le fichier à chaque itération, un coût qui explose avec le nombre de
     // lignes (déjà observé en usage réel : reset watchdog après ~150s pour
     // un import de 39 lignes).
+    // Appariement par `id` = UUID (identité permanente). Un `id` connu met à
+    // jour en place (réimport idempotent) ; un `id` absent ou hérité (entier de
+    // l'ancien format) donne une création avec UUID neuf attribué au save().
     std::map<Id, bool> existingIds;
     for (auto& existing : _components.findAll()) existingIds[existing.id] = true;
 
@@ -180,7 +188,15 @@ ImportResult ImportExportService::_importNative(const std::string& csv) {
         }
 
         Component c;
-        c.id = parseIntSafe(cell(row, idx, "id"));
+        // Un vrai UUID contient des tirets ; un id numérique hérité de l'ancien
+        // format est ignoré (-> "" -> UUID neuf), pour ne jamais promouvoir un
+        // entier en identité permanente de synchronisation.
+        std::string rawId = cell(row, idx, "id");
+        c.id = (rawId.find('-') != std::string::npos) ? rawId : kNoId;
+        // Enveloppe (colonnes absentes dans un ancien CSV -> valeurs vides).
+        c.meta.createdAt = cell(row, idx, "createdAt");
+        c.meta.updatedAt = cell(row, idx, "updatedAt");
+        c.meta.rev = (std::int64_t)strtoll(cell(row, idx, "rev").c_str(), nullptr, 10);
         c.kind = componentKindFromString(cell(row, idx, "kind"));
         c.name = name;
         c.reference = cell(row, idx, "reference");
@@ -231,7 +247,7 @@ ImportResult ImportExportService::_importNative(const std::string& csv) {
 std::string ImportExportService::exportCategoriesCsv() const {
     std::string out = joinCsvRow({"id", "name"}) + "\n";
     for (auto& c : _categories.findAll()) {
-        out += joinCsvRow({intStr(c.id), c.name}) + "\n";
+        out += joinCsvRow({c.id, c.name}) + "\n";
     }
     return out;
 }
@@ -243,7 +259,7 @@ std::string ImportExportService::exportLocationsCsv() const {
     std::string out = joinCsvRow({"id", "name", "parentId", "path"}) + "\n";
     for (auto& kv : byId) {
         const Location& l = kv.second;
-        out += joinCsvRow({intStr(l.id), l.name, intStr(l.parentId), _locationPath(l.id, byId)}) + "\n";
+        out += joinCsvRow({l.id, l.name, l.parentId, _locationPath(l.id, byId)}) + "\n";
     }
     return out;
 }
@@ -254,7 +270,7 @@ std::string ImportExportService::exportProjectsCsv() const {
     }) + "\n";
     for (auto& p : _projects.findAll()) {
         out += joinCsvRow({
-            intStr(p.id), p.name, p.description, p.version, p.firmware, p.gitRepo, p.status, p.notes
+            p.id, p.name, p.description, p.version, p.firmware, p.gitRepo, p.status, p.notes
         }) + "\n";
     }
     return out;
@@ -280,7 +296,7 @@ ImportResult ImportExportService::importCategoriesCsv(const std::string& csv) {
             continue;
         }
         Category c;
-        c.id = parseIntSafe(cell(row, idx, "id"));
+        c.id = cell(row, idx, "id");   // id = UUID (ou vide -> généré au save)
         c.name = name;
         if (c.id != kNoId && existingIds.count(c.id)) result.updated++; else result.created++;
         _categories.save(c);
@@ -308,9 +324,9 @@ ImportResult ImportExportService::importLocationsCsv(const std::string& csv) {
             continue;
         }
         Location l;
-        l.id = parseIntSafe(cell(row, idx, "id"));
+        l.id = cell(row, idx, "id");                 // id = UUID (ou vide -> généré)
         l.name = name;
-        l.parentId = parseIntSafe(cell(row, idx, "parentId"));  // colonne « path » ignorée (dérivée)
+        l.parentId = cell(row, idx, "parentId");     // colonne « path » ignorée (dérivée)
         if (l.id != kNoId && existingIds.count(l.id)) result.updated++; else result.created++;
         _locations.save(l);
     }
@@ -337,7 +353,7 @@ ImportResult ImportExportService::importProjectsCsv(const std::string& csv) {
             continue;
         }
         Project p;
-        p.id = parseIntSafe(cell(row, idx, "id"));
+        p.id = cell(row, idx, "id");   // id = UUID (ou vide -> généré au save)
         p.name = name;
         p.description = cell(row, idx, "description");
         p.version = cell(row, idx, "version");

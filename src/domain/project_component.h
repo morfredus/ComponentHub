@@ -11,11 +11,13 @@
 #pragma once
 #include <string>
 #include "ids.h"
+#include "sync_meta.h"
 
 namespace domain {
 
 struct ProjectComponent {
     Id id = kNoId;
+    SyncMeta meta;        // enveloppe de synchronisation
     Id projectId = kNoId;
     Id componentId = kNoId;
     std::string label;          // utilisé quand componentId == kNoId (élément hors inventaire)

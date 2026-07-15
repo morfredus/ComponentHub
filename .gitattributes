@@ -1,0 +1,21 @@
+# Normalisation des fins de ligne : LF dans le dépôt, natif au checkout.
+# Évite le bruit permanent « LF will be replaced by CRLF » sous Windows.
+* text=auto
+
+# Scripts shell toujours en LF (un CRLF casse le shebang « bash\r » sous Linux).
+*.sh   text eol=lf
+# Scripts Windows en CRLF.
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Binaires : aucune conversion.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.tar  binary
+*.zip  binary
+*.qm   binary

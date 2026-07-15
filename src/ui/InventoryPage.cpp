@@ -131,7 +131,7 @@ void InventoryPage::refresh() {
         int r = table_->rowCount();
         table_->insertRow(r);
         auto* name = new QTableWidgetItem(QString::fromStdString(c.name));
-        name->setData(Qt::UserRole, c.id);
+        name->setData(Qt::UserRole, QString::fromStdString(c.id));
         table_->setItem(r, 0, name);
         table_->setItem(r, 1, new QTableWidgetItem(QString::fromStdString(c.reference)));
         // Colonne « Type » = le champ Type (référentiel : Résistance, Capteur…),
@@ -156,7 +156,7 @@ void InventoryPage::addComponent() {
 
 void InventoryPage::editComponentRow(int row) {
     if (row < 0) return;
-    const Id id = table_->item(row, 0)->data(Qt::UserRole).toInt();
+    const Id id = table_->item(row, 0)->data(Qt::UserRole).toString().toStdString();
     ComponentDialog dlg(ctx_, id, this);
     if (dlg.exec() == QDialog::Accepted) refresh();
 }
@@ -167,7 +167,7 @@ void InventoryPage::deleteCurrent() {
     int r = table_->currentRow();
     if (r < 0) return;
     const QString name = table_->item(r, 0)->text();
-    const Id id = table_->item(r, 0)->data(Qt::UserRole).toInt();
+    const Id id = table_->item(r, 0)->data(Qt::UserRole).toString().toStdString();
     if (QMessageBox::question(this, "Supprimer", "Supprimer « " + name + " » ?") != QMessageBox::Yes) return;
     ctx_.inventory.removeComponent(id);
     refresh();

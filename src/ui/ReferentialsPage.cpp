@@ -169,7 +169,7 @@ void ReferentialsPage::reloadValues() {
     values_->clear();
     for (const auto& r : ctx_.referentials.findByList(currentKey().toStdString())) {
         auto* it = new QListWidgetItem(QString::fromStdString(r.value));
-        it->setData(Qt::UserRole, r.id);
+        it->setData(Qt::UserRole, QString::fromStdString(r.id));
         values_->addItem(it);
         if (it->text() == keep) values_->setCurrentItem(it);
     }
@@ -232,7 +232,7 @@ void ReferentialsPage::addValue() {
 void ReferentialsPage::editValue() {
     auto* it = values_->currentItem();
     if (!it) return;
-    const int id = it->data(Qt::UserRole).toInt();
+    const domain::Id id = it->data(Qt::UserRole).toString().toStdString();
     const QString oldVal = it->text();
 
     const auto siblings = ctx_.referentials.findByList(currentKey().toStdString());
@@ -276,7 +276,7 @@ void ReferentialsPage::deleteValue() {
         msg += QString("\n\n%1 composant(s) l'utilisent encore ; leur champ ne sera pas modifié "
                        "(pensez à fusionner plutôt que supprimer pour réaffecter).").arg(used);
     if (QMessageBox::question(this, "Supprimer", msg) != QMessageBox::Yes) return;
-    ctx_.referentials.remove(it->data(Qt::UserRole).toInt());
+    ctx_.referentials.remove(it->data(Qt::UserRole).toString().toStdString());
     reloadValues();
 }
 
@@ -322,7 +322,7 @@ void ReferentialsPage::mergeValues() {
         const QString src = it->text();
         if (src == keep) continue;
         reassigned += reassignComponentField(src, keep, bind);
-        ctx_.referentials.remove(it->data(Qt::UserRole).toInt());  // supprime la valeur source du référentiel
+        ctx_.referentials.remove(it->data(Qt::UserRole).toString().toStdString());  // supprime la valeur source du référentiel
     }
     reloadValues();
     QMessageBox::information(this, "Fusion terminée",

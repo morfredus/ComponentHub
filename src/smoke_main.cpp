@@ -26,7 +26,7 @@ int main() {
     c.quantity = 3;
     c.minStock = 5;  // sous le seuil -> doit apparaître en stock faible
     c = ctx.inventory.saveComponent(c);
-    std::printf("saved id=%d name=%s\n", c.id, c.name.c_str());
+    std::printf("saved id=%s name=%s\n", c.id.c_str(), c.name.c_str());
 
     // Mouvement de stock daté.
     StockMovement mv;
@@ -41,8 +41,8 @@ int main() {
     auto all = reloaded.inventory.listComponents();
     std::printf("reloaded %zu component(s)\n", all.size());
     for (auto& x : all)
-        std::printf("  #%d %-20s qty=%d cat=%s notes=\"%s\"\n",
-                    x.id, x.name.c_str(), x.quantity, x.category.c_str(), x.notes.c_str());
+        std::printf("  #%s %-20s qty=%d cat=%s notes=\"%s\"\n",
+                    x.id.c_str(), x.name.c_str(), x.quantity, x.category.c_str(), x.notes.c_str());
 
     // La catégorie doit avoir été créée automatiquement par saveComponent.
     std::printf("categories: %zu\n", reloaded.inventory.listCategories().size());

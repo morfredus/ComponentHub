@@ -83,7 +83,7 @@ void ProjectsPage::showEvent(QShowEvent*) { refreshProjects(); }
 
 Id ProjectsPage::currentProjectId() const {
     auto* it = projects_->currentItem();
-    return it ? it->data(Qt::UserRole).toInt() : kNoId;
+    return it ? it->data(Qt::UserRole).toString().toStdString() : kNoId;
 }
 
 void ProjectsPage::refreshProjects() {
@@ -91,7 +91,7 @@ void ProjectsPage::refreshProjects() {
     projects_->clear();
     for (const auto& p : ctx_.projects_service.listProjects()) {
         auto* it = new QListWidgetItem(QString::fromStdString(p.name));
-        it->setData(Qt::UserRole, p.id);
+        it->setData(Qt::UserRole, QString::fromStdString(p.id));
         projects_->addItem(it);
         if (p.id == keep) projects_->setCurrentItem(it);
     }
@@ -128,7 +128,7 @@ void ProjectsPage::showDetail() {
         QString label = QString::fromStdString(line.componentName);
         if (!line.inInventory) label += "  (hors inventaire)";
         auto* first = new QTableWidgetItem(label);
-        first->setData(Qt::UserRole, line.id);
+        first->setData(Qt::UserRole, QString::fromStdString(line.id));
         bom_->setItem(r, 0, first);
         bom_->setItem(r, 1, new QTableWidgetItem(QString::fromStdString(line.reference)));
         bom_->setItem(r, 2, new QTableWidgetItem(QString::number(line.quantityRequired)));
@@ -238,7 +238,7 @@ void ProjectsPage::addBomLine() {
             if (!c.manufacturer.empty()) meta << QString::fromStdString(c.manufacturer);
             if (!meta.isEmpty()) label += "  —  " + meta.join(" · ");
             auto* it = new QListWidgetItem(label);
-            it->setData(Qt::UserRole, c.id);
+            it->setData(Qt::UserRole, QString::fromStdString(c.id));
             results->addItem(it);
         }
     };
@@ -265,7 +265,7 @@ void ProjectsPage::addBomLine() {
     if (dlg.exec() != QDialog::Accepted) return;
 
     Id componentId = kNoId;
-    if (auto* sel = results->currentItem()) componentId = sel->data(Qt::UserRole).toInt();
+    if (auto* sel = results->currentItem()) componentId = sel->data(Qt::UserRole).toString().toStdString();
     const QString freeText = freeLabel->text().trimmed();
 
     if (componentId == kNoId && freeText.isEmpty()) {
@@ -279,7 +279,7 @@ void ProjectsPage::addBomLine() {
 void ProjectsPage::removeBomLine() {
     int r = bom_->currentRow();
     if (r < 0) return;
-    const Id linkId = bom_->item(r, 0)->data(Qt::UserRole).toInt();
+    const Id linkId = bom_->item(r, 0)->data(Qt::UserRole).toString().toStdString();
     ctx_.projects_service.removeComponent(linkId);
     showDetail();
 }

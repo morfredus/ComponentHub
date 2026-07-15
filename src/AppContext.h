@@ -8,12 +8,14 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "storage/FileRepositories.h"
 #include "inventory_service.h"
 #include "project_service.h"
 #include "document_service.h"
 #include "import_export_service.h"
+#include "sync_record.h"
 
 namespace chdesktop {
 
@@ -35,6 +37,13 @@ public:
           _dir(std::move(dir)) {}
 
     const std::string& dir() const { return _dir; }
+
+    // Toutes les tables synchronisables (pour SyncService). L'ordre importe peu ;
+    // StockMovement (historique append-only) est volontairement exclu.
+    std::vector<domain::ISyncableRepository*> syncables() {
+        return {&components, &locations, &categories, &documents,
+                &projects, &projectComponents, &referentials};
+    }
 
     // Dépôts (déclarés avant les services qui les référencent).
     ComponentRepository        components;

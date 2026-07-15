@@ -40,7 +40,7 @@ void CategoriesPage::refresh() {
     list_->clear();
     for (const auto& c : ctx_.inventory.listCategories()) {
         auto* it = new QListWidgetItem(QString::fromStdString(c.name));
-        it->setData(Qt::UserRole, c.id);
+        it->setData(Qt::UserRole, QString::fromStdString(c.id));
         list_->addItem(it);
     }
 }
@@ -73,7 +73,7 @@ void CategoriesPage::addCategory() {
 void CategoriesPage::renameCategory() {
     auto* it = list_->currentItem();
     if (!it) return;
-    const int id = it->data(Qt::UserRole).toInt();
+    const domain::Id id = it->data(Qt::UserRole).toString().toStdString();
     const QString oldText = it->text();
 
     const auto existing = ctx_.inventory.listCategories();
@@ -120,6 +120,6 @@ void CategoriesPage::deleteCategory() {
     if (!it) return;
     if (QMessageBox::question(this, "Supprimer", "Supprimer la catégorie « " + it->text() + " » ?")
         != QMessageBox::Yes) return;
-    ctx_.inventory.removeCategory(it->data(Qt::UserRole).toInt());
+    ctx_.inventory.removeCategory(it->data(Qt::UserRole).toString().toStdString());
     refresh();
 }

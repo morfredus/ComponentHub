@@ -12,11 +12,13 @@
 #pragma once
 #include <string>
 #include "ids.h"
+#include "sync_meta.h"
 
 namespace domain {
 
 struct RefItem {
     Id id = kNoId;
+    SyncMeta meta;         // enveloppe de synchronisation
     std::string list;      // clé du référentiel
     std::string value;     // valeur normalisée
     int position = 0;      // ordre d'affichage

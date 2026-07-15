@@ -8,6 +8,7 @@
 #pragma once
 #include <string>
 #include "ids.h"
+#include "sync_meta.h"
 
 namespace domain {
 
@@ -36,6 +37,11 @@ inline ComponentKind componentKindFromString(const std::string& s) {
 
 struct Component {
     Id id = kNoId;
+
+    // Enveloppe de synchronisation (identité permanente + métadonnées).
+    // L'`id` entier ci-dessus reste la clé locale/UI en Phase 1 ; `meta.uuid`
+    // porte l'identité inter-postes. Voir sync_meta.h.
+    SyncMeta meta;
 
     ComponentKind kind = ComponentKind::Component;
 

@@ -159,7 +159,7 @@ void ComponentDialog::buildUi() {
     connect(dAdd, &QPushButton::clicked, this, [this] { addOrEditDocument(kNoId); });
     connect(dEdit, &QPushButton::clicked, this, [this] {
         auto* it = documents_->currentItem();
-        if (it) addOrEditDocument(documents_->item(documents_->currentRow(), 0)->data(Qt::UserRole).toInt());
+        if (it) addOrEditDocument(documents_->item(documents_->currentRow(), 0)->data(Qt::UserRole).toString().toStdString());
     });
     connect(dDel, &QPushButton::clicked, this, &ComponentDialog::deleteDocument);
     connect(dOpen, &QPushButton::clicked, this, [this] {
@@ -197,9 +197,9 @@ void ComponentDialog::loadToForm() {
     // Emplacements, présentés par chemin hiérarchique.
     std::map<Id, Location> byId;
     for (const auto& l : ctx_.inventory.listLocations()) byId[l.id] = l;
-    location_->addItem("(aucun)", 0);
+    location_->addItem("(aucun)", QString());   // QString vide = kNoId
     for (const auto& kv : byId)
-        location_->addItem(locationPath(kv.first, byId), kv.first);
+        location_->addItem(locationPath(kv.first, byId), QString::fromStdString(kv.first));
 
     const Component& c = current_;
     auto setCombo = [](QComboBox* box, const std::string& code) {
@@ -216,7 +216,7 @@ void ComponentDialog::loadToForm() {
     setCombo(status_, c.status);
     state_->setText(QString::fromStdString(c.state));
     origin_->setText(QString::fromStdString(c.origin));
-    { int i = location_->findData(c.locationId); location_->setCurrentIndex(i < 0 ? 0 : i); }
+    { int i = location_->findData(QString::fromStdString(c.locationId)); location_->setCurrentIndex(i < 0 ? 0 : i); }
     description_->setPlainText(QString::fromStdString(c.description));
 
     voltage_->setText(QString::fromStdString(c.voltage));
@@ -256,7 +256,7 @@ bool ComponentDialog::saveFromForm() {
     c.status = status_->currentData().toString().toStdString();
     c.state = state_->text().toStdString();
     c.origin = origin_->text().toStdString();
-    c.locationId = location_->currentData().toInt();
+    c.locationId = location_->currentData().toString().toStdString();
     c.description = description_->toPlainText().toStdString();
 
     c.voltage = voltage_->text().toStdString();
@@ -319,7 +319,7 @@ void ComponentDialog::refreshChildTabs() {
             int r = documents_->rowCount();
             documents_->insertRow(r);
             auto* t = new QTableWidgetItem(QString::fromStdString(d.title));
-            t->setData(Qt::UserRole, d.id);
+            t->setData(Qt::UserRole, QString::fromStdString(d.id));
             documents_->setItem(r, 0, t);
             documents_->setItem(r, 1, new QTableWidgetItem(QString::fromStdString(d.category)));
             documents_->setItem(r, 2, new QTableWidgetItem(QString::fromStdString(d.url)));
@@ -369,7 +369,7 @@ void ComponentDialog::addOrEditDocument(Id docId) {
 void ComponentDialog::deleteDocument() {
     int r = documents_->currentRow();
     if (r < 0) return;
-    const Id id = documents_->item(r, 0)->data(Qt::UserRole).toInt();
+    const Id id = documents_->item(r, 0)->data(Qt::UserRole).toString().toStdString();
     if (QMessageBox::question(this, "Supprimer", "Supprimer ce document ?") != QMessageBox::Yes) return;
     ctx_.documents_service.remove(id);
     refreshChildTabs();

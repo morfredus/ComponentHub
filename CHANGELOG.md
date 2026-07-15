@@ -8,6 +8,36 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.7.0] — 2026-07-15
+
+### Added
+- **LAN synchronization with HomeServerHub (offline-first).** ComponentHub can now
+  keep the same data across several machines through a lightweight local-network
+  hub, without any cloud. The **local database stays sovereign**: the app always
+  works on its local copy; the hub is only used to reconcile copies when reachable.
+  Configure the hub address in **Settings → Synchronization**, then:
+  - **automatic sync at startup** if the hub is reachable (short, non-blocking probe
+    with on-screen feedback so it never feels frozen);
+  - **on-demand** button ("Synchroniser maintenant");
+  - **sync proposed on quit** — both automatic triggers are toggleable;
+  - an explicit **"local only"** mode that disables all synchronization.
+  See [docs/fr/SYNCHRONISATION.md](docs/fr/SYNCHRONISATION.md) *(FR)*.
+- **Last-sync metrics** in Settings (date + items received/sent).
+- **Configuration backup/restore**: the full `.tar` backup now includes the
+  configuration; a new "Configuration only" backup/restore exports just the
+  settings (hub address, options, appearance) as JSON, to replicate them on
+  another machine.
+
+### Changed
+- **Permanent identity is now a UUID** for every entity (was an auto-increment
+  integer). Required for conflict-free identity across machines; internal
+  references (location, project, BOM links, document owners) were migrated too.
+  Deletion is now **logical (tombstone)** so it propagates through sync.
+- **Migration note:** an existing integer-id database is not auto-converted.
+  Start from a fresh database and re-import your data (Bomist or native CSV).
+- Synchronization is **incremental**: only entities changed since the last push
+  are sent (scales to large inventories).
+
 ## [1.6.0] — 2026-07-13
 
 ### Added

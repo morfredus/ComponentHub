@@ -64,6 +64,21 @@ modules are vendored in the project (`third_party/morf/`) and compiled into the
 binary — nothing external to install. See
 [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)*.
 
+## LAN synchronization (offline-first)
+
+ComponentHub can keep the same data across several machines through a lightweight
+local-network hub, **HomeServerHub** — no cloud. The **local database stays
+sovereign**: the app always works on its local copy; the hub only reconciles
+copies when reachable. Set the hub address in **Settings → Synchronization**, then
+sync automatically at startup, on demand, or when quitting (each toggleable), or
+disable sync entirely with an explicit **local-only** mode. All tables sync with
+referential integrity preserved, deletions propagate, and only changed entities
+are sent (incremental). Identity is a per-entity **UUID** since 1.7. See
+[docs/fr/SYNCHRONISATION.md](docs/fr/SYNCHRONISATION.md) *(FR)*.
+
+> Upgrading from ≤ 1.6: identity moved from integer to UUID. Start from a fresh
+> database and re-import your data (Bomist or native CSV).
+
 ## Overview
 
 **Component sheet** — everything about a component (general, characteristics,
@@ -160,6 +175,7 @@ ComponentHub/
 | [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md) *(FR)* | Multi-platform build reference |
 | [docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md) *(FR)* | Layered architecture (domain / storage / UI) |
 | [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)* | LAN supervision (presence + metrics) and update checking |
+| [docs/fr/SYNCHRONISATION.md](docs/fr/SYNCHRONISATION.md) *(FR)* | LAN synchronization with HomeServerHub (offline-first) |
 | [docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md) *(FR)* | Decision: desktop master, ESP32 satellite |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, portability rules |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |

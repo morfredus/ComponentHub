@@ -45,35 +45,36 @@ LocationsPage::LocationsPage(chdesktop::AppContext& ctx, QWidget* parent)
 
 void LocationsPage::showEvent(QShowEvent*) { refresh(); }
 
-int LocationsPage::currentId() const {
+domain::Id LocationsPage::currentId() const {
     auto* it = tree_->currentItem();
-    return it ? it->text(1).toInt() : domain::kNoId;
+    return it ? it->text(1).toStdString() : domain::kNoId;
 }
 
 void LocationsPage::refresh() {
-    const int keep = currentId();
+    const domain::Id keep = currentId();
     tree_->clear();
 
-    QMap<int, QTreeWidgetItem*> items;
+    // Les identifiants sont des UUID (chaînes) depuis la v0.2 : clé QString.
+    QMap<QString, QTreeWidgetItem*> items;
     std::vector<Location> locs = ctx_.inventory.listLocations();
     // Première passe : un item par emplacement.
     for (const auto& l : locs) {
         auto* it = new QTreeWidgetItem;
         it->setText(0, QString::fromStdString(l.name));
-        it->setText(1, QString::number(l.id));
-        items.insert(l.id, it);
+        it->setText(1, QString::fromStdString(l.id));
+        items.insert(QString::fromStdString(l.id), it);
     }
     // Seconde passe : rattachement parent/enfant (ordre indépendant).
     for (const auto& l : locs) {
-        auto* it = items.value(l.id);
-        auto* parent = items.value(l.parentId, nullptr);
+        auto* it = items.value(QString::fromStdString(l.id));
+        auto* parent = items.value(QString::fromStdString(l.parentId), nullptr);
         if (parent) parent->addChild(it);
         else tree_->addTopLevelItem(it);
     }
     tree_->expandAll();
 
-    if (keep != domain::kNoId && items.contains(keep))
-        tree_->setCurrentItem(items.value(keep));
+    if (!keep.empty() && items.contains(QString::fromStdString(keep)))
+        tree_->setCurrentItem(items.value(QString::fromStdString(keep)));
 }
 
 void LocationsPage::addLocation(bool asChild) {
@@ -109,7 +110,7 @@ void LocationsPage::addLocation(bool asChild) {
 void LocationsPage::renameLocation() {
     auto* it = tree_->currentItem();
     if (!it) return;
-    const domain::Id id = it->text(1).toInt();
+    const domain::Id id = it->text(1).toStdString();
     const QString oldName = it->text(0);
 
     // Récupère le parent (pour le conserver et savoir si c'est une racine).
@@ -151,6 +152,6 @@ void LocationsPage::deleteLocation() {
         ? "« " + it->text(0) + " » contient des sous-emplacements qui deviendront orphelins. Supprimer quand même ?"
         : "Supprimer l'emplacement « " + it->text(0) + " » ?";
     if (QMessageBox::question(this, "Supprimer", msg) != QMessageBox::Yes) return;
-    ctx_.inventory.removeLocation(it->text(1).toInt());
+    ctx_.inventory.removeLocation(it->text(1).toStdString());
     refresh();
 }

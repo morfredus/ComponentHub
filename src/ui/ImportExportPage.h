@@ -17,6 +17,8 @@ private:
     void importCsv(const std::function<domain::ImportResult(const std::string&)>& consumer);
     void backup();
     void restore();
+    void backupConfig();    // sauvegarde la configuration seule (JSON)
+    void restoreConfig();   // restaure la configuration seule (JSON)
 
     chdesktop::AppContext& ctx_;
 };

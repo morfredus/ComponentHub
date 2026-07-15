@@ -1,5 +1,6 @@
 #pragma once
 #include <QWidget>
+#include "ids.h"
 class QTreeWidget;
 namespace chdesktop { class AppContext; }
 
@@ -14,7 +15,7 @@ private:
     void addLocation(bool asChild);
     void renameLocation();
     void deleteLocation();
-    int currentId() const;
+    domain::Id currentId() const;
     chdesktop::AppContext& ctx_;
     QTreeWidget* tree_ = nullptr;
 };

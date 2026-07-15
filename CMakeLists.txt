@@ -37,9 +37,14 @@ add_library(componenthub_core STATIC
     ${CH_DOMAIN}/import_export_service.cpp
     src/storage/FileRepositories.cpp
     src/platform/Tar.cpp
+    src/net/HttpClient.cpp        # client HTTP minimal (synchro HomeServerHub)
+    src/sync/SyncService.cpp      # orchestration PUSH/PULL vers le hub
 )
 target_include_directories(componenthub_core PUBLIC ${CH_DOMAIN} ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(componenthub_core PUBLIC nlohmann_json::nlohmann_json)
+if(WIN32)
+    target_link_libraries(componenthub_core PUBLIC ws2_32)   # winsock2 (HttpClient)
+endif()
 if(MSVC)
     target_compile_options(componenthub_core PRIVATE /utf-8)
 endif()

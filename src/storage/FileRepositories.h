@@ -3,6 +3,10 @@
 // document_repository.h). Chaque dépôt lit/écrit un fichier JSON (voir
 // JsonStore.h).
 //
+// Chaque table synchronisable implémente aussi domain::ISyncableRepository
+// (sync_record.h) : le SyncService la traite de façon générique. StockMovement
+// (historique append-only) n'est pas synchronisé.
+//
 // Le reste du cœur (services, CSV, import/export) vit dans src/domain/,
 // indépendant de la plateforme.
 #pragma once
@@ -12,10 +16,20 @@
 #include "project_repositories.h"
 #include "document_repository.h"
 #include "referential_repository.h"
+#include "sync_record.h"
 
 namespace chdesktop {
 
-class ComponentRepository : public domain::IComponentRepository {
+// Macro d'aide : les trois méthodes de domain::ISyncableRepository, identiques
+// à déclarer pour chaque dépôt.
+#define CH_SYNCABLE_DECL                                                                  \
+    std::string syncType() const override;                                               \
+    std::vector<domain::SyncRecord> exportForSync(std::int64_t sinceLocalSeq) const override; \
+    std::int64_t maxLocalSeq() const override;                                           \
+    bool applyRemote(const domain::SyncRecord& record) override;
+
+class ComponentRepository : public domain::IComponentRepository,
+                            public domain::ISyncableRepository {
 public:
     explicit ComponentRepository(std::string path) : _path(std::move(path)) {}
     std::vector<domain::Component> findAll() const override;
@@ -23,28 +37,33 @@ public:
     domain::Component save(domain::Component c) override;
     std::vector<domain::Component> saveAll(const std::vector<domain::Component>& cs) override;
     bool remove(domain::Id id) override;
+    CH_SYNCABLE_DECL
 private:
     std::string _path;
 };
 
-class LocationRepository : public domain::ILocationRepository {
+class LocationRepository : public domain::ILocationRepository,
+                           public domain::ISyncableRepository {
 public:
     explicit LocationRepository(std::string path) : _path(std::move(path)) {}
     std::vector<domain::Location> findAll() const override;
     std::optional<domain::Location> findById(domain::Id id) const override;
     domain::Location save(domain::Location l) override;
     bool remove(domain::Id id) override;
+    CH_SYNCABLE_DECL
 private:
     std::string _path;
 };
 
-class CategoryRepository : public domain::ICategoryRepository {
+class CategoryRepository : public domain::ICategoryRepository,
+                           public domain::ISyncableRepository {
 public:
     explicit CategoryRepository(std::string path) : _path(std::move(path)) {}
     std::vector<domain::Category> findAll() const override;
     std::optional<domain::Category> findById(domain::Id id) const override;
     domain::Category save(domain::Category c) override;
     bool remove(domain::Id id) override;
+    CH_SYNCABLE_DECL
 private:
     std::string _path;
 };
@@ -58,39 +77,46 @@ private:
     std::string _path;
 };
 
-class DocumentRepository : public domain::IDocumentRepository {
+class DocumentRepository : public domain::IDocumentRepository,
+                           public domain::ISyncableRepository {
 public:
     explicit DocumentRepository(std::string path) : _path(std::move(path)) {}
     std::vector<domain::Document> findByOwner(domain::DocumentOwnerKind ownerKind, domain::Id ownerId) const override;
     domain::Document save(domain::Document d) override;
     bool remove(domain::Id id) override;
+    CH_SYNCABLE_DECL
 private:
     std::string _path;
 };
 
-class ProjectRepository : public domain::IProjectRepository {
+class ProjectRepository : public domain::IProjectRepository,
+                          public domain::ISyncableRepository {
 public:
     explicit ProjectRepository(std::string path) : _path(std::move(path)) {}
     std::vector<domain::Project> findAll() const override;
     std::optional<domain::Project> findById(domain::Id id) const override;
     domain::Project save(domain::Project p) override;
     bool remove(domain::Id id) override;
+    CH_SYNCABLE_DECL
 private:
     std::string _path;
 };
 
-class ProjectComponentRepository : public domain::IProjectComponentRepository {
+class ProjectComponentRepository : public domain::IProjectComponentRepository,
+                                   public domain::ISyncableRepository {
 public:
     explicit ProjectComponentRepository(std::string path) : _path(std::move(path)) {}
     std::vector<domain::ProjectComponent> findByProject(domain::Id projectId) const override;
     domain::ProjectComponent save(domain::ProjectComponent link) override;
     bool remove(domain::Id id) override;
     bool removeByProject(domain::Id projectId) override;
+    CH_SYNCABLE_DECL
 private:
     std::string _path;
 };
 
-class ReferentialRepository : public domain::IReferentialRepository {
+class ReferentialRepository : public domain::IReferentialRepository,
+                              public domain::ISyncableRepository {
 public:
     explicit ReferentialRepository(std::string path) : _path(std::move(path)) {}
     std::vector<domain::RefItem> findAll() const override;
@@ -98,6 +124,7 @@ public:
     domain::RefItem save(domain::RefItem item) override;
     std::vector<domain::RefItem> saveAll(const std::vector<domain::RefItem>& items) override;
     bool remove(domain::Id id) override;
+    CH_SYNCABLE_DECL
 private:
     std::string _path;
 };

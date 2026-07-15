@@ -16,6 +16,7 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QMessageBox>
+#include <QCloseEvent>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QPushButton>
@@ -25,6 +26,8 @@
 #include <QtGlobal>
 
 #include "AppContext.h"
+#include "sync/SyncService.h"
+#include "ui/SyncPrefs.h"
 #include "ui/Theme.h"
 #include "ui/Icons.h"
 #include "ui/InventoryPage.h"
@@ -80,6 +83,70 @@ MainWindow::MainWindow(chdesktop::AppContext& ctx, QWidget* parent)
 
     // Vérification silencieuse des mises à jour, peu après l'affichage de l'UI.
     QTimer::singleShot(2000, this, [this]{ checkForUpdates(false); });
+    // Synchro au démarrage (si activée et hub joignable), juste après l'affichage.
+    QTimer::singleShot(600, this, [this]{ maybeSyncOnStartup(); });
+}
+
+void MainWindow::maybeSyncOnStartup() {
+    // Mode local uniquement, synchro au démarrage désactivée, ou hub non
+    // configuré : on ne fait rien (syncConfigured() intègre déjà le mode local).
+    if (!chui::syncAutoStart() || !chui::syncConfigured()) return;
+
+    // Retour visuel AVANT l'appel bloquant : sans ça, la sonde (jusqu'à 1,5 s)
+    // donnerait l'impression que l'appli est figée au lancement. processEvents()
+    // force l'affichage du message avant de bloquer.
+    statusBar()->showMessage("Recherche du hub de synchronisation…");
+    QApplication::processEvents();
+
+    chsync::SyncService svc(ctx_.syncables(), ctx_.dir() + "/sync_state.json");
+    std::string info;
+    // Sonde courte : si le hub ne répond pas vite, on reste sur la base locale
+    // (souveraine) sans bloquer le démarrage ni afficher d'erreur bloquante.
+    if (!svc.testConnection(chui::readSyncConfig(), info, 1500)) {
+        statusBar()->showMessage("Hub de synchronisation indisponible — travail en local.", 5000);
+        return;
+    }
+
+    statusBar()->showMessage("Synchronisation en cours…");
+    QApplication::processEvents();
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    const chsync::SyncOutcome o = svc.sync(chui::readSyncConfig());
+    QApplication::restoreOverrideCursor();
+    if (o.ok) {
+        chui::recordLastSync(o.applied, o.accepted);
+        statusBar()->showMessage(
+            QString("Synchronisé au démarrage : %1 reçu(s), %2 envoyé(s).").arg(o.applied).arg(o.accepted), 6000);
+        nav_->setCurrentRow(nav_->currentRow());  // ré-affiche la page pour refléter les données reçues
+    } else {
+        statusBar()->showMessage("Synchro au démarrage impossible : " + QString::fromStdString(o.error), 5000);
+    }
+}
+
+void MainWindow::runSync(bool showUpToDate) {
+    chsync::SyncService svc(ctx_.syncables(), ctx_.dir() + "/sync_state.json");
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    const chsync::SyncOutcome o = svc.sync(chui::readSyncConfig());
+    QApplication::restoreOverrideCursor();
+    if (o.ok) {
+        chui::recordLastSync(o.applied, o.accepted);
+        statusBar()->showMessage(
+            QString("Synchronisé : %1 reçu(s), %2 envoyé(s), %3 conflit(s).")
+                .arg(o.applied).arg(o.accepted).arg(o.conflicts), 6000);
+    } else if (showUpToDate)
+        statusBar()->showMessage("Synchro impossible : " + QString::fromStdString(o.error), 6000);
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    // Proposition de synchro en quittant (désactivable dans Réglages).
+    if (chui::syncAskOnQuit() && chui::syncConfigured()) {
+        const auto btn = QMessageBox::question(
+            this, "Synchroniser avant de quitter",
+            "Synchroniser vos données avec HomeServerHub avant de fermer ?\n"
+            "(Désactivable dans Réglages → Synchronisation.)",
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+        if (btn == QMessageBox::Yes) runSync(false);
+    }
+    QMainWindow::closeEvent(event);
 }
 
 void MainWindow::checkForUpdates(bool manual) {

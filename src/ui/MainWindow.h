@@ -16,8 +16,13 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(chdesktop::AppContext& ctx, QWidget* parent = nullptr);
 
+protected:
+    void closeEvent(QCloseEvent* event) override;  // propose la synchro en quittant
+
 private:
     struct NavEntry { QString label; int glyph; };
+    void maybeSyncOnStartup();                 // synchro au démarrage si hub joignable
+    void runSync(bool showUpToDate);           // exécute un cycle et informe via la barre d'état
     void buildSidebar();
     void buildMenuBar();
     void retintNav();

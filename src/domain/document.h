@@ -9,6 +9,7 @@
 #pragma once
 #include <string>
 #include "ids.h"
+#include "sync_meta.h"
 
 namespace domain {
 
@@ -29,6 +30,7 @@ inline DocumentOwnerKind documentOwnerKindFromString(const std::string& s) {
 
 struct Document {
     Id id = kNoId;
+    SyncMeta meta;        // enveloppe de synchronisation
     DocumentOwnerKind ownerKind = DocumentOwnerKind::Component;
     Id ownerId = kNoId;
 
