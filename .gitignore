@@ -1,43 +1,53 @@
 # =============================================================================
 # 1. SECRETS, CONFIGURATIONS LOCALES ET CRITIQUES (NE JAMAIS VERSIONNER)
 # =============================================================================
-# Configuration WiFi et secrets embarqués (Spécifique ESP32/PlatformIO)
+# Configuration WiFi et secrets embarqués (spécifique ESP32/PlatformIO)
 include/secrets.h
 include/wifi-config.h
 
 # Fichier de configuration locale (contient mots de passe, jetons, chemins)
 config.json
 
+# Variables d'environnement (peuvent contenir des clés d'API, tokens, etc.)
+.env
+.env.local
+.env.*.local
+*.env.local
+
 # Fichier et dossiers sensibles spécifiques à l'utilisateur
 .morfredus/
 
-# Clés de sécurité et certificats (Filet de sécurité)
+# Clés de sécurité et certificats (filet de sécurité)
 *.pem
 *.key
 id_rsa*
 id_ed25519*
 
+# Fichiers d'état locaux
+beacon_status.md
+
 
 # =============================================================================
 # 2. CONFIGURATION ET CACHE DES ÉDITEURS / IDE (VS Code, etc.)
 # =============================================================================
-# Dossier de configuration de l'espace de travail VS Code : on ignore tout SAUF
-# les fichiers de workflow partagés (build/déploiement, façon SiteWatch).
-.vscode/*
-!.vscode/tasks.json
-!.vscode/settings.json
-!.vscode/extensions.json
+# Dossier de configuration de l'espace de travail VS Code (englobe tout)
+.vscode/
 .vs/
 *.code-workspace
 *.user
-
-# Configuration locale de Claude Code (permissions propres à la machine)
-.claude/settings.local.json
 
 # Fichiers d'autres IDE/Environnements (Eclipse, etc.)
 .classpath
 .project
 .settings
+
+# Backups et fichiers temporaires d'éditeurs (vim, emacs, nano, etc.)
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.orig
 
 
 # =============================================================================
@@ -54,12 +64,6 @@ id_ed25519*
 /out/
 .build/
 build/
-# Application bureau (Qt/CMake) — répertoires de build et de packaging
-build-mingw/
-build-arm64/
-build-arm64-cross/
-dist/
-.cache/
 tmp/
 temp/
 .arduino/
@@ -67,13 +71,16 @@ arduino/
 hardware/
 CMakeUserPresets.json
 
+# Fichier généré par CMake pour clangd/IntelliSense
+compile_commands.json
+
 # Fichiers d'objets, de listes et intermédiaires de compilation
 *.o
 *.lss
 *.elf.map
 *.suo
 
-# Artefacts compilés (Binaires et dumps)
+# Artefacts compilés (binaires et dumps)
 *.hex
 *.elf
 *.bin
@@ -86,8 +93,14 @@ CMakeUserPresets.json
 # =============================================================================
 # 4. COMPILATION DE L'INTERFACE WEB & DISTRIBUTION
 # =============================================================================
-# Distribution (artefacts générés par scripts/package-win.ps1)
+# Dépendances Node (au cas où un projet en aurait besoin)
+node_modules/
+
+# Distribution (artefacts générés par les scripts de packaging Windows/Linux)
 /dist/
+
+# Outils de packaging Linux téléchargés à la demande (linuxdeploy, plugin Qt)
+/.cache/appimage-tools/
 
 # Interface web générée (web_src/ -> web/ -> src/generated/)
 # Jamais éditée à la main, régénérée automatiquement avant chaque compilation
@@ -99,10 +112,9 @@ src/generated/
 # 5. ENVIRONNEMENTS ET SCRIPTING PYTHON
 # =============================================================================
 # Environnements virtuels
+.venv/
 venv/
 env/
-VENV/
-ENV/
 
 # Byte-code Python, documentation et logs
 __pycache__/
@@ -124,8 +136,9 @@ Desktop.ini
 
 # macOS
 .DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
 
-# -----------------------------------------------------------------------------
-# NB : resources/app.ico et resources/logo.png SONT versionnés (nécessaires au
-# build de l'icône). config.example.json l'est aussi (modèle sans secret).
-# -----------------------------------------------------------------------------
