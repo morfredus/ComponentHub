@@ -8,6 +8,28 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.7.3] — 2026-07-19
+
+### Changed
+- **Copie vendorée de morfBeacon resynchronisée en 0.2.0** (champ `capabilities`
+  du heartbeat). Ajout purement additif et facultatif : ce projet n'annonce
+  aucune capacité et son comportement est strictement inchangé. La
+  resynchronisation évite que la copie embarquée ne dérive de l'amont.
+- **`scripts/sync-morf.sh` : résolution du dépôt source corrigée.** Le script
+  cherchait exclusivement `morfBeacon` / `morfUpdate` et échouait donc sur une
+  organisation où les clones sont suffixés (`morfBeacon_travail`) — c'est-à-dire
+  qu'il ne fonctionnait tout simplement pas. Il accepte désormais les deux noms.
+
+  morfUpdate reste en 0.1.0, déjà aligné sur l'amont.
+
+## [1.7.2] — 2026-07-15
+
+### Changed
+- The synchronization hub was renamed **HomeServerHub → morfSync**. Default hub
+  address is now `http://morfsync.local:8080` (was `homeserverhub.local`). Only
+  a default/placeholder — an already-configured address in Settings is untouched.
+  Docs updated (`docs/fr/SYNCHRONISATION.md`).
+
 ## [1.7.1] — 2026-07-15
 
 ### Fixed
@@ -16,12 +38,12 @@ file at the repository root).
   (`journalId`); when it changes, it **resets its cursor and re-synchronizes
   fully**, instead of silently missing changes. Fixes the case where a deletion
   made on one machine wasn't propagated to the others after the hub's data was
-  relocated. Requires HomeServerHub ≥ 0.2.5.
+  relocated. Requires morfSync ≥ 0.2.5.
 
 ## [1.7.0] — 2026-07-15
 
 ### Added
-- **LAN synchronization with HomeServerHub (offline-first).** ComponentHub can now
+- **LAN synchronization with morfSync (offline-first).** ComponentHub can now
   keep the same data across several machines through a lightweight local-network
   hub, without any cloud. The **local database stays sovereign**: the app always
   works on its local copy; the hub is only used to reconcile copies when reachable.

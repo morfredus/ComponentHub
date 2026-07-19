@@ -14,7 +14,7 @@ namespace chui {
 inline chsync::SyncConfig readSyncConfig() {
     QSettings s("morfredus", "ComponentHub");
     chsync::SyncConfig cfg;
-    cfg.serverUrl = s.value("sync/serverUrl", "http://homeserverhub.local:8080").toString().toStdString();
+    cfg.serverUrl = s.value("sync/serverUrl", "http://morfsync.local:8080").toString().toStdString();
     cfg.token     = s.value("sync/token", "").toString().toStdString();
     return cfg;
 }

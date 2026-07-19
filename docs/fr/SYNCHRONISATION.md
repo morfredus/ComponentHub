@@ -1,7 +1,7 @@
-# Synchronisation (HomeServerHub)
+# Synchronisation (morfSync)
 
 ComponentHub peut **retrouver les mêmes données sur plusieurs postes** (Windows,
-Linux, Raspberry Pi) via un petit serveur de réseau local, **HomeServerHub**,
+Linux, Raspberry Pi) via un petit serveur de réseau local, **morfSync**,
 sans aucun cloud.
 
 ## Principe : base locale souveraine (offline-first)
@@ -14,7 +14,7 @@ sans aucun cloud.
 
 ## Prérequis
 
-Un **HomeServerHub** qui tourne sur une machine de votre réseau (idéalement le
+Un **morfSync** qui tourne sur une machine de votre réseau (idéalement le
 Raspberry Pi, allumé en permanence). Voir son dépôt pour l'installation ; en
 résumé, une fois lancé il écoute sur `http://<ip-ou-nom>:8080`.
 
@@ -22,7 +22,7 @@ résumé, une fois lancé il écoute sur `http://<ip-ou-nom>:8080`.
 
 **Réglages → Synchronisation** :
 
-1. **Adresse du hub** : `http://homeserverhub.local:8080` ou `http://<ip-du-pi>:8080`.
+1. **Adresse du hub** : `http://morfsync.local:8080` ou `http://<ip-du-pi>:8080`.
 2. **Jeton** (facultatif) : uniquement si le hub en exige un.
 3. **Tester la connexion** pour vérifier, puis **Synchroniser maintenant**.
 
@@ -56,7 +56,7 @@ dernier envoi sont transmises — une synchro « à vide » ne transfère rien.
 Si le hub voit son dossier de données **déplacé ou réinitialisé** (son journal
 repart de zéro), ComponentHub le **détecte automatiquement** à la synchro
 suivante et **re-synchronise tout** — vous n'avez rien à faire, plus besoin de
-supprimer un fichier d'état à la main. (Nécessite HomeServerHub ≥ 0.2.5.)
+supprimer un fichier d'état à la main. (Nécessite morfSync ≥ 0.2.5.)
 
 ## Identifiants et migration
 

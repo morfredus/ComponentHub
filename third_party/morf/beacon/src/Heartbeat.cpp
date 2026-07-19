@@ -12,6 +12,7 @@
 #include <QHostInfo>
 #include <QNetworkInterface>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QDateTime>
 
@@ -102,6 +103,14 @@ QByteArray Heartbeat::buildDatagram() const {
     o["instance"]    = m_config.instanceId.isEmpty()
                            ? (m_config.appName + QStringLiteral("@") + host)
                            : m_config.instanceId;
+    // Capacites : emises seulement si declarees, pour que le datagramme reste
+    // court quand un service n'en annonce aucune.
+    if (!m_config.capabilities.isEmpty()) {
+        QJsonArray caps;
+        for (const QString& c : m_config.capabilities)
+            caps.append(c);
+        o["capabilities"] = caps;
+    }
     o["uptime_s"]    = static_cast<double>(m_uptime.isValid() ? m_uptime.elapsed() / 1000 : 0);
     o["ts"]          = static_cast<double>(QDateTime::currentSecsSinceEpoch());
 

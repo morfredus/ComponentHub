@@ -21,7 +21,7 @@
 namespace chsync {
 
 struct SyncConfig {
-    std::string serverUrl;               // ex. http://homeserverhub.local:8080
+    std::string serverUrl;               // ex. http://morfsync.local:8080
     std::string token;                   // optionnel (Bearer) ; vide = pas d'auth
     std::string domain = "componenthub"; // journal côté hub (toutes les tables)
 };

@@ -79,8 +79,8 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
 
     auto* urlRow = new QHBoxLayout;
     urlRow->addWidget(new QLabel("Adresse du hub :"));
-    auto* urlEdit = new QLineEdit(st.value("sync/serverUrl", "http://homeserverhub.local:8080").toString());
-    urlEdit->setPlaceholderText("http://homeserverhub.local:8080");
+    auto* urlEdit = new QLineEdit(st.value("sync/serverUrl", "http://morfsync.local:8080").toString());
+    urlEdit->setPlaceholderText("http://morfsync.local:8080");
     urlRow->addWidget(urlEdit, 1);
     sv->addLayout(urlRow);
 
