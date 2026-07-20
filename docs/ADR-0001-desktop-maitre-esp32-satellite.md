@@ -29,7 +29,7 @@ base de référence** :
    l'intégralité d'un fichier à chaque opération : le coût grimpe avec la
    taille des données — un import de 39 lignes avait déjà provoqué un reset
    *watchdog* (~150 s), incident qui a motivé l'ajout de `saveAll()` (voir
-   [ARCHITECTURE.md](ARCHITECTURE.md#persistance-srcstorage)). Ce n'est pas une
+   [ARCHITECTURE.md](fr/ARCHITECTURE.md#persistance-srcstorage)). Ce n'est pas une
    base pensée pour croître indéfiniment sur cette plateforme.
 
 2. **La carte SD comme extension a été écartée pour fiabilité insuffisante.**

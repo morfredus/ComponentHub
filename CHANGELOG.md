@@ -8,7 +8,12 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.7.4] — 2026-07-20
+
 ### Changed
+
+- Fixed a broken relative link in `docs/ADR-0001-desktop-maitre-esp32-satellite.md`:
+  `ARCHITECTURE.md` now points to `fr/ARCHITECTURE.md`.
 - Updated user-facing changelog wording to use canonical production naming.
 
 ## [1.7.3] — 2026-07-19
