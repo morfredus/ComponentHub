@@ -24,12 +24,12 @@ sync_one() {
   echo "OK  $name  (version $(cat "$dstdir/VERSION"))"
 }
 
-# Le dépôt source peut s'appeler « morfBeacon » ou « morfBeacon » selon
+# Le dépôt source peut s'appeler « morfBeacon » ou « morfBeacon_travail » selon
 # l'organisation locale des clones : on prend le premier trouvé, sinon le script
 # échouait silencieusement sur une copie de travail suffixée.
 resolve_src() {
   local name="$1"
-  if [ -d "$SRC_BASE/$name" ]; then echo "$SRC_BASE/$name"; else echo "$SRC_BASE/${name}"; fi
+  if [ -d "$SRC_BASE/$name" ]; then echo "$SRC_BASE/$name"; else echo "$SRC_BASE/${name}_travail"; fi
 }
 
 sync_one morfBeacon "$(resolve_src morfBeacon)" "$ROOT/third_party/morf/beacon"
