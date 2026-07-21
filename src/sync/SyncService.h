@@ -1,5 +1,5 @@
 /**
- * SyncService — client de synchronisation de ComponentHub vers HomeServerHub.
+ * SyncService — client de synchronisation de ComponentHub vers morfSync.
  *
  * Générique : opère sur une liste de dépôts synchronisables
  * (domain::ISyncableRepository), donc sur TOUTES les tables (composants,

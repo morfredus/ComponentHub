@@ -1,7 +1,7 @@
 /**
  * HttpClient — client HTTP/1.1 minimal, bloquant, sans dépendance externe.
  *
- * Pendant client du serveur de HomeServerHub : même philosophie (pas de TLS, LAN
+ * Pendant client du serveur de morfSync : même philosophie (pas de TLS, LAN
  * privé, on écrit les deux bouts). Portable Windows (winsock2) / Linux / ARM64
  * (sockets POSIX). Aucune dépendance à Qt : réutilisable et testable dans le
  * cœur métier (componenthub_core).
