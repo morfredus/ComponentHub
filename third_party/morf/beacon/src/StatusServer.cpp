@@ -130,6 +130,28 @@ QByteArray StatusServer::buildStatusJson() const {
     o["ts"]       = static_cast<double>(QDateTime::currentSecsSinceEpoch());
     o["metrics"]  = m_provider ? m_provider->metrics() : QJsonObject{};
 
+    // Detail de l'interface Web : publie ICI et pas dans le heartbeat. Le
+    // datagramme annonce la CAPACITE (« web_ui »), ce document en donne les
+    // moyens d'ouverture. Un consommateur n'interroge donc /status que pour les
+    // services qui ont declare la capacite, et le trafic periodique reste
+    // inchange.
+    //
+    // Absent si aucune interface n'est declaree : un consommateur ne doit pas
+    // avoir a distinguer « pas d'interface » de « interface vide ».
+    if (!m_config.webUiPath.isEmpty()) {
+        QJsonObject ui;
+        ui["path"]  = m_config.webUiPath;
+        ui["label"] = m_config.webUiLabel.isEmpty() ? m_config.appName
+                                                    : m_config.webUiLabel;
+        // Port explicite : le consommateur n'a pas a deviner que l'interface
+        // partage le port de /status, meme si c'est le cas le plus courant.
+        ui["port"]  = static_cast<int>(m_config.webUiPort != 0 ? m_config.webUiPort
+                                                               : m_config.statusPort);
+        if (!m_config.webUiDescription.isEmpty())
+            ui["description"] = m_config.webUiDescription;
+        o["web_ui"] = ui;
+    }
+
     return QJsonDocument(o).toJson(QJsonDocument::Compact);
 }
 

@@ -105,11 +105,21 @@ QByteArray Heartbeat::buildDatagram() const {
                            : m_config.instanceId;
     // Capacites : emises seulement si declarees, pour que le datagramme reste
     // court quand un service n'en annonce aucune.
-    if (!m_config.capabilities.isEmpty()) {
-        QJsonArray caps;
-        for (const QString& c : m_config.capabilities)
-            caps.append(c);
-        o["capabilities"] = caps;
+    //
+    // « web_ui » est derivee de webUiPath plutot que declaree separement : le
+    // detail de l'interface et la capacite qui la rend decouvrable ne peuvent
+    // donc pas diverger. Declarer l'un sans l'autre produirait soit une
+    // interface introuvable, soit un lien vers rien.
+    QStringList caps = m_config.capabilities;
+    if (!m_config.webUiPath.isEmpty() &&
+        !caps.contains(QLatin1String(PresenceConfig::kCapabilityWebUi)))
+        caps << QLatin1String(PresenceConfig::kCapabilityWebUi);
+
+    if (!caps.isEmpty()) {
+        QJsonArray arr;
+        for (const QString& c : caps)
+            arr.append(c);
+        o["capabilities"] = arr;
     }
     o["uptime_s"]    = static_cast<double>(m_uptime.isValid() ? m_uptime.elapsed() / 1000 : 0);
     o["ts"]          = static_cast<double>(QDateTime::currentSecsSinceEpoch());
