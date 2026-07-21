@@ -1,5 +1,5 @@
 /**
- * sync_meta.h — Enveloppe de synchronisation d'une entité (cf. HomeServerHub,
+ * sync_meta.h — Enveloppe de synchronisation d'une entité (cf. morfSync,
  * docs/sync-contract.md §1). Type de valeur pur, aucune dépendance plateforme.
  *
  * Identité PERMANENTE = l'`id` de l'entité, qui EST un UUID depuis la v0.2

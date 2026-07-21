@@ -141,7 +141,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
     if (chui::syncAskOnQuit() && chui::syncConfigured()) {
         const auto btn = QMessageBox::question(
             this, "Synchroniser avant de quitter",
-            "Synchroniser vos données avec HomeServerHub avant de fermer ?\n"
+            "Synchroniser vos données avec morfSync avant de fermer ?\n"
             "(Désactivable dans Réglages → Synchronisation.)",
             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
         if (btn == QMessageBox::Yes) runSync(false);

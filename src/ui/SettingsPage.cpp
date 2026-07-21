@@ -63,8 +63,8 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     });
     v->addWidget(data);
 
-    // --- Synchronisation (HomeServerHub) ---
-    auto* sync = new QGroupBox("Synchronisation (HomeServerHub)");
+    // --- Synchronisation (morfSync) ---
+    auto* sync = new QGroupBox("Synchronisation (morfSync)");
     auto* sv = new QVBoxLayout(sync);
     sv->addWidget(uikit::hint("Adresse du hub de synchronisation sur le réseau local. "
                               "L'inventaire fonctionne sans lui ; il sert à retrouver les mêmes "
