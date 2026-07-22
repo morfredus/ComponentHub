@@ -9,7 +9,7 @@ avec les autres applications de l'atelier (SiteWatch, et les outils à venir) :
 
 - **morfBeacon** — *supervision réseau* : l'application annonce sa présence sur le
   réseau local et expose ses métriques, pour être suivie depuis un tableau de bord
-  central (le **RaspberryDashboard**).
+  central (le **morfDashboard**).
 - **morfUpdate** — *mises à jour* : vérification de la dernière version publiée sur
   GitHub.
 
@@ -78,7 +78,7 @@ python3 morfBeacon/tools/fake_dashboard.py --poll
 ```
 
 Il affiche `DECOUVERT ComponentHub@…` en quelques secondes, puis les métriques.
-C'est exactement ce que fera le RaspberryDashboard.
+C'est exactement ce que fera le morfDashboard.
 
 ### Les ports
 

@@ -151,7 +151,7 @@ dépendance externe) :
 
 - **morfBeacon** (`third_party/morf/beacon/`) — annonce la présence de l'appli sur
   le réseau (heartbeat UDP) et expose ses métriques (`/status` HTTP), pour le
-  RaspberryDashboard. Câblé dans `src/main.cpp`.
+  morfDashboard. Câblé dans `src/main.cpp`.
 - **morfUpdate** (`third_party/morf/update/`) — vérifie les *releases* GitHub.
   Câblé dans `src/ui/MainWindow` (menu Aide + vérification au démarrage).
 
