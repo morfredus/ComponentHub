@@ -8,6 +8,14 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.7.5] — 2026-07-22
+### Modifié
+
+- **Le hub de synchronisation est nommé morfSync**, y compris dans les deux
+  textes visibles par l'utilisateur (groupe de réglages, confirmation à la
+  fermeture). Neuf références à l'ancien nom HomeServerHub corrigées.
+
+
 ## [1.7.4] — 2026-07-20
 
 ### Changed
