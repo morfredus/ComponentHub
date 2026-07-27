@@ -8,7 +8,7 @@ file at the repository root).
 
 ## [Unreleased]
 
-## [1.7.5] — 2026-07-22
+## [1.7.5] - 2026-07-22
 ### Modifié
 
 - **Le hub de synchronisation est nommé morfSync**, y compris dans les deux
@@ -16,7 +16,7 @@ file at the repository root).
   fermeture). Neuf références à l'ancien nom HomeServerHub corrigées.
 
 
-## [1.7.4] — 2026-07-20
+## [1.7.4] - 2026-07-20
 
 ### Changed
 
@@ -24,7 +24,7 @@ file at the repository root).
   `ARCHITECTURE.md` now points to `fr/ARCHITECTURE.md`.
 - Updated user-facing changelog wording to use canonical production naming.
 
-## [1.7.3] — 2026-07-19
+## [1.7.3] - 2026-07-19
 
 ### Changed
 - **Copie vendorée de morfBeacon resynchronisée en 0.2.0** (champ `capabilities`
@@ -33,20 +33,20 @@ file at the repository root).
   resynchronisation évite que la copie embarquée ne dérive de l'amont.
 - **`scripts/sync-morf.sh` : résolution du dépôt source corrigée.** Le script
   cherchait exclusivement `morfBeacon` / `morfUpdate` et échouait donc sur une
-  organisation où les clones portaient un suffixe de développement — c'est-à-dire
+  organisation où les clones portaient un suffixe de développement - c'est-à-dire
   qu'il ne fonctionnait tout simplement pas. Il accepte désormais les deux conventions.
 
   morfUpdate reste en 0.1.0, déjà aligné sur l'amont.
 
-## [1.7.2] — 2026-07-15
+## [1.7.2] - 2026-07-15
 
 ### Changed
 - The synchronization hub was renamed **HomeServerHub → morfSync**. Default hub
   address is now `http://morfsync.local:8080` (was `homeserverhub.local`). Only
-  a default/placeholder — an already-configured address in Settings is untouched.
+  a default/placeholder - an already-configured address in Settings is untouched.
   Docs updated (`docs/fr/SYNCHRONISATION.md`).
 
-## [1.7.1] — 2026-07-15
+## [1.7.1] - 2026-07-15
 
 ### Fixed
 - **Synchronization now recovers automatically if the hub's journal is reset**
@@ -56,7 +56,7 @@ file at the repository root).
   made on one machine wasn't propagated to the others after the hub's data was
   relocated. Requires morfSync ≥ 0.2.5.
 
-## [1.7.0] — 2026-07-15
+## [1.7.0] - 2026-07-15
 
 ### Added
 - **LAN synchronization with morfSync (offline-first).** ComponentHub can now
@@ -67,7 +67,7 @@ file at the repository root).
   - **automatic sync at startup** if the hub is reachable (short, non-blocking probe
     with on-screen feedback so it never feels frozen);
   - **on-demand** button ("Synchroniser maintenant");
-  - **sync proposed on quit** — both automatic triggers are toggleable;
+  - **sync proposed on quit** - both automatic triggers are toggleable;
   - an explicit **"local only"** mode that disables all synchronization.
   See [docs/fr/SYNCHRONISATION.md](docs/fr/SYNCHRONISATION.md) *(FR)*.
 - **Last-sync metrics** in Settings (date + items received/sent).
@@ -86,19 +86,19 @@ file at the repository root).
 - Synchronization is **incremental**: only entities changed since the last push
   are sent (scales to large inventories).
 
-## [1.6.0] — 2026-07-13
+## [1.6.0] - 2026-07-13
 
 ### Added
 - **LAN supervision (morfBeacon) and update check (morfUpdate).** ComponentHub now
   announces its presence on the local network (UDP heartbeat, port 45454) and
   exposes live metrics over a small local HTTP endpoint (`/status`, port 8787), so
   it can be watched from a central dashboard (RaspberryDashboard). It also checks
-  GitHub Releases for a newer version — silently at startup, and on demand via
+  GitHub Releases for a newer version - silently at startup, and on demand via
   **Help → "Check for updates…"**. Both are shared modules vendored under
   `third_party/morf/` (compiled into the binary, no external dependency). See
   [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)*.
 
-## [1.5.4] — 2026-07-12
+## [1.5.4] - 2026-07-12
 
 ### Changed
 - **Dropped the "business core shared with the ESP32" wording** from source-file
@@ -113,7 +113,7 @@ file at the repository root).
   application's *publisher* folder (the same on every machine, from the app's
   organization name), not the user's account name.
 
-## [1.5.3] — 2026-07-12
+## [1.5.3] - 2026-07-12
 
 ### Changed
 - **Documentation overhaul and internationalization.** By GitHub convention, the
@@ -123,18 +123,18 @@ file at the repository root).
   an English index at `docs/en/README.md` linking to them until translated.
 
 ### Added
-- **`CONTRIBUTING.md`** — project philosophy, the layered domain/storage/UI
+- **`CONTRIBUTING.md`** - project philosophy, the layered domain/storage/UI
   separation, and a strict **portability policy**: cross-platform libraries
   only, no OS-proprietary dependency, and no `#ifdef _WIN32 / #else / #endif`
   for behavior (the sole exception is isolated in `src/platform/` and must render
   identically on the three OSes).
-- **`docs/fr/GETTING_STARTED.md`** — a step-by-step, beginner-friendly guide to
+- **`docs/fr/GETTING_STARTED.md`** - a step-by-step, beginner-friendly guide to
   clone, install the tools, build and run on Windows, Linux and Raspberry Pi.
-- **`docs/fr/USER_MANUAL.md`** — a beginner's user manual for the application.
-- **`docs/fr/ARCHITECTURE.md`** — the desktop app's layered architecture and how
+- **`docs/fr/USER_MANUAL.md`** - a beginner's user manual for the application.
+- **`docs/fr/ARCHITECTURE.md`** - the desktop app's layered architecture and how
   to read the code.
 
-## [1.5.2] — 2026-07-12
+## [1.5.2] - 2026-07-12
 
 ### Fixed
 - **Debian package (`scripts/linux/package-deb.sh`)**: creating the `.desktop`
@@ -143,30 +143,30 @@ file at the repository root).
   explicit `install -d`. The `.deb` builds again (tested on Raspberry Pi,
   ARM64).
 
-## [1.5.1] — 2026-07-12
+## [1.5.1] - 2026-07-12
 
 ### Added
 - **Application screenshots** in the documentation: Inventory view, component
   sheet, Projects (BOM) and Import/Export in the README; the Settings screen in
   `docs/fr/BUILD_DESKTOP.md`. Images under `docs/pictures/`.
 
-## [1.5.0] — 2026-07-12
+## [1.5.0] - 2026-07-12
 
 ### Added
-- **Native menu bar** (File · Go to · View · Help), in addition to the sidebar —
+- **Native menu bar** (File · Go to · View · Help), in addition to the sidebar -
   for mouse **and** keyboard access, in line with desktop conventions.
   - **File**: *Open the data folder*, *Quit* (Ctrl+Q).
   - **Go to**: jump straight to each section, shortcuts **Ctrl+1 … Ctrl+7**.
   - **View → Theme**: System / Light / Dark, **synchronized** with Settings and
     the OS theme.
-  - **Help**: *Help* (**F1**) — a "Getting started" guide (sections, shortcuts,
+  - **Help**: *Help* (**F1**) - a "Getting started" guide (sections, shortcuts,
     data location); *About* (version, Qt version, GPL-3.0-only license); *About
     Qt*.
 - **Version shown in the window title** ("ComponentHub 1.5.0"), read from CMake
-  (`CH_APP_VERSION`) — no hard-coded value.
+  (`CH_APP_VERSION`) - no hard-coded value.
 - **QSS styles** for `QMenuBar` / `QMenu` (matching the light and dark themes).
 
-## [1.4.2] — 2026-07-12
+## [1.4.2] - 2026-07-12
 
 ### Changed
 - **`ROADMAP.md` rewritten from the desktop-master viewpoint**: "Already
@@ -175,29 +175,29 @@ file at the repository root).
   ESP32 API work; the long-term vision is recentered (JSON → SQLite persistence
   on the desktop).
 - **`docs/fr/BUILD_DESKTOP.md`**: the "core shared with the ESP32" wording is
-  corrected — since the split, the desktop keeps **its own copy** of
+  corrected - since the split, the desktop keeps **its own copy** of
   `src/domain/` (the `.tar` format remains interchangeable for now).
 
-## [1.4.1] — 2026-07-12
+## [1.4.1] - 2026-07-12
 
 ### Changed
 - **Desktop repository consolidation: the firmware-specific documentation moved
   to the `ComponentHub-ESP32` repository** (`ARCHITECTURE.md`, `API.md`,
-  `BOOT_LOG.md`, `WIFI_SETUP.md`, `pictures/` — screenshots of the embedded web
+  `BOOT_LOG.md`, `WIFI_SETUP.md`, `pictures/` - screenshots of the embedded web
   UI). The desktop repository keeps only the documents that concern it:
   `BUILD_DESKTOP.md` and the architecture decision `ADR-0001`. `README` and
   `ROADMAP` links updated accordingly.
 
-## [1.4.0] — 2026-07-12
+## [1.4.0] - 2026-07-12
 
 ### Changed
-- **The ESP32 firmware is split into a standalone repository — the desktop app
+- **The ESP32 firmware is split into a standalone repository - the desktop app
   becomes the master project, the ESP32 a "satellite".** Full decision in
   `ADR-0001`. In short: the workshop database cannot stay held by the ESP32-S3
   (constrained RAM/flash, growth over several years) and expanding it via an **SD
   card is ruled out for reduced reliability** (corruption, loose contacts,
   wear). The **reference database therefore lives on the desktop** (reliable
-  PC/RPi storage, capacity and evolution — JSON → SQLite — unconstrained). The
+  PC/RPi storage, capacity and evolution - JSON → SQLite - unconstrained). The
   **ESP32 becomes a mobile terminal** for browsing/editing stock (QR scanning)
   that will eventually **read and update the desktop database**. Concretely, the
   firmware is extracted to the sibling repository `ComponentHub-ESP32`, with
@@ -218,7 +218,7 @@ file at the repository root).
 - **Desktop application**: native **Qt 6 / C++17** port, buildable on
   **Windows, Linux (x86_64) and Raspberry Pi (ARM64)** via CMake, freed from the
   ESP32's memory constraint. Reuses the business core as-is (`src/domain/`:
-  services, CSV, import/export) — only the file storage (nlohmann/json, **same
+  services, CSV, import/export) - only the file storage (nlohmann/json, **same
   JSON format as the ESP32**) and the Qt interface are specific. Screens:
   Inventory (search/filters/full sheet with documents and stock movements),
   Categories, Locations (hierarchy), Projects (BOM + missing), Import/Export (CSV
@@ -244,7 +244,7 @@ file at the repository root).
 - **Inventory**: column sorting on header click, with correct **numeric** sort
   for Qty and Price ("10" after "9", price compared on value not text).
 - **Component sheet**: the +/− buttons of the spin boxes (quantity, thresholds,
-  price) get an **enlarged, clearly delimited click area** — the default Qt
+  price) get an **enlarged, clearly delimited click area** - the default Qt
   rendering, degraded as soon as a stylesheet targets a `QSpinBox`, produced tiny
   misaligned buttons. Full-height buttons + tinted PNG arrows.
 
@@ -252,11 +252,11 @@ file at the repository root).
 
 ### Added
 - **Export/import of secondary tables**: categories, locations (with the
-  hierarchy — `parentId` + readable path "Workshop > Cabinet A > Drawer") and
+  hierarchy - `parentId` + readable path "Workshop > Cabinet A > Drawer") and
   projects each get a CSV export and a CSV import that re-imports identically
   (the internal `id` is preserved, keeping cross-references intact).
 - **Full database backup / restore** in a single TAR archive
-  (`componenthub_backup.tar`) carrying **everything** in the workshop — all
+  (`componenthub_backup.tar`) carrying **everything** in the workshop - all
   tables (components, categories, locations, stock movements, documents,
   projects, BOMs) **and** the uploaded files (datasheets, PDFs, photos…),
   byte for byte. The format to prefer to fully recover the workshop after an
@@ -278,7 +278,7 @@ file at the repository root).
   always visible, without scrolling back up. The status area no longer reserves
   space when empty (`display:none` instead of merely hidden).
 - Inventory page: the toolbar (search, filters, "low stock", Add button) and the
-  **column headers** also stay pinned, stacked under the banner — the list
+  **column headers** also stay pinned, stacked under the banner - the list
   scrolls under always-visible markers. The banner and toolbar heights are
   measured at runtime (CSS variables `--topbar-h` / `--inv-toolbar-h`) for exact
   stacking despite their variable heights.
@@ -295,11 +295,11 @@ is below.
 
 ### Fixed
 - Inventory `⋮` action menu: now opens **upward** on the last rows when space is
-  missing below — no more overflow at the bottom of the page or spurious
+  missing below - no more overflow at the bottom of the page or spurious
   scrollbar.
 - Routing collision: `GET /api/projects/bom` (and `/missing`) was captured by
   the list handler `GET /api/projects` (ESPAsyncWebServer matches by prefix),
-  returning the project list instead of the BOM — hence empty ("undefined") rows
+  returning the project list instead of the BOM - hence empty ("undefined") rows
   and an add/remove with no effect. Specific routes are registered before the
   generic one.
 
@@ -307,7 +307,7 @@ is below.
 
 ### Fixed
 - mDNS re-announced cleanly on every WiFi reconnection (`MDNS.end()` before
-  `MDNS.begin()`) — a second `begin()` could leave the responder silent. Access
+  `MDNS.begin()`) - a second `begin()` could leave the responder silent. Access
   via `componenthub.local` still depends on the client (see `WIFI_SETUP.md`: on
   Windows, Bonjour is often required; access by IP is always reliable).
 - Embedded web assets served with `Cache-Control: no-cache`: prevents a browser
@@ -317,12 +317,12 @@ is below.
 ## [1.1.8]
 
 ### Added
-- Project BOM — **off-inventory** items: add to a project an item not yet owned
+- Project BOM - **off-inventory** items: add to a project an item not yet owned
   (free name), automatically counted "to buy". The add field accepts an
   inventory component (suggestions) or a new name.
-- Project BOM — **availability check**: global summary and a per-row status
+- Project BOM - **availability check**: global summary and a per-row status
   column (✅ available / 🛒 to buy).
-- Project BOM — **printing / PDF export**: printable page (needed components +
+- Project BOM - **printing / PDF export**: printable page (needed components +
   "Left to buy" with estimated cost), via browser printing or "Save as PDF".
 
 ## [1.1.7]
@@ -336,7 +336,7 @@ is below.
 
 ### Changed
 - Home page (the `Lab` menu) titled "Dashboard" and stripped of its redundant
-  welcome card — the inventory status is shown directly.
+  welcome card - the inventory status is shown directly.
 
 ## [1.1.5]
 
@@ -349,22 +349,22 @@ is below.
 
 ### Changed
 - Main menu flattened to 5 entries (Lab, Inventory, Projects, Settings, System)
-  — dropdown submenus dropped to stay navigable later with a rotary knob (see
+  - dropdown submenus dropped to stay navigable later with a rotary knob (see
   `ARCHITECTURE.md`, "steerable" navigation).
 
 ## [1.1.3]
 
 ### Added
-- Component form — **Interface** field with common suggestions (I2C, SPI, UART,
+- Component form - **Interface** field with common suggestions (I2C, SPI, UART,
   USB, GPIO, PWM, Analog, CAN, 1-Wire, Bluetooth, WiFi, Ethernet, RS232, RS485,
   JTAG, SWD), while remaining free-text.
-- Component form — **Category** field populated from the server-managed list,
+- Component form - **Category** field populated from the server-managed list,
   rather than from the displayed components only.
 
 ## [1.1.2]
 
 ### Added
-- Component form — editable **Location** field: text field + suggestions
+- Component form - editable **Location** field: text field + suggestions
   (existing paths), with on-the-fly creation of a new root location if the typed
   text matches no known path.
 
@@ -379,21 +379,21 @@ is below.
 
 ### Added
 - Per-row `⋮` action menu on the inventory (Edit, Movement, Documents, Photos,
-  QR Code, Duplicate, Delete), replacing the 4 fixed buttons — designed to absorb
+  QR Code, Duplicate, Delete), replacing the 4 fixed buttons - designed to absorb
   future actions without redoing the layout. Photos and QR Code show a "coming
   soon" message (features not yet built).
 - Validation status icons (🟡 to test, 🚧 in validation, 🟢 validated, 🛑 faulty,
-  📦 archived) instead of text, in the Status column and the drop-downs — full
+  📦 archived) instead of text, in the Status column and the drop-downs - full
   label kept as a tooltip.
 - Status filter on the Inventory page (was missing so the "to test" dashboard
   tile could point to a useful view).
 
-### Changed — architecture: embedded web UI in PROGMEM
+### Changed - architecture: embedded web UI in PROGMEM
 - The UI (`web_src/`) is no longer served from LittleFS: it is now compiled into
   the firmware (PROGMEM), regenerated automatically before each build
   (`tools/minify_web.py` then `tools/generate_web_assets.py`, chained via
   `extra_scripts`). `pio run --target upload` therefore updates firmware and web
-  UI at once — an OTA update too. LittleFS then holds only the real inventory
+  UI at once - an OTA update too. LittleFS then holds only the real inventory
   data and user documents (uploaded via `/api/files/upload`), never again erased
   by a UI update. See `ARCHITECTURE.md#embedded-web-ui-progmem`.
 - New service `src/services/web_assets/` (`WebAssets::find`/`send`): the only
@@ -411,7 +411,7 @@ First functional ComponentHub inventory. The project starts from the
 ESP32-Foundation base (WiFi/OTA/storage/logs services) and builds, on top, a
 business core dedicated to managing an electronics workshop.
 
-### Added — business core (`src/domain/`)
+### Added - business core (`src/domain/`)
 - Platform-independent domain (no Arduino/ESP32 dependency): entities
   `Component`, `Location`, `StockMovement`, `Project`, `ProjectComponent`,
   `Document`, repository interfaces, and the services `InventoryService`,
@@ -421,7 +421,7 @@ business core dedicated to managing an electronics workshop.
   rename) and explicit corrupt-file detection instead of a silent wipe of the
   inventory.
 
-### Added — inventory
+### Added - inventory
 - Complete component sheet (reference, manufacturer, electrical characteristics,
   price/supplier, dates, warranty, state, provenance, notes), with a `kind`
   field (component / module / tool / consumable) treating these families as
@@ -433,26 +433,26 @@ business core dedicated to managing an electronics workshop.
   provenance/location/state from one addition to the next.
 - Instant search and filters (type, category, status, low stock).
 
-### Added — projects
+### Added - projects
 - Project sheet (version, firmware, Git repo, status) and BOM of needed
   components, with immediate computation of missing quantities against real
   stock.
 
-### Added — attached documentation
+### Added - attached documentation
 - Datasheets, manuals, schematics, pinouts or useful links, attachable to a
   component or a project (reuses the existing file manager rather than
   duplicating an upload pipeline).
 
-### Added — import / export
+### Added - import / export
 - CSV export/import in the native format (full, re-importable backup) and in the
   [Bomist](https://bomist.com/)-compatible format (matching by reference,
   automatic location resolution/creation by name).
 - Tracking of the last import / export / backup dates, exposed on the dashboard.
 
-### Added — web UI
+### Added - web UI
 - Switch from the synchronous web server (`WebServer`) to **ESPAsyncWebServer**,
   the only layer (`web_manager`, `api_router`, `ota_manager`) that knows this
-  choice — the rest of the framework (WiFi, storage, logs) unchanged.
+  choice - the rest of the framework (WiFi, storage, logs) unchanged.
 - New dashboard (the **Lab** page, home page): detailed inventory status
   (references, parts, value, low stock, pending shopping list, components to
   test, projects, import/export/backup dates) and quick access to common
@@ -468,7 +468,7 @@ business core dedicated to managing an electronics workshop.
 
 ### Fixed
 - CSV import: matching and updating were done row by row, each re-reading/
-  re-writing the whole components JSON file and rescanning locations — a
+  re-writing the whole components JSON file and rescanning locations - a
   quadratic cost that caused a watchdog reset (task blocked ~150s) when importing
   a 39-line file. Matching is now done entirely in memory from a single disk
   snapshot, with a batched write (`saveAll`).
@@ -481,5 +481,5 @@ business core dedicated to managing an electronics workshop.
 - `examples/` and `src/modules/example_module/` (generic demos of the
   ESP32-Foundation base, unused in ComponentHub).
 - `docs/INTEGRATION_GUIDE.md` (generic "start a new project from the framework"
-  guide) and the generic screenshots in `docs/pictures/` — content specific to
+  guide) and the generic screenshots in `docs/pictures/` - content specific to
   ESP32-Foundation, unrelated to the real ComponentHub interface.

@@ -40,7 +40,7 @@ d'éléments reçus / envoyés).
 ## Ce qui est synchronisé
 
 Toutes les tables : composants, emplacements, catégories, projets, nomenclatures,
-référentiels et documents. L'**intégrité référentielle est préservée** — un
+référentiels et documents. L'**intégrité référentielle est préservée** - un
 composant et ce qu'il référence (son emplacement, sa catégorie…) arrivent
 ensemble, donc un composant s'affiche correctement quel que soit le poste.
 
@@ -49,13 +49,13 @@ mouvements de stock n'est pas synchronisé (journal local). Les documents
 synchronisent leur lien/chemin, pas le fichier binaire lui-même.
 
 La synchronisation est **incrémentale** : seules les entités modifiées depuis le
-dernier envoi sont transmises — une synchro « à vide » ne transfère rien.
+dernier envoi sont transmises - une synchro « à vide » ne transfère rien.
 
 ## Robustesse : réinitialisation du hub
 
 Si le hub voit son dossier de données **déplacé ou réinitialisé** (son journal
 repart de zéro), ComponentHub le **détecte automatiquement** à la synchro
-suivante et **re-synchronise tout** — vous n'avez rien à faire, plus besoin de
+suivante et **re-synchronise tout** - vous n'avez rien à faire, plus besoin de
 supprimer un fichier d'état à la main. (Nécessite morfSync ≥ 0.2.5.)
 
 ## Identifiants et migration

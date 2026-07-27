@@ -7,10 +7,10 @@ Retour à l'[architecture](ARCHITECTURE.md) · au [README (français)](../../REA
 ComponentHub embarque deux petits **modules communs** (préfixe « morf »), partagés
 avec les autres applications de l'atelier (SiteWatch, et les outils à venir) :
 
-- **morfBeacon** — *supervision réseau* : l'application annonce sa présence sur le
+- **morfBeacon** - *supervision réseau* : l'application annonce sa présence sur le
   réseau local et expose ses métriques, pour être suivie depuis un tableau de bord
   central (le **morfDashboard**).
-- **morfUpdate** — *mises à jour* : vérification de la dernière version publiée sur
+- **morfUpdate** - *mises à jour* : vérification de la dernière version publiée sur
   GitHub.
 
 Ces modules sont **vendorés** dans le projet (dossier `third_party/morf/`) : ils se
@@ -19,7 +19,7 @@ l'identique sous Windows, Linux et Raspberry Pi.
 
 ---
 
-## morfBeacon — « je suis actif » + métriques
+## morfBeacon - « je suis actif » + métriques
 
 ### Le principe : annoncer, plutôt qu'être scanné
 
@@ -87,7 +87,7 @@ C'est exactement ce que fera le morfDashboard.
 
 ---
 
-## morfUpdate — vérification des mises à jour
+## morfUpdate - vérification des mises à jour
 
 ComponentHub compare sa version (fichier `VERSION`) à la dernière *release*
 publiée sur GitHub (`morfredus/ComponentHub`) :
@@ -99,7 +99,7 @@ publiée sur GitHub (`morfredus/ComponentHub`) :
 
 La notification propose d'ouvrir la page de la *release* (ou le binaire) dans le
 navigateur. **Aucune installation automatique** : le téléchargement reste à votre
-main — un choix de prudence.
+main - un choix de prudence.
 
 ---
 

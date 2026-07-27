@@ -1,14 +1,14 @@
-# ComponentHub — version bureau (Windows / Linux / Raspberry Pi)
+# ComponentHub - version bureau (Windows / Linux / Raspberry Pi)
 
 Application native **Qt 6 / C++17**. C'est le **projet maître** de ComponentHub,
-détenteur de la base de référence de l'atelier, sur PC ou Raspberry Pi — sans la
+détenteur de la base de référence de l'atelier, sur PC ou Raspberry Pi - sans la
 contrainte mémoire de l'ESP32 (voir
 [ADR-0001](ADR-0001-desktop-maitre-esp32-satellite.md)).
 
 ## Cœur métier et format de données
 
 - **Domaine** (`../src/domain/`) : entités, services (`InventoryService`,
-  `ProjectService`, `ImportExportService`…), CSV — sans aucune dépendance à la
+  `ProjectService`, `ImportExportService`…), CSV - sans aucune dépendance à la
   plateforme (ni Qt, ni système embarqué). Ce dépôt en détient sa propre copie.
 - **Format des données** : chaque table est un fichier JSON
   `{ "nextId", "items" }` ; une sauvegarde `.tar` (menu Import/Export) réunit

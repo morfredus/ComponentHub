@@ -1,13 +1,13 @@
-# ADR-0001 — Version bureau maître, ESP32 satellite
+# ADR-0001 - Version bureau maître, ESP32 satellite
 
 - **Statut** : accepté
 - **Date** : 2026-07-12
 - **Version** : 1.4.0 (bureau et firmware)
-- **Portée** : les deux dépôts — `ComponentHub` (bureau) et
+- **Portée** : les deux dépôts - `ComponentHub` (bureau) et
   `ComponentHub-ESP32` (firmware), désormais séparés.
 
 > Un ADR (*Architecture Decision Record*) fige **pourquoi** une décision a été
-> prise, son contexte et ses conséquences — pour que le choix reste
+> prise, son contexte et ses conséquences - pour que le choix reste
 > compréhensible dans plusieurs années, conformément à la vision « mémoire
 > technique de l'atelier ».
 
@@ -27,7 +27,7 @@ base de référence** :
    pendant des années (des milliers de composants, l'historique complet des
    mouvements, les documents joints). Les dépôts JSON relisent/réécrivent
    l'intégralité d'un fichier à chaque opération : le coût grimpe avec la
-   taille des données — un import de 39 lignes avait déjà provoqué un reset
+   taille des données - un import de 39 lignes avait déjà provoqué un reset
    *watchdog* (~150 s) sur l'ESP32, incident qui avait motivé l'ajout d'une
    écriture en lot. Ce n'est pas une base pensée pour croître indéfiniment sur
    cette plateforme.
@@ -37,11 +37,11 @@ base de référence** :
    une **carte SD**. Elle est rejetée : dans un usage d'atelier (coupures
    d'alimentation, connecteur SD sujet aux faux contacts, usure des cellules
    flash bas de gamme, corruption de système de fichiers), une carte SD offre
-   une **fiabilité réduite** — inacceptable pour la base qui EST la mémoire de
+   une **fiabilité réduite** - inacceptable pour la base qui EST la mémoire de
    l'atelier. On ne veut pas confier la source de vérité à un support fragile.
 
 Conséquence : la base de référence doit vivre là où le stockage est fiable et
-la capacité non contrainte — **un PC (ou un Raspberry Pi)**, pas l'ESP32.
+la capacité non contrainte - **un PC (ou un Raspberry Pi)**, pas l'ESP32.
 
 ## Décision
 
@@ -71,7 +71,7 @@ bureau.
 
 | Alternative | Raison du rejet |
 |---|---|
-| **Carte SD sur l'ESP32** pour agrandir le stockage | Fiabilité réduite (corruption, faux contacts, usure) — inacceptable pour la base de référence. |
+| **Carte SD sur l'ESP32** pour agrandir le stockage | Fiabilité réduite (corruption, faux contacts, usure) - inacceptable pour la base de référence. |
 | **Garder un monorepo à cœur partagé** (référence unique) | Le couplage fort n'a plus de sens une fois les rôles divergents (maître vs satellite) : chaque cible a désormais son propre rythme d'évolution. |
 | **Rester ESP32-centré**, bureau accessoire | Bloque la base sous les limites mémoire de l'ESP32, exactement le problème à résoudre. |
 
@@ -96,7 +96,7 @@ bureau.
   n'existe pas encore. C'est le principal chantier ouvert par cette décision.
 - Le **format JSON / `.tar` reste identique** pour l'instant (sauvegardes
   interchangeables carte ↔ PC), ce qui préserve l'interopérabilité tant que le
-  protocole de synchro n'est pas en place — mais ce contrat devra être tenu
+  protocole de synchro n'est pas en place - mais ce contrat devra être tenu
   explicitement, dépôts séparés obligent.
 
 ## Suites

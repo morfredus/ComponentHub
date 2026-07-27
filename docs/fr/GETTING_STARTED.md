@@ -1,4 +1,4 @@
-# Bien démarrer — cloner, compiler et lancer ComponentHub
+# Bien démarrer - cloner, compiler et lancer ComponentHub
 
 Ce guide vous emmène de **zéro** à **l'application qui s'ouvre sur votre écran**,
 même si vous n'avez **jamais compilé un programme**. Il couvre **Windows, Linux
@@ -7,7 +7,7 @@ et Raspberry Pi**.
 > **Spoiler** : sous Linux et Raspberry Pi, l'installation des outils tient en
 > **une seule commande** et la première compilation est souvent **plus rapide**
 > que sous Windows. « Compiler soi-même » n'est pas réservé aux experts, et ce
-> n'est pas plus compliqué sur Linux — au contraire.
+> n'est pas plus compliqué sur Linux - au contraire.
 
 Si vous voulez juste **utiliser** l'application une fois compilée, filez au
 [mode d'emploi](USER_MANUAL.md).
@@ -52,7 +52,7 @@ se lancent **depuis ce dossier**.
 
 ---
 
-## 🐧 Linux (PC x86_64) — le plus rapide
+## 🐧 Linux (PC x86_64) - le plus rapide
 
 Testé sur Debian / Ubuntu / Linux Mint. Ouvrez un **terminal**.
 
@@ -161,7 +161,7 @@ l'exécutable par la compilation : vous pouvez double-cliquer sur
 `build-mingw\ComponentHub.exe` depuis l'Explorateur Windows.
 
 > **Astuce VS Code (Windows)** : le dépôt fournit des tâches prêtes à l'emploi
-> (`.vscode/tasks.json`) — **CMake: Build (MinGW)** et **ComponentHub: Run** —
+> (`.vscode/tasks.json`) - **CMake: Build (MinGW)** et **ComponentHub: Run** -
 > qui font les étapes 4 et 5 en un raccourci.
 
 ---
@@ -183,19 +183,19 @@ Linux, y compris sur un Raspberry Pi.
 
 ## Ça ne marche pas ? Les cas courants
 
-- **`cmake : command not found` (Linux)** — l'installation des paquets a échoué,
+- **`cmake : command not found` (Linux)** - l'installation des paquets a échoué,
   relancez l'`apt install` de l'étape 1 et lisez les messages.
-- **`cmake` introuvable (Windows)** — vous n'êtes pas dans le terminal **MSYS2
+- **`cmake` introuvable (Windows)** - vous n'êtes pas dans le terminal **MSYS2
   MINGW64**, ou l'étape `pacman` a échoué. Rouvrez « MSYS2 MINGW64 » et
   recommencez l'étape 3.
-- **`Could NOT find Qt6` pendant `cmake --preset`** — Qt n'est pas installé :
+- **`Could NOT find Qt6` pendant `cmake --preset`** - Qt n'est pas installé :
   vérifiez `qt6-base-dev` (Linux) ou `mingw-w64-x86_64-qt6-base` (Windows).
-- **`Could NOT find nlohmann_json`** — installez `nlohmann-json3-dev` (Linux) ou
+- **`Could NOT find nlohmann_json`** - installez `nlohmann-json3-dev` (Linux) ou
   `mingw-w64-x86_64-nlohmann-json` (Windows).
 - **La fenêtre ne s'ouvre pas sous Linux (`could not load the Qt platform
-  plugin "xcb"`)** — installez la dépendance d'exécution :
+  plugin "xcb"`)** - installez la dépendance d'exécution :
   `sudo apt install libxcb-cursor0`.
-- **Je veux repartir de zéro** — supprimez le dossier de build
+- **Je veux repartir de zéro** - supprimez le dossier de build
   (`build/`, `build-arm64/` ou `build-mingw/`) et relancez `cmake --preset …`.
 
 ---
@@ -208,4 +208,4 @@ Linux, y compris sur un Raspberry Pi.
 - **Comprendre le code** pour le modifier : [ARCHITECTURE.md](ARCHITECTURE.md) et
   [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-Bienvenue — vous venez peut-être de compiler votre premier programme. 🙂
+Bienvenue - vous venez peut-être de compiler votre premier programme. 🙂

@@ -2,7 +2,7 @@
 
 Thanks for your interest! This document explains **how the project is built, why
 it is built that way, and the rules that keep it maintainable**. Read it once
-before your first change — it will save you (and reviewers) time.
+before your first change - it will save you (and reviewers) time.
 
 It applies to the **desktop application** (this repository). The ESP32 firmware
 lives in the separate `ComponentHub-ESP32` repository and has its own rules.
@@ -24,7 +24,7 @@ principles drive every decision:
   actual use, not speculation.
 - **One behavior, three operating systems.** What the user sees and does must be
   identical on Windows, Linux (x86_64) and Raspberry Pi (ARM64). See
-  [§4 Portability](#4-portability-the-most-important-rule) — this is the rule we
+  [§4 Portability](#4-portability-the-most-important-rule) - this is the rule we
   are strictest about.
 
 ## 2. Architecture in one picture
@@ -82,7 +82,7 @@ Always build **and run** your change on at least one OS before opening a PR. If
 your change touches anything platform-facing (files, paths, fonts, rendering),
 try to test on a second OS.
 
-## 4. Portability — the most important rule
+## 4. Portability - the most important rule
 
 > **The application must build, run and behave identically on Windows x64,
 > Linux x64 and Raspberry Pi (ARM64). No exceptions the user can notice.**
@@ -95,7 +95,7 @@ Concretely:
    Prefer, in order: (1) the C++17 standard library, (2) Qt (already a
    dependency), (3) a small, well-maintained, permissively licensed
    header/library that ships on all three. Adding a dependency is a design
-   decision — open an issue first.
+   decision - open an issue first.
 
 2. **No `#ifdef _WIN32 / #else / #endif` for behavior.** Do not fork the code
    per OS. This kind of block is **forbidden by default**:
@@ -114,7 +114,7 @@ Concretely:
 
 3. **The only allowed exception**, when *no* portable solution exists:
    - keep the platform-specific code **isolated inside `src/platform/`** behind a
-     single portable function/interface — never sprinkled through the UI or the
+     single portable function/interface - never sprinkled through the UI or the
      domain;
    - **guarantee identical results** on all three OSes (same output, same
      formatting, same on-screen rendering, same file bytes);
@@ -122,14 +122,14 @@ Concretely:
      failed) and mention it in the pull request.
 
    Example of an acceptable case: a Windows-only deployment step in a *build
-   script* (`scripts/windows/…`) — that is packaging, not application behavior.
+   script* (`scripts/windows/…`) - that is packaging, not application behavior.
 
 4. **No hard-coded, OS-specific paths.** Use `QStandardPaths` for user data,
    `resources/` (Qt resource system) for bundled assets, and forward slashes in
    code. Never assume `C:\…` or `/home/…`.
 
 Why so strict? Because the promise of ComponentHub is that it is the *same tool*
-everywhere — and that **Linux/Raspberry Pi is a first-class target, not an
+everywhere - and that **Linux/Raspberry Pi is a first-class target, not an
 afterthought** (see the Getting Started guide: it is as easy there as on
 Windows, often faster). Per-OS branches quietly break that promise.
 
@@ -152,9 +152,9 @@ Windows, often faster). Per-OS branches quietly break that promise.
 
 - **Branch** off the current working branch; don't commit straight to it.
 - **Semantic Versioning** (`MAJOR.MINOR.PATCH`) in the `VERSION` file:
-  - **PATCH** — bug fix or docs, no behavior change (e.g. 1.5.1 → 1.5.2);
-  - **MINOR** — new backward-compatible feature (e.g. 1.4.2 → 1.5.0);
-  - **MAJOR** — a breaking change (e.g. the data format stops being
+  - **PATCH** - bug fix or docs, no behavior change (e.g. 1.5.1 → 1.5.2);
+  - **MINOR** - new backward-compatible feature (e.g. 1.4.2 → 1.5.0);
+  - **MAJOR** - a breaking change (e.g. the data format stops being
     interchangeable with the firmware).
 - **Update `CHANGELOG.md`** in the same commit, following the
   [Keep a Changelog](https://keepachangelog.com/) format (`Added` / `Changed` /

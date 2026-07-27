@@ -1,4 +1,4 @@
-# Mode d'emploi — ComponentHub
+# Mode d'emploi - ComponentHub
 
 Ce guide explique **comment utiliser ComponentHub au quotidien**, sans rien
 supposer de connu. Pour l'installer/compiler, voir
@@ -25,7 +25,7 @@ défaut (remplacez `<compte>` par votre nom d'utilisateur) :
   (soit `~/.local/share/morfredus/ComponentHub`)
 
 > `<compte>` est **votre** nom d'utilisateur (propre à votre session) ;
-> `morfredus` est le dossier de **l'éditeur** de l'application — identique sur
+> `morfredus` est le dossier de **l'éditeur** de l'application - identique sur
 > toutes les machines.
 
 Le plus simple : **Fichier → Ouvrir le dossier de données** vous y emmène
@@ -39,7 +39,7 @@ directement, quel que soit votre système.
 
 - **La barre latérale** (à gauche) : les sections de l'application. Cliquez pour
   changer d'écran.
-- **La barre de menus** (en haut) : *Fichier*, *Aller à*, *Affichage*, *Aide* —
+- **La barre de menus** (en haut) : *Fichier*, *Aller à*, *Affichage*, *Aide* -
   les mêmes accès qu'à gauche, plus le thème, l'aide et « À propos ».
 - **La barre de statut** (en bas) : le chemin de votre dossier de données.
 
@@ -48,7 +48,7 @@ Les sept sections : **Inventaire**, **Catégories**, **Emplacements**,
 
 ---
 
-## 3. Inventaire — le cœur de l'outil
+## 3. Inventaire - le cœur de l'outil
 
 C'est la liste de tout ce que vous possédez. Chaque ligne est un composant, un
 module, un outil ou un consommable.
@@ -134,7 +134,7 @@ fournisseurs, technologies, états, mots-clés) pour éviter les doublons du gen
 réordonner, **fusionner** deux doublons, importer/exporter en CSV. Renommer ou
 fusionner une valeur **met à jour les composants** qui l'utilisent.
 
-## 8. Import / Export — et surtout, vos **sauvegardes**
+## 8. Import / Export - et surtout, vos **sauvegardes**
 
 ![Import / Export](../pictures/import-export.png)
 

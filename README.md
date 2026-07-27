@@ -16,11 +16,11 @@ This is more than a plain inventory: the goal is to find, in one click and for
 any component, its stock, its physical location, its datasheets and the projects
 that use it.
 
-![ComponentHub — Inventory view](docs/pictures/inventaire.png)
+![ComponentHub - Inventory view](docs/pictures/inventaire.png)
 
 ComponentHub is a **Qt / C++17 desktop application**, native on **Windows, Linux
 (x86_64) and Raspberry Pi (ARM64)**. It is the **master project**, the holder of
-the workshop's reference database — on reliable storage, free of the ESP32's
+the workshop's reference database - on reliable storage, free of the ESP32's
 memory limits. An **ESP32 firmware**, now developed in a **separate repository**
 (`ComponentHub-ESP32`, a sibling of this one), becomes a **satellite**: a mobile
 terminal to browse and update stock (QR scanning) that will eventually read the
@@ -29,7 +29,7 @@ desktop database. The rationale for this split is documented in
 
 ## Get started in 3 minutes
 
-Never compiled a program before? This is a good place to start — and it is
+Never compiled a program before? This is a good place to start - and it is
 **exactly as simple on Linux/Raspberry Pi as on Windows** (often faster). Follow
 the step-by-step guide:
 **[docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md)** *(FR)*.
@@ -39,13 +39,13 @@ Once the app is running, the beginner's user manual is here:
 
 > **Documentation language.** By GitHub convention, the root files (this README,
 > `CHANGELOG`, `ROADMAP`, `CONTRIBUTING`) are in English. The in-depth guides
-> under `docs/` are currently written in **French only** — see
+> under `docs/` are currently written in **French only** - see
 > [docs/en/README.md](docs/en/README.md) for an English index with links.
 
 ## Business core
 
-The business core [`src/domain/`](src/domain/) — entities, services (inventory,
-projects, documents, import/export), CSV — depends on neither Qt nor Arduino. The
+The business core [`src/domain/`](src/domain/) - entities, services (inventory,
+projects, documents, import/export), CSV - depends on neither Qt nor Arduino. The
 ESP32 firmware keeps **its own copy** in its repository: the two projects, once
 built on a shared core, now **evolve separately**. This layered separation
 (domain ⟷ storage ⟷ UI) is described in
@@ -61,13 +61,13 @@ ComponentHub announces its presence on the local network and exposes live metric
 (**morfBeacon** module) so it can be watched from a central dashboard, and checks
 GitHub for updates (**morfUpdate** module, from the Help menu). These shared
 modules are vendored in the project (`third_party/morf/`) and compiled into the
-binary — nothing external to install. See
+binary - nothing external to install. See
 [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)*.
 
 ## LAN synchronization (offline-first)
 
 ComponentHub can keep the same data across several machines through a lightweight
-local-network hub, **morfSync** — no cloud. The **local database stays
+local-network hub, **morfSync** - no cloud. The **local database stays
 sovereign**: the app always works on its local copy; the hub only reconciles
 copies when reachable. Set the hub address in **Settings → Synchronization**, then
 sync automatically at startup, on demand, or when quitting (each toggleable), or
@@ -81,16 +81,16 @@ are sent (incremental). Identity is a per-entity **UUID** since 1.7. See
 
 ## Overview
 
-**Component sheet** — everything about a component (general, characteristics,
+**Component sheet** - everything about a component (general, characteristics,
 purchase/stock, documents, notes):
 
 ![Component sheet](docs/pictures/fiche-composant.png)
 
-**Projects** — bill of materials (BOM) and computation of missing components:
+**Projects** - bill of materials (BOM) and computation of missing components:
 
 ![Projects and BOM](docs/pictures/projets.png)
 
-**Import / Export** — full `.tar` backup and per-table CSV:
+**Import / Export** - full `.tar` backup and per-table CSV:
 
 ![Import / Export](docs/pictures/import-export.png)
 
@@ -170,7 +170,7 @@ ComponentHub/
 
 | Document | Contents |
 |---|---|
-| [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) *(FR)* | Clone, install the tools, build and run — step by step, every OS, beginners included |
+| [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) *(FR)* | Clone, install the tools, build and run - step by step, every OS, beginners included |
 | [docs/fr/USER_MANUAL.md](docs/fr/USER_MANUAL.md) *(FR)* | Application user manual, to get productive quickly |
 | [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md) *(FR)* | Multi-platform build reference |
 | [docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md) *(FR)* | Layered architecture (domain / storage / UI) |

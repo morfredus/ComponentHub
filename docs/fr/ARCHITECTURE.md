@@ -1,4 +1,4 @@
-# Architecture — ComponentHub (version bureau)
+# Architecture - ComponentHub (version bureau)
 
 Ce document explique **comment le code est organisé et pourquoi**. Il s'adresse
 autant au contributeur qu'au débutant curieux qui veut lire les sources et
@@ -47,7 +47,7 @@ src/
 └── main.cpp    Assemblage : crée l'AppContext, l'ouvre dans la MainWindow.
 ```
 
-### `src/domain/` — le cœur métier
+### `src/domain/` - le cœur métier
 
 Trois familles de fichiers :
 
@@ -66,7 +66,7 @@ Trois familles de fichiers :
 Un service ne connaît que des **interfaces** de dépôt, jamais leur
 implémentation. C'est ce qui rend le cœur portable et testable.
 
-### `src/storage/` — la persistance bureau
+### `src/storage/` - la persistance bureau
 
 `FileRepositories` fournit **l'unique implémentation actuelle** des interfaces du
 domaine : chaque table est un fichier JSON `{ "nextId": N, "items": [ … ] }`
@@ -75,18 +75,18 @@ renommage), et un fichier illisible est signalé plutôt que traité en silence
 comme vide.
 
 Un futur backend (SQLite, par exemple) se limiterait à ré-implémenter ces
-interfaces — le reste du programme ne changerait pas.
+interfaces - le reste du programme ne changerait pas.
 
-### `src/platform/` — les aides proches du système
+### `src/platform/` - les aides proches du système
 
 Ce qui touche à l'OS mais doit rester **portable** : `Tar.cpp` (archive `.tar`
 de sauvegarde/restauration, au format ustar) et `Clock.h`
 (horodatage). Si un jour un besoin n'a *aucune* solution portable, c'est **ici,
-et seulement ici**, qu'un cas particulier serait isolé — avec un rendu garanti
+et seulement ici**, qu'un cas particulier serait isolé - avec un rendu garanti
 identique sur les trois OS (voir la règle de portabilité dans
 [CONTRIBUTING.md](../../CONTRIBUTING.md)).
 
-### `src/ui/` — l'interface Qt
+### `src/ui/` - l'interface Qt
 
 La seule couche qui inclut Qt. On y trouve :
 
@@ -97,9 +97,9 @@ La seule couche qui inclut Qt. On y trouve :
   dialogue `ComponentDialog` (la fiche composant).
 - **`Theme`** : thème clair/sombre. Les couleurs viennent de jetons
   (`resources/themes/*.theme` + `app.qss`), **jamais codées en dur** dans les
-  widgets — c'est ce qui fait fonctionner les deux thèmes.
+  widgets - c'est ce qui fait fonctionner les deux thèmes.
 - **`Icons`** : pictogrammes dessinés au `QPainter` (grille 24×24), teintés à la
-  couleur du thème — pas de police d'icônes ni de module SVG à installer.
+  couleur du thème - pas de police d'icônes ni de module SVG à installer.
 - **`UiKit.h`** : petites fabriques communes (titre de page, boutons, indices).
 
 Les pages **n'écrivent jamais dans les fichiers directement** : elles appellent
@@ -149,10 +149,10 @@ Deux petites bibliothèques partagées avec les autres applications de l'atelier
 sont **vendorées** dans `third_party/morf/` (compilées dans l'exécutable, sans
 dépendance externe) :
 
-- **morfBeacon** (`third_party/morf/beacon/`) — annonce la présence de l'appli sur
+- **morfBeacon** (`third_party/morf/beacon/`) - annonce la présence de l'appli sur
   le réseau (heartbeat UDP) et expose ses métriques (`/status` HTTP), pour le
   morfDashboard. Câblé dans `src/main.cpp`.
-- **morfUpdate** (`third_party/morf/update/`) — vérifie les *releases* GitHub.
+- **morfUpdate** (`third_party/morf/update/`) - vérifie les *releases* GitHub.
   Câblé dans `src/ui/MainWindow` (menu Aide + vérification au démarrage).
 
 Comme le reste, ces modules ne remontent jamais dans les couches supérieures :

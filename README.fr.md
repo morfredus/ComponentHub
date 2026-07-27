@@ -20,7 +20,7 @@ projets qui l'utilisent.
 
 ComponentHub est une **application de bureau Qt / C++17**, native sur
 **Windows, Linux (x86_64) et Raspberry Pi (ARM64)**. C'est le **projet maître**,
-détenteur de la base de données de référence de l'atelier — sur un stockage
+détenteur de la base de données de référence de l'atelier - sur un stockage
 fiable, sans les limites mémoire de l'ESP32. Un **firmware ESP32**, développé
 désormais dans un **dépôt séparé** (`ComponentHub-ESP32`, voisin de celui-ci),
 en devient un **satellite** : terminal mobile de consultation/modification du
@@ -30,7 +30,7 @@ pourquoi de cette séparation est détaillé dans
 
 ## Débuter en 3 minutes
 
-Jamais compilé un programme ? C'est le bon endroit pour commencer — et c'est
+Jamais compilé un programme ? C'est le bon endroit pour commencer - et c'est
 **exactement aussi simple sous Linux/Raspberry Pi que sous Windows** (souvent
 plus rapide). Suivez le guide pas à pas :
 **[docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md)**.
@@ -40,8 +40,8 @@ Une fois l'application lancée, le mode d'emploi débutant est là :
 
 ## Cœur métier
 
-Le cœur métier [`src/domain/`](src/domain/) — entités, services (inventaire,
-projets, documents, import/export), CSV — ne dépend ni de Qt ni d'Arduino. Le
+Le cœur métier [`src/domain/`](src/domain/) - entités, services (inventaire,
+projets, documents, import/export), CSV - ne dépend ni de Qt ni d'Arduino. Le
 firmware ESP32 en possède **sa propre copie** dans son dépôt : les deux projets,
 autrefois issus d'un cœur commun, **évoluent maintenant séparément**. Cette
 séparation en couches (domaine ⟷ stockage ⟷ interface) est décrite dans
@@ -56,21 +56,21 @@ ComponentHub annonce sa présence sur le réseau local et expose ses métriques
 (module **morfBeacon**), pour être suivi depuis un tableau de bord central, et
 vérifie les mises à jour depuis GitHub (module **morfUpdate**, menu Aide). Ces
 modules communs sont inclus dans le projet (`third_party/morf/`) et compilés dans
-l'exécutable — rien d'externe à installer. Voir
+l'exécutable - rien d'externe à installer. Voir
 [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md).
 
 ## Aperçu
 
-**Fiche composant** — tout sur un composant (général, caractéristiques, achat/
+**Fiche composant** - tout sur un composant (général, caractéristiques, achat/
 stock, documents, notes) :
 
 ![Fiche composant](docs/pictures/fiche-composant.png)
 
-**Projets** — nomenclature (BOM) et calcul des composants manquants :
+**Projets** - nomenclature (BOM) et calcul des composants manquants :
 
 ![Projets et nomenclature](docs/pictures/projets.png)
 
-**Import / Export** — sauvegarde complète `.tar` et CSV par table :
+**Import / Export** - sauvegarde complète `.tar` et CSV par table :
 
 ![Import / Export](docs/pictures/import-export.png)
 
@@ -150,7 +150,7 @@ ComponentHub/
 
 | Document | Contenu |
 |---|---|
-| [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) | Cloner, installer les outils, compiler et lancer — pas à pas, tous OS, débutant compris |
+| [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) | Cloner, installer les outils, compiler et lancer - pas à pas, tous OS, débutant compris |
 | [docs/fr/USER_MANUAL.md](docs/fr/USER_MANUAL.md) | Mode d'emploi de l'application, pour bien démarrer |
 | [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md) | Référence de compilation multi-plateforme |
 | [docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md) | Architecture en couches (domaine / stockage / interface) |
