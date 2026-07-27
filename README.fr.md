@@ -2,6 +2,8 @@
 
 *Lire dans une autre langue : [English](README.md) · **Français** (ce document).*
 
+[![Version](https://img.shields.io/badge/version-1.7.5-blue)](CHANGELOG.md)
+
 ![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
 ![Qt](https://img.shields.io/badge/Qt-6-41CD52?logo=qt)
