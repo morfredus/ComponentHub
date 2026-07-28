@@ -31,4 +31,16 @@ HttpResult httpPost(const std::string& url, const std::string& body,
                     const std::map<std::string, std::string>& headers = {},
                     int timeoutMs = 0);
 
+// PUT avec un corps binaire (Content-Type: application/octet-stream). Sert à
+// téléverser un blob de pièce jointe vers le magasin de morfSync.
+HttpResult httpPut(const std::string& url, const std::string& body,
+                   const std::map<std::string, std::string>& headers = {},
+                   int timeoutMs = 0);
+
+// HEAD : présence sans corps. Sert à savoir si le hub détient déjà un blob avant
+// de le téléverser.
+HttpResult httpHead(const std::string& url,
+                    const std::map<std::string, std::string>& headers = {},
+                    int timeoutMs = 0);
+
 } // namespace chnet

@@ -36,6 +36,13 @@ public:
     // Plus haute séquence locale attribuée (nouveau repère de push après envoi).
     virtual std::int64_t maxLocalSeq() const = 0;
     virtual bool applyRemote(const SyncRecord& record) = 0;    // true si le stockage a changé
+
+    // Hashes des blobs (pièces jointes) que cette table référence et dont le
+    // BINAIRE doit voyager à part (magasin de blobs, cf. sync_record côté
+    // document). Par défaut aucune table n'en référence : seul le dépôt des
+    // documents redéfinit cette méthode. Générique : le SyncService transfère les
+    // blobs sans connaître quelle table les porte.
+    virtual std::vector<std::string> referencedBlobs() const { return {}; }
 };
 
 } // namespace domain

@@ -38,6 +38,20 @@ struct Document {
     std::string category;  // datasheet, manual, schematic, pinout, link, other
     std::string url;
     std::string notes;
+
+    // --- Pièce jointe « fichier » (facultatif) ------------------------------
+    // Un document est soit un LIEN (url http... renseignée, blobHash vide), soit
+    // un FICHIER importé, dont le contenu vit dans le magasin de pièces jointes
+    // sous ce hash. `blobHash` non vide DISTINGUE les deux : un lien externe se
+    // synchronise déjà tel quel, un fichier a besoin que son binaire voyage
+    // (magasin de blobs morfSync). Rétrocompatible : les documents créés avant
+    // cette version n'ont pas de blobHash et restent des liens.
+    std::string  blobHash;      // SHA-256 du contenu ; vide => document = lien
+    std::string  fileName;      // nom d'origine (affichage + extension à l'ouverture)
+    std::int64_t sizeBytes = 0; // taille du contenu
+    std::string  mime;          // type, facultatif (déduit de l'extension au besoin)
+
+    bool isFile() const { return !blobHash.empty(); }
 };
 
 } // namespace domain

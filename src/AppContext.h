@@ -16,6 +16,7 @@
 #include "document_service.h"
 #include "import_export_service.h"
 #include "sync_record.h"
+#include "attachment_store.h"
 
 namespace chdesktop {
 
@@ -30,6 +31,7 @@ public:
           projects(dir + "/projects.json"),
           projectComponents(dir + "/project_components.json"),
           referentials(dir + "/referentials.json"),
+          attachments(dir + "/attachments"),
           inventory(components, locations, categories, movements),
           projects_service(projects, projectComponents, components),
           documents_service(documents),
@@ -54,6 +56,11 @@ public:
     ProjectRepository          projects;
     ProjectComponentRepository projectComponents;
     ReferentialRepository      referentials;
+
+    // Magasin local des pièces jointes (contenu des documents « fichier »),
+    // adressé par contenu. Partagé par l'UI (import, ouverture) et le SyncService
+    // (transfert des blobs). Déclaré après les dépôts, avant les services.
+    domain::AttachmentStore    attachments;
 
     // Services métier du domaine (src/domain/).
     domain::InventoryService    inventory;

@@ -1,10 +1,12 @@
 #include "SyncService.h"
 
 #include <fstream>
+#include <set>
 #include <nlohmann/json.hpp>
 
 #include "net/HttpClient.h"
-#include "sync_meta.h"   // generateUuid
+#include "sync_meta.h"          // generateUuid
+#include "attachment_store.h"   // magasin de blobs local + chutil::sha256Hex
 
 using nlohmann::json;
 using domain::SyncRecord;
@@ -48,8 +50,9 @@ std::string base(const SyncConfig& cfg) {
 
 } // namespace
 
-SyncService::SyncService(std::vector<domain::ISyncableRepository*> repos, std::string statePath)
-    : repos_(std::move(repos)), statePath_(std::move(statePath)) {
+SyncService::SyncService(std::vector<domain::ISyncableRepository*> repos, std::string statePath,
+                         domain::AttachmentStore* attachments)
+    : repos_(std::move(repos)), attachments_(attachments), statePath_(std::move(statePath)) {
     for (auto* r : repos_) if (r) byType_[r->syncType()] = r;
     loadState();
 }
@@ -190,8 +193,58 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
     lastSeq_ = since;
     saveState();
     out.lastSeq = lastSeq_;
+
+    // 4) Transfert du binaire des pièces jointes. Les métadonnées sont déjà
+    //    synchronisées : le transfert des blobs est best-effort et ne fait pas
+    //    échouer la synchro s'il achoppe (un blob manquant se rattrape à la passe
+    //    suivante, la référence de hash restant valide).
+    transferBlobs(cfg, out);
+
     out.ok = true;
     return out;
+}
+
+void SyncService::transferBlobs(const SyncConfig& cfg, SyncOutcome& out) {
+    if (!attachments_) return;
+
+    // Ensemble dédupliqué des hashes référencés par toutes les tables (en pratique
+    // seuls les documents en portent).
+    std::set<std::string> hashes;
+    for (auto* repo : repos_)
+        for (const auto& h : repo->referencedBlobs())
+            if (domain::AttachmentStore::validHash(h)) hashes.insert(h);
+    if (hashes.empty()) return;
+
+    const std::string url = base(cfg);
+    const auto headers = authHeaders(cfg);
+
+    for (const auto& h : hashes) {
+        const std::string blobUrl = url + "/api/blob/" + h;
+
+        if (attachments_->has(h)) {
+            // Contenu présent localement : le téléverser SI le hub ne l'a pas déjà.
+            // Le HEAD évite de renvoyer un binaire déjà stocké (adressage par
+            // contenu = un seul exemplaire par hash).
+            auto head = chnet::httpHead(blobUrl, headers);
+            if (!head.ok) continue;            // hub injoignable pour les blobs : best-effort
+            if (head.status == 200) continue;  // déjà présent côté hub
+            if (head.status == 404) {
+                std::string bytes;
+                if (!attachments_->get(h, bytes)) continue;
+                auto put = chnet::httpPut(blobUrl, bytes, headers);
+                if (put.ok && (put.status == 201 || put.status == 200)) out.blobsUploaded++;
+            }
+            // 405 (hub sans magasin de blobs) ou autre : on ignore proprement,
+            // la synchro des métadonnées a déjà réussi.
+        } else {
+            // Contenu absent localement : le télécharger, en VÉRIFIANT l'intégrité
+            // (on re-hache ce qu'on reçoit ; le hub ne garantit pas le contenu).
+            auto get = chnet::httpGet(blobUrl, headers);
+            if (!get.ok || get.status != 200) continue;      // pas encore dispo : prochaine passe
+            if (chutil::sha256Hex(get.body) != h) continue;  // corrompu : on refuse
+            if (attachments_->put(h, get.body)) out.blobsDownloaded++;
+        }
+    }
 }
 
 } // namespace chsync

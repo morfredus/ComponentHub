@@ -70,7 +70,8 @@ void applyTimeout(socket_t fd, int timeoutMs) {
 }
 
 HttpResult request(const std::string& method, const std::string& url, const std::string& body,
-                   const std::map<std::string, std::string>& headers, int timeoutMs) {
+                   const std::map<std::string, std::string>& headers, int timeoutMs,
+                   const std::string& contentType = "application/json; charset=utf-8") {
     HttpResult r;
     ensureNetwork();
 
@@ -105,12 +106,16 @@ HttpResult request(const std::string& method, const std::string& url, const std:
         << "Host: " << host << ':' << port << "\r\n"
         << "Connection: close\r\n";
     for (const auto& [k, v] : headers) req << k << ": " << v << "\r\n";
-    if (method == "POST") {
-        req << "Content-Type: application/json; charset=utf-8\r\n"
+    // POST et PUT portent un corps (JSON de synchro pour l'un, binaire d'un blob
+    // pour l'autre). Content-Length dimensionne l'octet près : le corps est écrit
+    // verbatim, sans hypothèse sur son contenu.
+    const bool hasBody = (method == "POST" || method == "PUT");
+    if (hasBody) {
+        req << "Content-Type: " << contentType << "\r\n"
             << "Content-Length: " << body.size() << "\r\n";
     }
     req << "\r\n";
-    if (method == "POST") req << body;
+    if (hasBody) req << body;
 
     const std::string payload = req.str();
     std::size_t sent = 0;
@@ -151,6 +156,14 @@ HttpResult httpGet(const std::string& url, const std::map<std::string, std::stri
 HttpResult httpPost(const std::string& url, const std::string& body,
                     const std::map<std::string, std::string>& headers, int timeoutMs) {
     return request("POST", url, body, headers, timeoutMs);
+}
+HttpResult httpPut(const std::string& url, const std::string& body,
+                   const std::map<std::string, std::string>& headers, int timeoutMs) {
+    return request("PUT", url, body, headers, timeoutMs, "application/octet-stream");
+}
+HttpResult httpHead(const std::string& url,
+                    const std::map<std::string, std::string>& headers, int timeoutMs) {
+    return request("HEAD", url, "", headers, timeoutMs);
 }
 
 } // namespace chnet

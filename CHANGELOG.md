@@ -8,6 +8,27 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-07-29
+
+### Added
+
+- **File attachments with content synced across machines.** A document can now be
+  an imported **file** (button "Importer un fichier") in addition to an external
+  link. The file is copied into a local content-addressed store
+  (`<data>/attachments/<sha256>`), and its binary travels between machines through
+  morfSync's blob store: on sync, missing blobs are uploaded to the hub, and blobs
+  referenced but absent locally are downloaded and integrity-checked (the SHA-256
+  is recomputed on receipt). Until a blob's content is present, the document is
+  shown as "(contenu non encore synchronisé)" and opening it explains it will
+  arrive at the next sync. External links keep working unchanged; documents created
+  before this version remain links (backward compatible). Requires morfSync 0.6.0
+  or later for the blob endpoints (older hubs: metadata still syncs, binaries are
+  simply skipped).
+  - New self-contained SHA-256 in the Qt-free core (`src/util/sha256.h`) and a
+    local attachment store (`src/domain/attachment_store.h`); `HttpClient` gains
+    binary `PUT` and `HEAD`; `SyncService` runs a best-effort blob-transfer pass
+    after the metadata sync, so a blob hiccup never fails the sync.
+
 ## [1.7.6] - 2026-07-28
 
 ### Corrigé

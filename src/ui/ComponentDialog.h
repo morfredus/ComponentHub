@@ -27,6 +27,8 @@ private:
     bool saveFromForm();          // valide + persiste ; false si invalide
     void refreshChildTabs();      // documents + stock (selon existence de l'id)
     void addOrEditDocument(domain::Id docId);
+    void importDocumentFile();    // copie un fichier dans le magasin de pièces jointes
+    void openDocument();          // ouvre le lien, ou la copie locale d'un fichier
     void deleteDocument();
     void doStockMovement();
 

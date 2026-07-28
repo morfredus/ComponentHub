@@ -355,6 +355,10 @@ std::vector<Document> chdesktop::DocumentRepository::findByOwner(DocumentOwnerKi
         d.category = str(o, "category");
         d.url = str(o, "url");
         d.notes = str(o, "notes");
+        d.blobHash = str(o, "blobHash");
+        d.fileName = str(o, "fileName");
+        d.sizeBytes = int64(o, "sizeBytes");
+        d.mime = str(o, "mime");
         if (d.ownerKind == ownerKind && d.ownerId == ownerId) out.push_back(d);
     }
     return out;
@@ -368,6 +372,8 @@ Document chdesktop::DocumentRepository::save(Document d) {
     json obj = {
         {"id", d.id}, {"ownerKind", toString(d.ownerKind)}, {"ownerId", d.ownerId},
         {"title", d.title}, {"category", d.category}, {"url", d.url}, {"notes", d.notes},
+        {"blobHash", d.blobHash}, {"fileName", d.fileName},
+        {"sizeBytes", d.sizeBytes}, {"mime", d.mime},
     };
     putMeta(obj, d.meta);
     if (json* found = findItem(items, d.id)) *found = obj;
@@ -381,6 +387,20 @@ std::string chdesktop::DocumentRepository::syncType() const { return "document";
 std::vector<SyncRecord> chdesktop::DocumentRepository::exportForSync(std::int64_t since) const { return exportTable(_path, "document", since); }
 std::int64_t chdesktop::DocumentRepository::maxLocalSeq() const { return maxLocalSeqOf(_path); }
 bool chdesktop::DocumentRepository::applyRemote(const SyncRecord& r) { return applyTable(_path, r); }
+// Blobs référencés : le contenu (fichier) de tout document VIVANT (non tombstone)
+// qui porte un blobHash. Un document supprimé n'a plus besoin de son binaire ;
+// les blobs eux-mêmes ne sont jamais effacés (adressés par contenu, potentiellement
+// partagés) -- un éventuel nettoyage des orphelins serait un chantier distinct.
+std::vector<std::string> chdesktop::DocumentRepository::referencedBlobs() const {
+    json doc = chstore::load(_path);
+    std::vector<std::string> out;
+    for (auto& o : doc["items"]) {
+        if (boolean(o, "deleted")) continue;
+        const std::string h = str(o, "blobHash");
+        if (!h.empty()) out.push_back(h);
+    }
+    return out;
+}
 
 // ============================= ProjectRepository =============================
 std::vector<Project> chdesktop::ProjectRepository::findAll() const {

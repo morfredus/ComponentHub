@@ -98,7 +98,7 @@ void MainWindow::maybeSyncOnStartup() {
     statusBar()->showMessage("Recherche du hub de synchronisation…");
     QApplication::processEvents();
 
-    chsync::SyncService svc(ctx_.syncables(), ctx_.dir() + "/sync_state.json");
+    chsync::SyncService svc(ctx_.syncables(), ctx_.dir() + "/sync_state.json", &ctx_.attachments);
     std::string info;
     // Sonde courte : si le hub ne répond pas vite, on reste sur la base locale
     // (souveraine) sans bloquer le démarrage ni afficher d'erreur bloquante.
@@ -123,15 +123,20 @@ void MainWindow::maybeSyncOnStartup() {
 }
 
 void MainWindow::runSync(bool showUpToDate) {
-    chsync::SyncService svc(ctx_.syncables(), ctx_.dir() + "/sync_state.json");
+    chsync::SyncService svc(ctx_.syncables(), ctx_.dir() + "/sync_state.json", &ctx_.attachments);
     QApplication::setOverrideCursor(Qt::WaitCursor);
     const chsync::SyncOutcome o = svc.sync(chui::readSyncConfig());
     QApplication::restoreOverrideCursor();
     if (o.ok) {
         chui::recordLastSync(o.applied, o.accepted);
-        statusBar()->showMessage(
-            QString("Synchronisé : %1 reçu(s), %2 envoyé(s), %3 conflit(s).")
-                .arg(o.applied).arg(o.accepted).arg(o.conflicts), 6000);
+        QString msg = QString("Synchronisé : %1 reçu(s), %2 envoyé(s), %3 conflit(s).")
+                          .arg(o.applied).arg(o.accepted).arg(o.conflicts);
+        // Ne mentionner les pièces jointes que s'il y en a eu : le cas courant
+        // (rien à transférer) ne doit pas alourdir le message.
+        if (o.blobsUploaded || o.blobsDownloaded)
+            msg += QString(" Pièces jointes : %1 envoyée(s), %2 reçue(s).")
+                       .arg(o.blobsUploaded).arg(o.blobsDownloaded);
+        statusBar()->showMessage(msg, 6000);
     } else if (showUpToDate)
         statusBar()->showMessage("Synchro impossible : " + QString::fromStdString(o.error), 6000);
 }

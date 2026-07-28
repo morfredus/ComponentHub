@@ -18,6 +18,10 @@
 #include <QInputDialog>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QDir>
+#include <QFile>
 #include <map>
 
 #include "AppContext.h"
@@ -142,11 +146,13 @@ void ComponentDialog::buildUi() {
     childHint_ = uikit::hint("Enregistrez d'abord la fiche pour lui rattacher des documents.");
     dv->addWidget(childHint_);
     auto* docBar = new QHBoxLayout;
-    auto* dAdd = uikit::button("Ajouter", icons::Glyph::Add);
+    auto* dAdd = uikit::button("Ajouter un lien", icons::Glyph::Add);
+    auto* dImport = uikit::button("Importer un fichier", icons::Glyph::Add, "ghost");
     auto* dEdit = uikit::button("Modifier", icons::Glyph::Edit, "ghost");
     auto* dOpen = uikit::button("Ouvrir", icons::Glyph::Link, "ghost");
     auto* dDel = uikit::button("Supprimer", icons::Glyph::Delete, "danger");
-    docBar->addWidget(dAdd); docBar->addWidget(dEdit); docBar->addWidget(dOpen); docBar->addWidget(dDel); docBar->addStretch(1);
+    docBar->addWidget(dAdd); docBar->addWidget(dImport); docBar->addWidget(dEdit);
+    docBar->addWidget(dOpen); docBar->addWidget(dDel); docBar->addStretch(1);
     dv->addLayout(docBar);
     documents_ = new QTableWidget(0, 3);
     documents_->setHorizontalHeaderLabels({"Titre", "Catégorie", "Lien / fichier"});
@@ -157,17 +163,13 @@ void ComponentDialog::buildUi() {
     dv->addWidget(documents_, 1);
     tabs->addTab(doc, "Documents");
     connect(dAdd, &QPushButton::clicked, this, [this] { addOrEditDocument(kNoId); });
+    connect(dImport, &QPushButton::clicked, this, &ComponentDialog::importDocumentFile);
     connect(dEdit, &QPushButton::clicked, this, [this] {
         auto* it = documents_->currentItem();
         if (it) addOrEditDocument(documents_->item(documents_->currentRow(), 0)->data(Qt::UserRole).toString().toStdString());
     });
     connect(dDel, &QPushButton::clicked, this, &ComponentDialog::deleteDocument);
-    connect(dOpen, &QPushButton::clicked, this, [this] {
-        int r = documents_->currentRow();
-        if (r < 0) return;
-        const QString url = documents_->item(r, 2)->text();
-        if (!url.isEmpty()) QDesktopServices::openUrl(QUrl::fromUserInput(url));
-    });
+    connect(dOpen, &QPushButton::clicked, this, &ComponentDialog::openDocument);
 
     // --- Notes ---
     auto* note = new QWidget; auto* nv = new QVBoxLayout(note);
@@ -322,7 +324,15 @@ void ComponentDialog::refreshChildTabs() {
             t->setData(Qt::UserRole, QString::fromStdString(d.id));
             documents_->setItem(r, 0, t);
             documents_->setItem(r, 1, new QTableWidgetItem(QString::fromStdString(d.category)));
-            documents_->setItem(r, 2, new QTableWidgetItem(QString::fromStdString(d.url)));
+            // Colonne « Lien / fichier » : pour une pièce jointe importée, on
+            // montre le nom d'origine (pas le hash, illisible) ; pour un lien,
+            // l'URL. Un fichier dont le contenu n'est pas encore là (reçu par
+            // synchro mais binaire pas encore récupéré) est signalé.
+            QString shown = d.isFile() ? QString::fromStdString(d.fileName)
+                                       : QString::fromStdString(d.url);
+            if (d.isFile() && !ctx_.attachments.has(d.blobHash))
+                shown += "  (contenu non encore synchronisé)";
+            documents_->setItem(r, 2, new QTableWidgetItem(shown));
         }
     }
 
@@ -364,6 +374,70 @@ void ComponentDialog::addOrEditDocument(Id docId) {
     d.url = url.trimmed().toStdString();
     ctx_.documents_service.save(d);
     refreshChildTabs();
+}
+
+void ComponentDialog::importDocumentFile() {
+    if (current_.id == kNoId) return;
+    const QString path = QFileDialog::getOpenFileName(this, "Importer un fichier", QString());
+    if (path.isEmpty()) return;
+
+    // Copie le fichier dans le magasin, sous le hash de son contenu. Le contenu
+    // devient indépendant du fichier d'origine (déplaçable, supprimable).
+    const auto res = ctx_.attachments.importFile(path.toStdString());
+    if (!res.ok) {
+        QMessageBox::warning(this, "Import", "Impossible de lire le fichier sélectionné.");
+        return;
+    }
+
+    const QFileInfo fi(path);
+    Document d;
+    d.ownerKind = DocumentOwnerKind::Component;
+    d.ownerId = current_.id;
+    d.title = fi.fileName().toStdString();   // proposition, modifiable ensuite
+    d.category = "fichier";
+    d.blobHash = res.hash;
+    d.fileName = fi.fileName().toStdString();
+    d.sizeBytes = res.sizeBytes;
+    ctx_.documents_service.save(d);
+    refreshChildTabs();
+}
+
+void ComponentDialog::openDocument() {
+    const int r = documents_->currentRow();
+    if (r < 0) return;
+    const Id docId = documents_->item(r, 0)->data(Qt::UserRole).toString().toStdString();
+
+    Document doc; bool found = false;
+    for (const auto& e : ctx_.documents_service.listForOwner(DocumentOwnerKind::Component, current_.id))
+        if (e.id == docId) { doc = e; found = true; break; }
+    if (!found) return;
+
+    if (doc.isFile()) {
+        std::string bytes;
+        if (!ctx_.attachments.get(doc.blobHash, bytes)) {
+            QMessageBox::information(this, "Pièce jointe",
+                "Le contenu de ce fichier n'est pas encore présent sur ce poste. "
+                "Il sera récupéré à la prochaine synchronisation avec morfSync.");
+            return;
+        }
+        // Le magasin nomme le fichier par son hash (sans extension) : on
+        // matérialise une copie temporaire au nom d'origine pour que le système
+        // sache avec quelle application l'ouvrir.
+        const QString name = doc.fileName.empty() ? QStringLiteral("piece-jointe")
+                                                   : QString::fromStdString(doc.fileName);
+        const QString tmpDir = QDir::tempPath() + "/componenthub-attachments";
+        QDir().mkpath(tmpDir);
+        const QString tmpPath = tmpDir + "/" + name;
+        QFile f(tmpPath);
+        if (f.open(QIODevice::WriteOnly)) {
+            f.write(bytes.data(), static_cast<qint64>(bytes.size()));
+            f.close();
+            QDesktopServices::openUrl(QUrl::fromLocalFile(tmpPath));
+        }
+        return;
+    }
+    if (!doc.url.empty())
+        QDesktopServices::openUrl(QUrl::fromUserInput(QString::fromStdString(doc.url)));
 }
 
 void ComponentDialog::deleteDocument() {

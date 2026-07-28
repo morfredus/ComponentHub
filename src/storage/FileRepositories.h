@@ -85,6 +85,7 @@ public:
     domain::Document save(domain::Document d) override;
     bool remove(domain::Id id) override;
     CH_SYNCABLE_DECL
+    std::vector<std::string> referencedBlobs() const override;
 private:
     std::string _path;
 };

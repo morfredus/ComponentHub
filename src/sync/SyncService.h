@@ -18,6 +18,8 @@
 #include <cstdint>
 #include "sync_record.h"
 
+namespace domain { class AttachmentStore; }
+
 namespace chsync {
 
 struct SyncConfig {
@@ -32,6 +34,8 @@ struct SyncOutcome {
     int accepted = 0;         // changements locaux acceptés par le hub (PUSH)
     int conflicts = 0;        // versions refusées par le hub (plus anciennes)
     int applied = 0;          // changements distants appliqués localement (PULL)
+    int blobsUploaded = 0;    // binaires de pièces jointes envoyés au hub
+    int blobsDownloaded = 0;  // binaires de pièces jointes récupérés du hub
     std::int64_t lastSeq = 0; // curseur après synchro
 };
 
@@ -39,7 +43,11 @@ class SyncService {
 public:
     // `repos` : tous les dépôts à synchroniser (leur durée de vie doit couvrir
     // celle du SyncService). `statePath` : fichier local deviceId + curseur.
-    SyncService(std::vector<domain::ISyncableRepository*> repos, std::string statePath);
+    // `attachments` (facultatif) : magasin local des pièces jointes ; s'il est
+    // fourni, la synchro transfère aussi le BINAIRE des blobs référencés. Nul =
+    // synchro des métadonnées uniquement (comportement antérieur).
+    SyncService(std::vector<domain::ISyncableRepository*> repos, std::string statePath,
+                domain::AttachmentStore* attachments = nullptr);
 
     // Teste la joignabilité du hub via GET /api/health. `info` reçoit un résumé
     // lisible en cas de succès, le message d'erreur sinon.
@@ -57,8 +65,13 @@ private:
     void loadState();
     void saveState() const;
     SyncOutcome syncOnce(const SyncConfig& cfg, bool mayReset);
+    // Transfère le binaire des blobs référencés (best-effort, après la synchro
+    // des métadonnées) : téléverse ceux que le hub n'a pas, télécharge ceux qui
+    // manquent localement (intégrité vérifiée). Sans effet si aucun magasin.
+    void transferBlobs(const SyncConfig& cfg, SyncOutcome& out);
 
     std::vector<domain::ISyncableRepository*> repos_;
+    domain::AttachmentStore* attachments_ = nullptr;
     std::map<std::string, domain::ISyncableRepository*> byType_; // dispatch au PULL
     std::string statePath_;
     std::string deviceId_;
