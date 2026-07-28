@@ -8,6 +8,17 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.7.6] - 2026-07-28
+
+### Corrigé
+
+- **Port `/status` déplacé de 8787 à 8880** pour éviter toute collision. 8787 est
+  le port par défaut réservé de morfBeacon ; ComponentHub le reprenait, ce qui
+  pouvait entrer en conflit avec un service du parc sur la même machine. Le port
+  vit désormais dans la nouvelle plage réservée aux applications de bureau
+  (`appRange` 8880-8899, hors du bloc des services), enregistrée dans
+  `morfTools/ecosystem.json` pour que `morf doctor` interdise tout recouvrement.
+
 ## [1.7.5] - 2026-07-22
 ### Modifié
 

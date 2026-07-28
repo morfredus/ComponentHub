@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
     morfbeacon::PresenceConfig beaconCfg;
     beaconCfg.appName    = "ComponentHub";
     beaconCfg.version    = CH_APP_VERSION;
-    beaconCfg.statusPort = 8787;                // port /status propre à ComponentHub
+    beaconCfg.statusPort = 8880;                // /status propre à ComponentHub (appRange, cf. morfTools/ecosystem.json)
 
     morfbeacon::FunctionMetricsProvider beaconMetrics([&ctx]() {
         QJsonObject m;
