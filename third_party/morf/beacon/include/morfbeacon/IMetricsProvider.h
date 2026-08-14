@@ -30,6 +30,23 @@ public:
 
     // Etat de sante synthetique. Redefinir pour refleter l'etat reel.
     virtual QString state() const { return QStringLiteral("ok"); }
+
+    // Etat du MATERIEL geré par le service, exposé UNIQUEMENT via /status (comme
+    // metrics()). Contrat additif : un service sans matériel renvoie {} (défaut)
+    // et rien n'apparait. Un service à matériel (capteur, écran...) renvoie au
+    // moins :
+    //   { "state": "present" | "none" | "degraded", "label": "<texte lisible>" }
+    // et, s'il le peut, "expected"/"present" (compteurs). Sémantique :
+    //   - "present"  : matériel attendu ET disponible ;
+    //   - "none"     : AUCUN matériel attendu ici (configuration valide, pas une
+    //                  panne) ;
+    //   - "degraded" : matériel attendu mais absent ou défaillant.
+    // Règle de séparation : chaque service reste SEUL juge de son matériel ; le
+    // superviseur (morfMonitor) lit ce bloc et l'affiche SANS jamais déduire la
+    // présence lui-même. L'état service (state()) doit rester cohérent : "none"
+    // et "present" n'empêchent pas un "ok" ; seul "degraded" justifie un
+    // "warning".
+    virtual QJsonObject hardware() const { return {}; }
 };
 
 // -----------------------------------------------------------------------------

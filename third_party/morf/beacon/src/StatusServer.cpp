@@ -131,6 +131,14 @@ QByteArray StatusServer::buildStatusJson() const {
     o["ts"]       = static_cast<double>(QDateTime::currentSecsSinceEpoch());
     o["metrics"]  = m_provider ? m_provider->metrics() : QJsonObject{};
 
+    // Etat du matériel (additif) : présent seulement si le service en déclare un.
+    // Un service sans matériel renvoie {} et la clé n'apparait pas.
+    if (m_provider) {
+        const QJsonObject hw = m_provider->hardware();
+        if (!hw.isEmpty())
+            o["hardware"] = hw;
+    }
+
     // Detail annonce (interface web + liste d'API) : publie ICI et pas dans le
     // heartbeat. Le datagramme annonce la CAPACITE (« web_ui »), ce document en
     // donne les moyens d'ouverture. Construit par describeService() -- le meme

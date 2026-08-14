@@ -8,6 +8,14 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-08-14
+
+### Changed
+
+- Resync the vendored **morfBeacon** copy (`third_party/morf/beacon`) to 0.6.0,
+  matching the source repository (`IMetricsProvider.h`, `StatusServer.cpp`). No
+  behavior change for ComponentHub; keeps the static build in step with the parc.
+
 ## [1.8.0] - 2026-07-29
 
 ### Added
