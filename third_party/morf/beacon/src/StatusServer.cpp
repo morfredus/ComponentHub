@@ -117,7 +117,13 @@ void StatusServer::handleRequest(QTcpSocket* sock, const QByteArray& requestLine
     resp += body;
 
     sock->write(resp);
-    sock->flush();
+    // Vider le tampon d'écriture AVANT de fermer : un /status riche (agrégation des
+    // capacités du parc) peut déborder du tampon socket (~20 Ko constaté) et
+    // `disconnectFromHost` seul en tronquerait la fin côté client. On draine jusqu'à
+    // ce qu'il ne reste rien à écrire, avec un délai de garde pour ne jamais bloquer.
+    while (sock->bytesToWrite() > 0)
+        if (!sock->waitForBytesWritten(2000))
+            break;
     sock->disconnectFromHost();
 }
 

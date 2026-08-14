@@ -8,6 +8,16 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.8.2] - 2026-08-14
+
+### Changed
+
+- Resync the vendored **morfBeacon** copy (`third_party/morf/beacon`) to 0.6.1,
+  which fixes truncation of large `/status` responses: `StatusServer` used to close
+  the socket without draining its write buffer, so a `/status` bigger than the
+  socket buffer (~20 KB) was cut off client-side. Now waits for `bytesToWrite()` to
+  reach zero before closing. No API change for ComponentHub.
+
 ## [1.8.1] - 2026-08-14
 
 ### Changed
