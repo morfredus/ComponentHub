@@ -21,7 +21,7 @@ class IMetricsProvider;
 // annoncer la presence de l'application sur le reseau local.
 //
 // Le datagramme (JSON compact) contient uniquement l'essentiel :
-//   proto, app, host, version, state, status_port, instance, uptime_s, ts
+//   proto, app, host, role, version, state, status_port, instance, uptime_s, ts
 //
 // Il ne contient AUCUNE metrique detaillee : celles-ci vivent derriere le
 // serveur HTTP (StatusServer), interroge a la demande.

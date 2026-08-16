@@ -38,6 +38,29 @@ struct PresenceConfig {
     QString version   = QStringLiteral("dev");  // ex. "1.4.2"
     QString instanceId;                         // optionnel ; defaut = appName@hostname
 
+    // --- Role de l'emetteur dans le parc (STABLE) ---------------------------
+    // Repond a « qu'est-ce qui emet ? », pas « comment il s'appelle » :
+    //   "host"   : machine generaliste susceptible d'heberger plusieurs services
+    //              (pi4fred, pi4dev, un PC Windows...). C'est le cas par defaut,
+    //              car toute annonce historique etait un service tournant sur une
+    //              machine. Un poste eteint entraine la disparition SIMULTANEE de
+    //              tous ses services host : un consommateur (morfMonitor) en deduit
+    //              « machine hors ligne » plutot que N pannes independantes.
+    //   "device" : equipement autonome, non generaliste (MeteoHub S3 et autres
+    //              ESP32, capteurs). Il appartient fonctionnellement a
+    //              l'installation locale ou qu'il soit vu, et reste donc visible
+    //              sur les tableaux de bord locaux meme s'il porte un autre hote.
+    //
+    // Champ ADDITIF et retrocompatible : absent => "host". Seuls les equipements
+    // autonomes ont a declarer explicitement "device". Laisse la porte ouverte a
+    // un troisieme role sans casser la semantique (role est extensible).
+    QString role = QStringLiteral("host");
+
+    // Valeurs connues de `role`, comme constantes pour que producteur et
+    // consommateur ne divergent pas sur l'orthographe.
+    static constexpr const char* kRoleHost   = "host";
+    static constexpr const char* kRoleDevice = "device";
+
     // --- Capacites offertes (STABLES, jamais renommees) ---------------------
     // Ce que le service SAIT FAIRE, par opposition a ce qu'il S'APPELLE.
     //

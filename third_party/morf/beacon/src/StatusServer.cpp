@@ -131,6 +131,9 @@ QByteArray StatusServer::buildStatusJson() const {
     QJsonObject o;
     o["app"]      = m_config.appName;
     o["host"]     = QHostInfo::localHostName();
+    o["role"]     = m_config.role.isEmpty()
+                        ? QString::fromLatin1(PresenceConfig::kRoleHost)
+                        : m_config.role;
     o["version"]  = m_config.version;
     o["state"]    = m_provider ? m_provider->state() : QStringLiteral("ok");
     o["uptime_s"] = static_cast<double>(m_uptime.isValid() ? m_uptime.elapsed() / 1000 : 0);

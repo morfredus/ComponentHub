@@ -97,6 +97,13 @@ QByteArray Heartbeat::buildDatagram() const {
     o["proto"]       = QString::fromLatin1(PresenceConfig::kProto);
     o["app"]         = m_config.appName;
     o["host"]        = host;
+    // Role de l'emetteur (host/device). Emis systematiquement : c'est une donnee
+    // d'identite, courte et stable, dont un consommateur a besoin pour distinguer
+    // « poste eteint » de « equipement absent ». Absent d'une annonce ancienne =>
+    // le consommateur retombe sur "host", le defaut historique.
+    o["role"]        = m_config.role.isEmpty()
+                           ? QString::fromLatin1(PresenceConfig::kRoleHost)
+                           : m_config.role;
     o["version"]     = m_config.version;
     o["state"]       = m_provider ? m_provider->state() : QStringLiteral("ok");
     o["status_port"] = static_cast<int>(m_config.statusPort);

@@ -19,7 +19,7 @@ class IMetricsProvider;
 // -----------------------------------------------------------------------------
 // StatusServer : minuscule serveur HTTP/1.1 local exposant le DETAIL de l'app.
 //
-//   GET /status   -> JSON complet { app, host, version, state, uptime_s,
+//   GET /status   -> JSON complet { app, host, role, version, state, uptime_s,
 //                                    metrics: {...}, ts }
 //   GET /healthz  -> { "status": "ok" }  (sonde de vie legere)
 //
