@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "project": { "id": "ComponentHub", "type": "application" },
+  "packaging": {
+    "provider": "project",
+    "targets": {
+      "linux-amd64-deb":      { "platform": { "os": "linux", "arch": "x86_64" }, "build": { "preset": "linux" },       "package": { "script": "scripts/linux/package-deb.sh", "format": "deb", "architecture": "amd64" } },
+      "linux-amd64-appimage": { "platform": { "os": "linux", "arch": "x86_64" }, "build": { "preset": "linux" },       "package": { "script": "scripts/linux/package-appimage.sh", "format": "appimage" } },
+      "linux-arm64-deb":      { "platform": { "os": "linux", "arch": "arm64" },  "build": { "preset": "linux-arm64" }, "package": { "script": "scripts/linux/package-deb.sh", "format": "deb", "architecture": "arm64" } },
+      "windows-x86_64-zip":   { "platform": { "os": "windows", "arch": "x86_64" }, "build": { "preset": "mingw" },     "package": { "script": "scripts/windows/package-win.ps1", "format": "zip" } }
+    }
+  }
+}
