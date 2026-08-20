@@ -8,6 +8,13 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.8.3] - 2026-08-20
+
+### Fixed
+
+- Use the MSYS2 Bash that belongs to the active MinGW compiler when collecting
+  runtime DLLs after a Windows build, instead of the unrelated WSL command.
+
 ## [1.8.2] - 2026-08-14
 
 ### Changed

@@ -87,9 +87,30 @@ if(WIN32)
             COMMENT "Déploiement des DLL Qt à côté de l'exécutable")
     endif()
     if(NOT MSVC)
-        add_custom_command(TARGET ComponentHub POST_BUILD
-            COMMAND bash "${CMAKE_SOURCE_DIR}/scripts/windows/deploy-mingw.sh" "$<TARGET_FILE_DIR:ComponentHub>"
-            COMMENT "Copie des DLL MinGW à côté de l'exécutable")
+        function(componenthub_msys_path windows_path output)
+            string(REGEX REPLACE "^([A-Za-z]):/" "/\\1/" converted "${windows_path}")
+            string(SUBSTRING "${converted}" 1 1 drive)
+            string(TOLOWER "${drive}" drive)
+            string(SUBSTRING "${converted}" 2 -1 tail)
+            set(${output} "/${drive}${tail}" PARENT_SCOPE)
+        endfunction()
+        componenthub_msys_path("${CMAKE_SOURCE_DIR}/scripts/windows/deploy-mingw.sh"
+                               COMPONENTHUB_DEPLOY_SCRIPT)
+        componenthub_msys_path("${CMAKE_CURRENT_BINARY_DIR}" COMPONENTHUB_TARGET_DIR)
+        get_filename_component(COMPONENTHUB_COMPILER_BIN "${CMAKE_CXX_COMPILER}" DIRECTORY)
+        get_filename_component(COMPONENTHUB_MINGW_ROOT "${COMPONENTHUB_COMPILER_BIN}" DIRECTORY)
+        get_filename_component(COMPONENTHUB_MSYS_ROOT "${COMPONENTHUB_MINGW_ROOT}" DIRECTORY)
+        set(COMPONENTHUB_MSYS_BASH "${COMPONENTHUB_MSYS_ROOT}/usr/bin/bash.exe")
+        if(EXISTS "${COMPONENTHUB_MSYS_BASH}")
+            add_custom_command(TARGET ComponentHub POST_BUILD
+                # Do not use `bash` from PATH: Windows may resolve it to WSL,
+                # which cannot read this Windows workspace. The matching MSYS2
+                # Bash is derived from the active MinGW compiler instead.
+                COMMAND "${COMPONENTHUB_MSYS_BASH}" "${COMPONENTHUB_DEPLOY_SCRIPT}" "${COMPONENTHUB_TARGET_DIR}"
+                COMMENT "Copie des DLL MinGW à côté de l'exécutable")
+        else()
+            message(WARNING "MSYS2 Bash not found; non-Qt MinGW DLL collection is skipped")
+        endif()
     endif()
 endif()
 
