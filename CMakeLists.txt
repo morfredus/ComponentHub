@@ -8,6 +8,15 @@ string(STRIP "${CH_VERSION}" CH_VERSION)
 
 project(ComponentHub VERSION "${CH_VERSION}" LANGUAGES CXX)
 
+
+# --- Enregistrement des compilations (best-effort) ------------------------
+# Chronometre le vrai travail des compilateurs et signale la duree a
+# morfAnalytics (POST /api/monitor/activity), QUEL QUE SOIT le declencheur :
+# `cmake --build` direct, `morf upgrade` ou un deploiement morfDeploy (un
+# marqueur evite le double comptage cote morfDeploy). Sans URL configuree
+# (machine hors parc), c'est un no-op silencieux. A appeler AVANT les cibles.
+include("${CMAKE_CURRENT_SOURCE_DIR}/third_party/morf/morfdeploy/record_compile.cmake")
+morf_enable_compile_recording()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -80,7 +89,8 @@ endif()
 
 # --- Déploiement Windows : DLL Qt (windeployqt) + DLL MinGW (script) -------
 if(WIN32)
-    find_program(WINDEPLOYQT_EXE windeployqt HINTS "${Qt6_DIR}/../../../bin")
+    find_program(WINDEPLOYQT_EXE windeployqt
+        HINTS "${Qt6_DIR}/../../../bin" "$ENV{QT_ROOT}/bin")
     if(WINDEPLOYQT_EXE)
         add_custom_command(TARGET ComponentHub POST_BUILD
             COMMAND "${WINDEPLOYQT_EXE}" --no-translations --compiler-runtime "$<TARGET_FILE:ComponentHub>"
@@ -97,16 +107,23 @@ if(WIN32)
         componenthub_msys_path("${CMAKE_SOURCE_DIR}/scripts/windows/deploy-mingw.sh"
                                COMPONENTHUB_DEPLOY_SCRIPT)
         componenthub_msys_path("${CMAKE_CURRENT_BINARY_DIR}" COMPONENTHUB_TARGET_DIR)
-        get_filename_component(COMPONENTHUB_COMPILER_BIN "${CMAKE_CXX_COMPILER}" DIRECTORY)
+        set(_componenthub_cxx "${CMAKE_CXX_COMPILER}")
+        if(NOT EXISTS "${_componenthub_cxx}")
+            find_program(_componenthub_cxx NAMES "${CMAKE_CXX_COMPILER}" g++.exe)
+        endif()
+        get_filename_component(COMPONENTHUB_COMPILER_BIN "${_componenthub_cxx}" DIRECTORY)
         get_filename_component(COMPONENTHUB_MINGW_ROOT "${COMPONENTHUB_COMPILER_BIN}" DIRECTORY)
         get_filename_component(COMPONENTHUB_MSYS_ROOT "${COMPONENTHUB_MINGW_ROOT}" DIRECTORY)
-        set(COMPONENTHUB_MSYS_BASH "${COMPONENTHUB_MSYS_ROOT}/usr/bin/bash.exe")
-        if(EXISTS "${COMPONENTHUB_MSYS_BASH}")
+        find_program(COMPONENTHUB_MSYS_BASH bash.exe
+            HINTS "${COMPONENTHUB_MSYS_ROOT}/usr/bin"
+            NO_DEFAULT_PATH)
+        if(COMPONENTHUB_MSYS_BASH)
             add_custom_command(TARGET ComponentHub POST_BUILD
-                # Do not use `bash` from PATH: Windows may resolve it to WSL,
-                # which cannot read this Windows workspace. The matching MSYS2
-                # Bash is derived from the active MinGW compiler instead.
-                COMMAND "${COMPONENTHUB_MSYS_BASH}" "${COMPONENTHUB_DEPLOY_SCRIPT}" "${COMPONENTHUB_TARGET_DIR}"
+                COMMAND "${CMAKE_COMMAND}" -E env
+                    "PATH=${COMPONENTHUB_MSYS_ROOT}/usr/bin;${COMPONENTHUB_COMPILER_BIN}"
+                    --
+                    "${COMPONENTHUB_MSYS_BASH}" "${COMPONENTHUB_DEPLOY_SCRIPT}" "${COMPONENTHUB_TARGET_DIR}"
+                VERBATIM
                 COMMENT "Copie des DLL MinGW à côté de l'exécutable")
         else()
             message(WARNING "MSYS2 Bash not found; non-Qt MinGW DLL collection is skipped")
@@ -120,3 +137,6 @@ if(CH_BUILD_SMOKE)
     add_executable(ch_smoke src/smoke_main.cpp)
     target_link_libraries(ch_smoke PRIVATE componenthub_core)
 endif()
+
+# Signale la duree de compile a morfAnalytics apres le lien de l'executable.
+morf_record_target_build(ComponentHub "ComponentHub")

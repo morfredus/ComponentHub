@@ -34,4 +34,22 @@ resolve_src() {
 
 sync_one morfBeacon "$(resolve_src morfBeacon)" "$ROOT/third_party/morf/beacon"
 sync_one morfUpdate "$(resolve_src morfUpdate)" "$ROOT/third_party/morf/update"
+# Coeur de deploiement (morfdeploy) : vendore UNIQUEMENT pour l'enregistrement des
+# compilations (record_compile.cmake/.py, appele par le CMakeLists). Source de
+# verite : depot « morfDeploy » (ou son clone de travail).
+if [ -d "$SRC_BASE/morfDeploy" ]; then
+  DEPLOY_SRC="$SRC_BASE/morfDeploy/morfdeploy"; DEPLOY_VER="$SRC_BASE/morfDeploy/VERSION"
+else
+  DEPLOY_SRC="$SRC_BASE/morfDeploy_travail/morfdeploy"; DEPLOY_VER="$SRC_BASE/morfDeploy_travail/VERSION"
+fi
+DEPLOY_DST="$ROOT/third_party/morf/morfdeploy"
+if [ -d "$DEPLOY_SRC" ]; then
+  rm -rf "$DEPLOY_DST"; mkdir -p "$DEPLOY_DST"
+  cp -r "$DEPLOY_SRC/." "$DEPLOY_DST/"
+  find "$DEPLOY_DST" -name __pycache__ -type d -prune -exec rm -rf {} +
+  [ -f "$DEPLOY_VER" ] && cp "$DEPLOY_VER" "$DEPLOY_DST/VERSION"
+  echo "OK  morfdeploy$([ -f "$DEPLOY_DST/VERSION" ] && echo "  (version $(cat "$DEPLOY_DST/VERSION"))")"
+else
+  echo "!! Source introuvable pour morfdeploy : $DEPLOY_SRC" >&2
+fi
 echo "Synchronisation terminée. Le CMakeLists vendoré n'est pas modifié."

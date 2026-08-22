@@ -8,6 +8,30 @@ file at the repository root).
 
 ## [Unreleased]
 
+## [1.8.7] - 2026-08-22
+
+### Modifié
+
+- Resynchroniser la copie vendorée de morfUpdate vers 0.4.3.
+
+## [1.8.6] - 2026-08-22
+
+### Corrigé
+
+- Déploiement MinGW : PATH du POST_BUILD = `usr/bin` de l'install MSYS2 du compilateur + dossier de `g++` (grep/awk/ldd depuis PowerShell). `windeployqt` est aussi cherché sous `$QT_ROOT/bin`.
+
+## [1.8.5] - 2026-08-21
+
+### Ajouté
+
+- Enregistrement des compilations au niveau CMake (record_compile, vendoré) : la durée de compile est signalée à morfAnalytics quel que soit le déclencheur (cmake --build direct, morf upgrade, déploiement morfDeploy).
+
+## [1.8.4] - 2026-08-21
+
+### Changed
+
+- Resync the vendored morfUpdate copy to 0.4.1.
+
 ## [1.8.3] - 2026-08-20
 
 ### Fixed
