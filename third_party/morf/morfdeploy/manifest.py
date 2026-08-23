@@ -50,6 +50,14 @@ class ConfigFile:
     dest: object          # str, or {"linux": ..., "windows": ...}
     overwrite: bool = False
 
+    #: Mode POSIX du fichier de config une fois pose (chaine octale). Par defaut
+    #: 0644 : contrat deterministe, root proprietaire, service en lecture. Un
+    #: fichier porteur de SECRETS declare un mode restrictif (0640 typiquement) ;
+    #: le service doit alors le lire par le groupe, ce que le postinst arrange
+    #: (chown root:<service>). Ce n'est PAS une regle absolue 0644 partout : c'est
+    #: un defaut sur, surchargeable la ou un secret l'exige.
+    mode: str = "0644"
+
     #: Places this configuration used to live. On install, the first one found
     #: is adopted rather than replaced by the example -- a settings file
     #: someone edited by hand outlives the directory convention it was written
@@ -447,6 +455,7 @@ class Manifest:
                 dest=entry["dest"],
                 overwrite=bool(entry.get("overwrite", False)),
                 migrate_from=tuple(entry.get("migrate_from", ())),
+                mode=str(entry.get("mode", "0644")),
             )
             for entry in raw.get("configs", [])
             if entry.get("source") and entry.get("dest")

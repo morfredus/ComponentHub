@@ -276,6 +276,11 @@ def build_deb(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
         opt.mkdir(parents=True)
         shutil.copy2(binary, opt / manifest.binary_name())
         (opt / manifest.binary_name()).chmod(0o755)
+        # Fichier VERSION a cote du binaire : un service sans beacon (morfUpdate)
+        # reste lisible par morfMonitor si /status ne repond pas encore.
+        version_file = manifest.repo_root / "VERSION"
+        if version_file.is_file():
+            shutil.copy2(version_file, opt / "VERSION")
 
         # A privileged helper is an explicit, opt-in package fact. It never
         # shares the application directory: the service account must not be
@@ -295,6 +300,7 @@ def build_deb(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
             (helper_dir / manifest.helper_binary).chmod(0o4750)
 
         conffiles = []
+        restricted_configs = []
         etc = Path(str(manifest.config_dir()).lstrip("/"))
         for config in manifest.configs:
             src = manifest.repo_root / config.source
@@ -308,7 +314,19 @@ def build_deb(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
             dest = stage / str(dest_abs).lstrip("/")
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dest)
-            conffiles.append("/" + str(dest.relative_to(stage)).replace("\\", "/"))
+            # Mode deterministe (defaut 0644) plutot que celui herite du checkout
+            # git : sinon un meme paquet pose un mode different selon la machine,
+            # le umask ou la maniere dont le fichier a ete genere.
+            mode = int(config.mode, 8)
+            dest.chmod(mode)
+            abs_path = "/" + str(dest.relative_to(stage)).replace("\\", "/")
+            conffiles.append(abs_path)
+            # Un mode sans lecture « autre » (ex. secret en 0640) suppose que le
+            # service lit par son groupe. dpkg pose tout en root:root ; le postinst
+            # redonne alors le fichier au groupe du service, sinon un 0640 serait
+            # illisible pour son compte non-root.
+            if not (mode & 0o004):
+                restricted_configs.append((abs_path, config.mode))
 
         # Persistent state directory (owned by the run user via postinst).
         (stage / str(manifest.state_dir()).lstrip("/")).mkdir(parents=True, exist_ok=True)
@@ -353,12 +371,18 @@ def build_deb(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
                 f"chmod 750 {helper_dir} || true\n"
                 f"chown root:{run_user} {helper_file} || true\n"
                 f"chmod 4750 {helper_file} || true\n")
+        # Configs a mode restrictif (secrets) : donnees au groupe du service.
+        config_postinst = ""
+        for abs_path, mode in restricted_configs:
+            config_postinst += (
+                f"chown root:{run_user} {abs_path} || true\n"
+                f"chmod {mode} {abs_path} || true\n")
         postinst = (
             "#!/bin/sh\nset -e\n"
             f"if ! id -u {run_user} >/dev/null 2>&1; then\n"
             f"  adduser --system --group --no-create-home --home /opt/{svc} {run_user} || true\n"
             "fi\n"
-            f"chown -R {run_user}:{run_user} /opt/{svc} {manifest.state_dir()} || true\n") + helper_postinst + (
+            f"chown -R {run_user}:{run_user} /opt/{svc} {manifest.state_dir()} || true\n") + helper_postinst + config_postinst + (
             "if [ -d /run/systemd/system ]; then\n"
             "  systemctl daemon-reload || true\n"
             f"  systemctl enable --now {svc}.service || true\n"
@@ -490,14 +514,14 @@ def package(project, manifest: Manifest, target_name, no_build: bool,
             write_build_info(manifest.repo_root, pack_binary,
                              project=manifest.display_name)
         except OSError:
-            if os.access(binary.parent, os.W_OK):
-                raise
+            # Parent writable + build-info.json root:root : le test W_OK du
+            # dossier ne suffit pas. Tampon hors du build.
             stamp_tmp = tempfile.TemporaryDirectory(prefix="morfdeploy-stamp-")
             pack_binary = Path(stamp_tmp.name) / binary.name
             shutil.copy2(binary, pack_binary)
             write_build_info(manifest.repo_root, pack_binary,
                              project=manifest.display_name)
-            print(f"  build dir not writable ({binary.parent}); "
+            print(f"  cannot write build-info.json beside {binary}; "
                   f"provenance stamped in {stamp_tmp.name}")
     else:
         pack_binary = locate_binary(manifest, build_dir)
