@@ -337,9 +337,17 @@ def build_deb(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
         # files are conffiles, so dpkg preserves an edited one across upgrades.
         helper_postinst = ""
         if manifest.helper_binary:
+            # Le binaire 4750 ne suffit pas : si le dossier reste root:root 750,
+            # le compte du service ne peut pas le parcourir et QProcess echoue
+            # « helper introuvable » alors que le fichier est la (cas vu avec
+            # morfphoto-helper apres un dpkg incomplet).
+            helper_dir = f"/usr/lib/morfsystem/{svc}"
+            helper_file = f"{helper_dir}/{manifest.helper_binary}"
             helper_postinst = (
-                f"chown root:{run_user} /usr/lib/morfsystem/{svc}/{manifest.helper_binary} || true\n"
-                f"chmod 4750 /usr/lib/morfsystem/{svc}/{manifest.helper_binary} || true\n")
+                f"chown root:{run_user} {helper_dir} || true\n"
+                f"chmod 750 {helper_dir} || true\n"
+                f"chown root:{run_user} {helper_file} || true\n"
+                f"chmod 4750 {helper_file} || true\n")
         postinst = (
             "#!/bin/sh\nset -e\n"
             f"if ! id -u {run_user} >/dev/null 2>&1; then\n"
