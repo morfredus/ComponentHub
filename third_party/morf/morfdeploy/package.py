@@ -29,6 +29,8 @@ import platform
 import shutil
 import subprocess
 import zipfile
+import os
+import tempfile
 from pathlib import Path
 
 from .core import detect_preset, invoking_user, locate_binary
@@ -479,21 +481,42 @@ def package(project, manifest: Manifest, target_name, no_build: bool,
         if binary is None:
             raise PackageError(f"no binary under {manifest.repo_root / build_dir} "
                                "after building.")
-        write_build_info(manifest.repo_root, binary,
-                         project=manifest.display_name)
+        pack_binary = binary
+        stamp_tmp = None
+        # Un cmake/ninja lance en root laisse build-*/service/ en root:root :
+        # ninja n'a plus rien a faire, mais build-info.json est injouable
+        # (PermissionError). On tamponne alors une copie dans un dossier user.
+        try:
+            write_build_info(manifest.repo_root, pack_binary,
+                             project=manifest.display_name)
+        except OSError:
+            if os.access(binary.parent, os.W_OK):
+                raise
+            stamp_tmp = tempfile.TemporaryDirectory(prefix="morfdeploy-stamp-")
+            pack_binary = Path(stamp_tmp.name) / binary.name
+            shutil.copy2(binary, pack_binary)
+            write_build_info(manifest.repo_root, pack_binary,
+                             project=manifest.display_name)
+            print(f"  build dir not writable ({binary.parent}); "
+                  f"provenance stamped in {stamp_tmp.name}")
     else:
-        binary = locate_binary(manifest, build_dir)
-        if binary is None:
+        pack_binary = locate_binary(manifest, build_dir)
+        stamp_tmp = None
+        if pack_binary is None:
             raise PackageError("no built binary and --no-build was given: build it "
                                "first, or drop --no-build.")
 
     made = []
-    for t in selected:
-        print(f"\nTarget {t.name} ({t.format}):")
-        verify_provenance(binary, t, manifest.repo_root)   # the barrier
-        builder = _FORMAT_BUILDERS.get(t.format)
-        if builder is None:
-            print(f"  no builder for format '{t.format}', skipped.")
-            continue
-        made.append(builder(manifest, binary, t, out_dir))
-    return made
+    try:
+        for t in selected:
+            print(f"\nTarget {t.name} ({t.format}):")
+            verify_provenance(pack_binary, t, manifest.repo_root)   # the barrier
+            builder = _FORMAT_BUILDERS.get(t.format)
+            if builder is None:
+                print(f"  no builder for format '{t.format}', skipped.")
+                continue
+            made.append(builder(manifest, pack_binary, t, out_dir))
+        return made
+    finally:
+        if stamp_tmp is not None:
+            stamp_tmp.cleanup()

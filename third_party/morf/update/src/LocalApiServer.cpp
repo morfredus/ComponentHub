@@ -82,8 +82,14 @@ void LocalApiServer::handle(QTcpSocket* socket, QByteArray method, QByteArray pa
         return;
     }
     if (method == "GET" && path == "/status") {
-        reply(socket, 200, "OK", {{"app", "morfUpdate"}, {"state", "ok"},
-              {"updates", QJsonObject{{"scope", "local"}}}});
+        // version : sans beacon, morfMonitor n'avait rien a afficher pour
+        // cet agent. /status est le contrat HTTP de tout service morfSystem.
+        reply(socket, 200, "OK", {
+            {QStringLiteral("app"), QStringLiteral("morfUpdate")},
+            {QStringLiteral("version"), QStringLiteral(MORFUPDATE_VERSION)},
+            {QStringLiteral("state"), QStringLiteral("ok")},
+            {QStringLiteral("updates"), QJsonObject{{QStringLiteral("scope"),
+                                                     QStringLiteral("local")}}}});
         return;
     }
     if (method == "GET" && path.startsWith("/api/v1/updates/")) {
