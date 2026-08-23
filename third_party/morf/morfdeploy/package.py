@@ -335,6 +335,9 @@ def build_deb(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
 
         # Maintainer scripts: a dedicated system user, then systemd wiring. Config
         # files are conffiles, so dpkg preserves an edited one across upgrades.
+        # prerm : a l'upgrade, seulement stop (pas disable). disable --now laissait
+        # le service eteint si enable --now du postinst echouait (|| true), visible
+        # en mettant a jour morfMonitor depuis sa propre interface.
         helper_postinst = ""
         if manifest.helper_binary:
             # Le binaire 4750 ne suffit pas : si le dossier reste root:root 750,
@@ -361,7 +364,14 @@ def build_deb(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
         prerm = (
             "#!/bin/sh\nset -e\n"
             "if [ -d /run/systemd/system ]; then\n"
-            f"  systemctl disable --now {svc}.service || true\n"
+            "  case \"$1\" in\n"
+            "    remove|deconfigure)\n"
+            f"      systemctl disable --now {svc}.service || true\n"
+            "      ;;\n"
+            "    *)\n"
+            f"      systemctl stop {svc}.service || true\n"
+            "      ;;\n"
+            "  esac\n"
             "fi\nexit 0\n")
         for name, body in (("postinst", postinst), ("prerm", prerm)):
             p = debian / name
