@@ -141,6 +141,59 @@ bool installLinux(const QString& file, const AgentTarget& target, QString* error
                       {QStringLiteral("--install-deb"), file, target.service}, error);
 }
 
+// Stratégie "source-bundle" (projet non compilé, ex. morfDashboard) : l'archive
+// .tar.gz des fichiers applicatifs remplace l'installation, config et état
+// préservés. L'EXTRACTION se fait ici, NON privilégiée (utilisateur du service) :
+// le helper setuid ne touche jamais à une archive, seulement à un échange
+// atomique de répertoires déjà extraits. Contrôle anti-traversée avant extraction.
+bool safeBundleEntries(const QString& archive, QString* error) {
+    QProcess tar;
+    tar.start(QStringLiteral("tar"), {QStringLiteral("-tzf"), archive});
+    if (!tar.waitForFinished(30000) || tar.exitStatus() != QProcess::NormalExit
+        || tar.exitCode() != 0) {
+        *error = QStringLiteral("cannot inspect source bundle");
+        return false;
+    }
+    const QStringList entries =
+        QString::fromUtf8(tar.readAllStandardOutput()).split('\n', Qt::SkipEmptyParts);
+    for (const QString& entry : entries) {
+        if (entry.startsWith('/') || entry.startsWith(QStringLiteral(".."))
+            || entry.contains(QStringLiteral("/../")) || entry.contains(':')) {
+            *error = QStringLiteral("source bundle contains an unsafe path");
+            return false;
+        }
+    }
+    return !entries.isEmpty();
+}
+
+bool installSourceBundle(const QString& file, const AgentTarget& target,
+                         const QString& stage, const QString& version, QString* error) {
+    if (!safeBundleEntries(file, error)) return false;
+    const QString unpack = QDir(stage).filePath(QStringLiteral("unpack"));
+    if (!QDir().mkpath(unpack)
+        || !runProcess(QStringLiteral("tar"),
+                       {QStringLiteral("-xzf"), file, QStringLiteral("-C"), unpack}, error))
+        return false;
+    // La version embarquée dans le bundle doit correspondre à celle demandée :
+    // dernière barrière avant de remplacer l'application.
+    QFile embedded(QDir(unpack).filePath(QStringLiteral("VERSION")));
+    if (!embedded.open(QIODevice::ReadOnly)) {
+        *error = QStringLiteral("source bundle has no VERSION file");
+        return false;
+    }
+    const QString found = QString::fromUtf8(embedded.readLine()).trimmed();
+    embedded.close();
+    if (found != version) {
+        *error = QStringLiteral("source bundle VERSION does not match the requested version");
+        return false;
+    }
+    // Échange atomique + rollback : opération privilégiée, déléguée au helper
+    // setuid, qui ne reçoit qu'un répertoire déjà extrait et un service déclaré.
+    return runProcess(QStringLiteral("/usr/lib/morfsystem/morfupdate/morfupdate-helper"),
+                      {QStringLiteral("--install-bundle"),
+                       QDir(unpack).absolutePath(), target.service}, error);
+}
+
 #ifdef Q_OS_WIN
 bool safeArchive(const QString& zip, QStringList* entries, QString* error) {
     QProcess tar;
@@ -236,8 +289,19 @@ void UpdateEngine::run(const QString& operationId) {
     ValidatedAsset asset;
     if (!ReleaseValidator::selectAsset(manifestDoc.object(), operation->project, operation->toVersion,
                                        operation->platform, commit, &asset, &error)) { fail(operationId, error); return; }
-    const QString expectedFormat = operation->platform.startsWith(QStringLiteral("windows")) ? "zip" : "deb";
-    if (asset.format != expectedFormat) { fail(operationId, QStringLiteral("manifest asset format is incompatible")); return; }
+    // Stratégie d'installation déclarée par le manifeste ; défaut "package" pour
+    // les releases antérieures au champ (rétro-compat). morfUpdate lit QUOI
+    // installer plutôt que de présumer un binaire compilé.
+    const QString strategy = manifestDoc.object().value("install").toObject()
+                                 .value("type").toString(QStringLiteral("package"));
+    const bool windows = operation->platform.startsWith(QStringLiteral("windows"));
+    const QString expectedFormat = strategy == QStringLiteral("source-bundle")
+                                       ? QStringLiteral("source-bundle")
+                                       : (windows ? QStringLiteral("zip") : QStringLiteral("deb"));
+    if (asset.format != expectedFormat) {
+        fail(operationId, QStringLiteral("manifest asset format is incompatible with its install strategy"));
+        return;
+    }
     QJsonObject artifactAsset;
     for (const QJsonValue& value : release.value("assets").toArray()) {
         const QJsonObject candidate = value.toObject();
@@ -254,11 +318,20 @@ void UpdateEngine::run(const QString& operationId) {
     if (!m_operations->transition(operationId, UpdateState::Verifying, QStringLiteral("checking SHA-256 and provenance"), &error)
         || !ReleaseValidator::checksumMatches(file, asset.sha256, &error)) { fail(operationId, error); return; }
     if (!m_operations->transition(operationId, UpdateState::Installing, QStringLiteral("installing verified package"), &error)) return;
+    if (strategy == QStringLiteral("source-bundle")) {
 #ifdef Q_OS_WIN
-    if (!installWindows(file, target, stage, &error)) { fail(operationId, error); return; }
+        fail(operationId, QStringLiteral("source-bundle install is not supported on Windows"));
+        return;
 #else
-    if (!installLinux(file, target, &error)) { fail(operationId, error); return; }
+        if (!installSourceBundle(file, target, stage, operation->toVersion, &error)) { fail(operationId, error); return; }
 #endif
+    } else {
+#ifdef Q_OS_WIN
+        if (!installWindows(file, target, stage, &error)) { fail(operationId, error); return; }
+#else
+        if (!installLinux(file, target, &error)) { fail(operationId, error); return; }
+#endif
+    }
     if (!m_operations->transition(operationId, UpdateState::Restarting, QStringLiteral("service restarted"), &error)) return;
     if (!m_operations->transition(operationId, UpdateState::HealthCheck, QStringLiteral("checking service health"), &error)) return;
     // dpkg a déjà réussi : un /healthz trop lent ne doit pas afficher un échec

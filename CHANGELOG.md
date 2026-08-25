@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.8.8] - 2026-08-25
+
+### Modifié
+
+- Resynchronisation de la copie vendorée de morfUpdate vers 0.4.8 (stratégie d'installation `source-bundle` ajoutée au moteur ; aucun changement fonctionnel côté cette application).
+
 ## [Unreleased]
 
 ## [1.8.7] - 2026-08-22
