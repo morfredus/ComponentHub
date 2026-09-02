@@ -29,9 +29,12 @@
       "displayName": "ComponentHub (Linux ARM64 croisé, depuis x86_64)",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-arm64-cross",
-      "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64.cmake",
+      "toolchainFile": "${sourceDir}/third_party/morf/morfdeploy/cmake/linux-aarch64.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
+      },
+      "environment": {
+        "QEMU_LD_PREFIX": "$penv{MORF_SYSROOT}"
       }
     },
     {
@@ -58,7 +61,10 @@
     },
     {
       "name": "linux-arm64-cross",
-      "configurePreset": "linux-arm64-cross"
+      "configurePreset": "linux-arm64-cross",
+      "environment": {
+        "QEMU_LD_PREFIX": "$penv{MORF_SYSROOT}"
+      }
     },
     {
       "name": "mingw",
