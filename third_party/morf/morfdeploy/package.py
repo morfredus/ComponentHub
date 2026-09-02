@@ -72,6 +72,40 @@ def _read_version(repo_root: Path) -> str | None:
         return None
 
 
+# --- Cross-compilation (opt-in) ----------------------------------------------
+#
+# Reproducible ARM64 packaging from an x86_64 host, using the linux-arm64-cross
+# preset (Debian Trixie sysroot + qemu for Qt's tools). Strictly opt-in: only when
+# a linux/arm64 target is packaged BY NAME on an x86_64 Linux host with MORF_SYSROOT
+# set. The native path (build on the matching platform) is untouched. The Pi build
+# (native arm64) stays the reference; this is the "verified cross toolchain" the
+# native guard already anticipated.
+
+def _is_cross_build(target) -> bool:
+    """True when `target` (linux/arm64) is being cross-built from this x86_64 host."""
+    if target.os != "linux" or target.arch != "arm64":
+        return False
+    if platform.system() == "Windows":
+        return False
+    if platform.machine().lower() in ("aarch64", "arm64"):
+        return False  # native on the Pi, not a cross build
+    return bool(os.environ.get("MORF_SYSROOT"))
+
+
+def _elf_arch(binary: Path) -> str:
+    """Actual architecture of an ELF binary, in the parc's names (x86_64/arm64)."""
+    tool = shutil.which("readelf")
+    if tool is None:
+        return ""
+    out = subprocess.run([tool, "-h", str(binary)], capture_output=True, text=True)
+    text = out.stdout
+    if "AArch64" in text:
+        return "arm64"
+    if "X86-64" in text or "Advanced Micro Devices X86-64" in text:
+        return "x86_64"
+    return ""
+
+
 def verify_provenance(binary: Path, target, repo_root: Path) -> dict:
     """Refuse to package anything whose provenance cannot be fully proved."""
     info = _read_build_info(binary)
@@ -93,7 +127,15 @@ def verify_provenance(binary: Path, target, repo_root: Path) -> dict:
     if version is not None and info.get("version") != version:
         raise PackageError(
             f"build version {info.get('version')!r} != VERSION {version!r}: rebuild.")
-    if info.get("platform") != target.os or info.get("architecture") != target.arch:
+    if _is_cross_build(target):
+        # A cross build's build-info records the HOST arch (provenance detects the
+        # running machine). The binary itself is the ground truth : check the ELF.
+        elf = _elf_arch(binary)
+        if elf and elf != target.arch:
+            raise PackageError(
+                f"cross build produced a {elf} binary, target is {target.arch}: "
+                "wrong build for this deliverable.")
+    elif info.get("platform") != target.os or info.get("architecture") != target.arch:
         raise PackageError(
             f"binary is {info.get('platform')}-{info.get('architecture')}, target "
             f"is {target.os}-{target.arch}: wrong build for this deliverable.")
@@ -121,10 +163,15 @@ def select_targets(project, target_name, cur_os, cur_arch):
             raise PackageError(f"target '{target_name}' is not packaged by morfdeploy "
                                f"(provider '{t.provider}').")
         if not (t.os == cur_os and t.arch == cur_arch):
+            # Opt-in cross path: a named linux/arm64 target, on an x86_64 Linux host,
+            # with a verified cross toolchain (MORF_SYSROOT). Otherwise refused as before.
+            if _is_cross_build(t):
+                return [t], [x for x in incompatible if x is not t]
             raise PackageError(
                 f"target '{target_name}' is {t.os}-{t.arch}, this machine is "
                 f"{cur_os}-{cur_arch}. Cross-compilation is not assumed; run it on "
-                "the matching platform (or declare a verified cross toolchain).")
+                "the matching platform, or set MORF_SYSROOT for the linux-arm64-cross "
+                "toolchain (see morfDeploy/scripts/build-arm64-sysroot.sh).")
         return [t], incompatible
     return native, incompatible
 
@@ -165,11 +212,15 @@ def declared_runtime_debs(manifest: Manifest) -> list:
     return sorted(set(packages))
 
 
-def shlibdeps(binary: Path) -> list:
+def shlibdeps(binary: Path, admindir: str | None = None) -> list:
     """ELF runtime dependencies read from the binary itself, via dpkg-shlibdeps.
 
     Returns a list of Debian dependency clauses (e.g. 'libqt6core6 (>= 6.4)').
     dpkg-shlibdeps needs a minimal debian/ context, provided in a temp tree.
+
+    `admindir` : for a CROSS build, the dpkg database of the target sysroot
+    (<sysroot>/var/lib/dpkg), so an arm64 binary's sonames resolve to the target's
+    arm64 packages instead of the x86_64 host's.
     """
     if shutil.which("dpkg-shlibdeps") is None:
         raise PackageError("dpkg-shlibdeps not found: install 'dpkg-dev' to build a .deb.")
@@ -182,9 +233,12 @@ def shlibdeps(binary: Path) -> list:
             encoding="utf-8")
         # -O prints "shlibs:Depends=..." to stdout instead of writing a substvars
         # file; --ignore-missing-info keeps a private/bundled .so from aborting it.
+        cmd = ["dpkg-shlibdeps", "-O", "--ignore-missing-info"]
+        if admindir:
+            cmd.append(f"--admindir={admindir}")
+        cmd.append(str(binary))
         result = subprocess.run(
-            ["dpkg-shlibdeps", "-O", "--ignore-missing-info", str(binary)],
-            cwd=str(work), capture_output=True, text=True, check=False)
+            cmd, cwd=str(work), capture_output=True, text=True, check=False)
         line = result.stdout.strip()
         if not line.startswith("shlibs:Depends="):
             # Not fatal to the whole package: report and continue with an empty ELF
@@ -258,7 +312,14 @@ def build_deb(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
     run_user = svc  # a dedicated system user, created by the maintainer script
 
     # --- Depends: ELF (from the binary) + explicit runtime, shown then merged ---
-    elf = shlibdeps(binary)
+    # Cross build : resolve sonames against the target sysroot's dpkg database, not
+    # the x86_64 host's (an arm64 binary must map to arm64 packages).
+    admindir = None
+    if _is_cross_build(target):
+        sysroot = os.environ.get("MORF_SYSROOT")
+        if sysroot:
+            admindir = str(Path(sysroot) / "var" / "lib" / "dpkg")
+    elf = shlibdeps(binary, admindir=admindir)
     runtime = declared_runtime_debs(manifest)
     print("  Depends -- from dpkg-shlibdeps (linked libraries):")
     for c in elf:
@@ -290,6 +351,7 @@ def build_deb(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
             candidates = (
                 manifest.repo_root / "build" / "service" / manifest.helper_binary,
                 manifest.repo_root / "build-arm64" / "service" / manifest.helper_binary,
+                manifest.repo_root / "build-arm64-cross" / "service" / manifest.helper_binary,
             )
             helper_path = next((candidate for candidate in candidates if candidate.is_file()), None)
             if helper_path is None:
@@ -478,6 +540,31 @@ def build_zip(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
 _FORMAT_BUILDERS = {"deb": build_deb, "zip": build_zip}
 
 
+def _package_cross(manifest: Manifest, target, no_build: bool, out_dir: Path) -> list:
+    """Cross-build a linux/arm64 target from x86_64 and package it (opt-in).
+
+    Isolated from the native flow: builds the linux-arm64-cross preset, locates the
+    aarch64 binary in build-arm64-cross, proves it (via the ELF), and hands it to the
+    format builder. build_deb resolves Depends against the sysroot's dpkg database.
+    """
+    preset, build_dir = "linux-arm64-cross", "build-arm64-cross"
+    if not no_build:
+        print(f"Cross-building (preset {preset}) for {target.os}-{target.arch}...")
+        build_preset(manifest.repo_root, preset)
+    binary = locate_binary(manifest, build_dir)
+    if binary is None:
+        raise PackageError(
+            f"no binary under {manifest.repo_root / build_dir} after cross-building. "
+            "Is MORF_SYSROOT set and the sysroot built "
+            "(morfDeploy/scripts/build-arm64-sysroot.sh)?")
+    print(f"\nTarget {target.name} ({target.format}) [cross aarch64]:")
+    verify_provenance(binary, target, manifest.repo_root)   # ELF-arch checked for cross
+    builder = _FORMAT_BUILDERS.get(target.format)
+    if builder is None:
+        raise PackageError(f"no builder for format '{target.format}'.")
+    return [builder(manifest, binary, target, out_dir)]
+
+
 def package(project, manifest: Manifest, target_name, no_build: bool,
             out_dir: Path) -> list:
     """Build the deliverable(s) for the current platform. Returns the paths made."""
@@ -492,6 +579,11 @@ def package(project, manifest: Manifest, target_name, no_build: bool,
     if not selected:
         print(f"No morfdeploy target native to {cur_os}-{cur_arch}: nothing to build.")
         return []
+
+    # Opt-in cross path : a single named linux/arm64 target on an x86_64 host with a
+    # verified sysroot. Isolated so the native flow below stays exactly as it was.
+    if len(selected) == 1 and _is_cross_build(selected[0]):
+        return _package_cross(manifest, selected[0], no_build, out_dir)
 
     _, build_dir = detect_preset()
 
