@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.8.11] - 2026-09-03
+
+### Fixed
+
+- `scripts/linux/package-deb.sh` now stages the package tree in a native temporary
+  directory (`mktemp -d`) instead of under `dist/` on the current drive. On WSL the
+  parc lives on `/mnt/c`, where DrvFs forces mode 777 and ignores `chmod`, so
+  `dpkg-deb` refused the `DEBIAN/` control directory ("bad permissions 777, must be
+  <= 0775"). Staging on the native filesystem (ext4 in WSL, the Pi's disk natively)
+  fixes it; only the final `.deb` is written to `dist/`.
+
 ## [1.8.10] - 2026-09-03
 
 ### Fixed
