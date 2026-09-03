@@ -54,14 +54,26 @@ PLUGIN_QT="$TOOLS_DIR/linuxdeploy-plugin-qt-$ARCH.AppImage"
 BASE_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous"
 QT_URL="https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous"
 
+# Un AppImage est un ELF : on valide chaque outil (magie ELF + taille plancher)
+# avant de le réutiliser depuis le cache. Un téléchargement à moitié écrit y
+# resterait sinon indéfiniment et casserait l'extraction (« Failed to open
+# squashfs image »), car fetch() sautait tout fichier déjà présent.
+appimage_ok() {
+    [ -s "$1" ] || return 1
+    [ "$(od -An -tx1 -N4 "$1" 2>/dev/null | tr -d ' \n')" = "7f454c46" ] || return 1
+    [ "$(stat -c%s "$1" 2>/dev/null || echo 0)" -gt 100000 ] || return 1
+    return 0
+}
 fetch() {
     local url="$1" dst="$2"
-    [ -f "$dst" ] && return 0
+    [ -f "$dst" ] && appimage_ok "$dst" && return 0
+    rm -f "$dst"
     echo "Téléchargement : $(basename "$dst")"
     if command -v wget >/dev/null 2>&1; then wget -q -O "$dst" "$url" || die "échec du téléchargement de $url"
     elif command -v curl >/dev/null 2>&1; then curl -fsSL -o "$dst" "$url" || die "échec du téléchargement de $url"
     else die "ni wget ni curl disponible."; fi
     chmod +x "$dst"
+    appimage_ok "$dst" || die "outil AppImage corrompu après téléchargement : $dst (relancer pour re-télécharger)"
 }
 fetch "$BASE_URL/linuxdeploy-$ARCH.AppImage"          "$LINUXDEPLOY"
 fetch "$QT_URL/linuxdeploy-plugin-qt-$ARCH.AppImage"  "$PLUGIN_QT"
@@ -81,6 +93,12 @@ if command -v magick >/dev/null 2>&1 || command -v convert >/dev/null 2>&1; then
 else
     install -Dm644 "$ICON_SRC" "$APPDIR/usr/share/icons/hicolor/256x256/apps/$CMD.png"
 fi
+
+# linuxdeploy peut juger une icône hicolor « non adaptée » quand ses dimensions
+# réelles ne correspondent pas au dossier de taille. usr/share/pixmaps/ n'impose
+# aucune taille : y déposer l'icône garantit une résolution de l'entrée Icon du
+# .desktop (« Could not find suitable icon for Icon entry »).
+install -Dm644 "$ICON_SRC" "$APPDIR/usr/share/pixmaps/$CMD.png"
 
 export APPIMAGE_EXTRACT_AND_RUN=1
 export VERSION

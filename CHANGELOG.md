@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.8.12] - 2026-09-04
+
+### Fixed
+
+- `scripts/linux/package-appimage.sh` now also installs the icon into
+  `usr/share/pixmaps/`, which has no size-directory constraint, so linuxdeploy
+  stops failing with "Could not find suitable icon for Icon entry" when the
+  hicolor icon's real dimensions do not match its size folder. The cached
+  linuxdeploy tools are also validated (ELF magic + minimum size) and re-fetched
+  when corrupt, instead of being reused forever.
+
 ## [1.8.11] - 2026-09-03
 
 ### Fixed
