@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.8.9] - 2026-09-03
+
+### Fixed
+
+- Windows build comments (`COMMENT` of the Qt/MinGW DLL deployment steps) are now
+  ASCII, so they no longer show as mojibake in the PowerShell console (which uses a
+  legacy OEM code page and mangles UTF-8). Aligns ComponentHub with PhotoHub and
+  SiteWatch, which already used the ASCII wording. Build output only; no behaviour
+  change.
+
 ## [1.8.8] - 2026-08-25
 
 ### Modifié

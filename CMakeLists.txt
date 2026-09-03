@@ -94,7 +94,7 @@ if(WIN32)
     if(WINDEPLOYQT_EXE)
         add_custom_command(TARGET ComponentHub POST_BUILD
             COMMAND "${WINDEPLOYQT_EXE}" --no-translations --compiler-runtime "$<TARGET_FILE:ComponentHub>"
-            COMMENT "Déploiement des DLL Qt à côté de l'exécutable")
+            COMMENT "Deploiement des DLL Qt a cote de l'executable")
     endif()
     if(NOT MSVC)
         function(componenthub_msys_path windows_path output)
@@ -124,7 +124,7 @@ if(WIN32)
                     --
                     "${COMPONENTHUB_MSYS_BASH}" "${COMPONENTHUB_DEPLOY_SCRIPT}" "${COMPONENTHUB_TARGET_DIR}"
                 VERBATIM
-                COMMENT "Copie des DLL MinGW à côté de l'exécutable")
+                COMMENT "Copie des DLL MinGW a cote de l'executable")
         else()
             message(WARNING "MSYS2 Bash not found; non-Qt MinGW DLL collection is skipped")
         endif()
