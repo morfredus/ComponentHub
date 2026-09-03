@@ -212,15 +212,14 @@ def declared_runtime_debs(manifest: Manifest) -> list:
     return sorted(set(packages))
 
 
-def shlibdeps(binary: Path, admindir: str | None = None) -> list:
+def shlibdeps(binary: Path) -> list:
     """ELF runtime dependencies read from the binary itself, via dpkg-shlibdeps.
 
     Returns a list of Debian dependency clauses (e.g. 'libqt6core6 (>= 6.4)').
-    dpkg-shlibdeps needs a minimal debian/ context, provided in a temp tree.
-
-    `admindir` : for a CROSS build, the dpkg database of the target sysroot
-    (<sysroot>/var/lib/dpkg), so an arm64 binary's sonames resolve to the target's
-    arm64 packages instead of the x86_64 host's.
+    dpkg-shlibdeps needs a minimal debian/ context, provided in a temp tree. This is
+    the NATIVE path (host arch == target) ; a cross build resolves its Depends from
+    the sysroot's .shlibs instead (see cross_depends), because dpkg-shlibdeps cannot
+    strip a sysroot prefix when mapping a found library back to its package.
     """
     if shutil.which("dpkg-shlibdeps") is None:
         raise PackageError("dpkg-shlibdeps not found: install 'dpkg-dev' to build a .deb.")
@@ -233,10 +232,7 @@ def shlibdeps(binary: Path, admindir: str | None = None) -> list:
             encoding="utf-8")
         # -O prints "shlibs:Depends=..." to stdout instead of writing a substvars
         # file; --ignore-missing-info keeps a private/bundled .so from aborting it.
-        cmd = ["dpkg-shlibdeps", "-O", "--ignore-missing-info"]
-        if admindir:
-            cmd.append(f"--admindir={admindir}")
-        cmd.append(str(binary))
+        cmd = ["dpkg-shlibdeps", "-O", "--ignore-missing-info", str(binary)]
         result = subprocess.run(
             cmd, cwd=str(work), capture_output=True, text=True, check=False)
         line = result.stdout.strip()
@@ -248,6 +244,75 @@ def shlibdeps(binary: Path, admindir: str | None = None) -> list:
         return [c.strip() for c in clauses.split(",") if c.strip()] if clauses else []
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def _needed_sonames(binary: Path, objdump: str) -> list:
+    """The NEEDED sonames of an ELF, read with the given objdump (host or cross)."""
+    out = subprocess.run([objdump, "-p", str(binary)],
+                         capture_output=True, text=True, check=False)
+    sonames = []
+    for ln in out.stdout.splitlines():
+        parts = ln.split()
+        if len(parts) >= 2 and parts[0] == "NEEDED":
+            sonames.append(parts[1])
+    return sonames
+
+
+def _sysroot_shlibs_map(sysroot: Path) -> dict:
+    """soname -> Debian dependency clause, read from the sysroot's own .shlibs files.
+
+    A cross build cannot lean on dpkg-shlibdeps' file->package lookup : it finds the
+    library at <sysroot>/usr/lib/... but the package database records it at /usr/lib/...
+    (no sysroot prefix) and there is no --sysroot to strip it. The .shlibs files ARE
+    the soname->dependency mapping we need, and reading them directly sidesteps the
+    prefix problem entirely. Format of a line: `library major-version dependency...`,
+    so `libQt6Sql 6 libqt6sql6t64 (>= 6.4.2)` describes soname libQt6Sql.so.6. Lines
+    prefixed with a type (e.g. `udeb:`) are for other package flavours, skipped.
+    """
+    info = sysroot / "var" / "lib" / "dpkg" / "info"
+    mapping: dict = {}
+    if not info.is_dir():
+        return mapping
+    for shlibs in info.glob("*.shlibs"):
+        try:
+            for ln in shlibs.read_text(encoding="utf-8", errors="replace").splitlines():
+                ln = ln.strip()
+                if not ln or ln.startswith("#") or ":" in ln.split(" ", 1)[0]:
+                    continue  # comment, or a typed line like `udeb: ...`
+                parts = ln.split(None, 2)
+                if len(parts) < 3:
+                    continue
+                library, soversion, dependency = parts[0], parts[1], parts[2].strip()
+                mapping.setdefault(f"{library}.so.{soversion}", dependency)
+        except OSError:
+            continue
+    return mapping
+
+
+def cross_depends(binary: Path, sysroot: Path, objdump: str) -> list:
+    """Runtime Depends of a cross-built binary, resolved from the sysroot's .shlibs.
+
+    Reads the binary's NEEDED sonames (with the target objdump) and maps each to the
+    dependency clause its providing package declares in the sysroot. Sonames with no
+    shlibs entry (typically the dynamic loader ld-linux-*.so) get no dependency, just
+    as dpkg would not add one. Deterministic, and free of dpkg-shlibdeps' sysroot
+    path-matching limitation.
+    """
+    smap = _sysroot_shlibs_map(sysroot)
+    clauses = {}
+    unresolved = []
+    for soname in _needed_sonames(binary, objdump):
+        dep = smap.get(soname)
+        if dep:
+            clauses[_dep_name(dep)] = dep
+        elif not soname.startswith("ld-linux"):
+            unresolved.append(soname)
+    if unresolved:
+        # The loader aside, an unresolved soname means a library present in the
+        # sysroot without shlibs metadata : say so rather than dropping it silently.
+        print("  [WARN] no .shlibs entry in the sysroot for: "
+              + ", ".join(sorted(unresolved)))
+    return [clauses[n] for n in sorted(clauses)]
 
 
 def _dep_name(clause: str) -> str:
@@ -312,16 +377,35 @@ def build_deb(manifest: Manifest, binary: Path, target, out_dir: Path) -> Path:
     run_user = svc  # a dedicated system user, created by the maintainer script
 
     # --- Depends: ELF (from the binary) + explicit runtime, shown then merged ---
-    # Cross build : resolve sonames against the target sysroot's dpkg database, not
-    # the x86_64 host's (an arm64 binary must map to arm64 packages).
-    admindir = None
+    # Cross build : dpkg-shlibdeps cannot map a library found under <sysroot>/usr/lib
+    # to a package recorded at /usr/lib (no --sysroot to strip the prefix), so the
+    # sonames are resolved directly from the sysroot's .shlibs files instead. Native
+    # keeps the standard dpkg-shlibdeps path unchanged.
+    cross_sysroot = None
     if _is_cross_build(target):
         sysroot = os.environ.get("MORF_SYSROOT")
         if sysroot:
-            admindir = str(Path(sysroot) / "var" / "lib" / "dpkg")
-    elf = shlibdeps(binary, admindir=admindir)
+            cross_sysroot = Path(sysroot)
+            triplet = {"arm64": "aarch64-linux-gnu"}.get(target.arch, "")
+            # L'objdump de la cible : le binutils hote (x86_64) ne sait pas lire un
+            # ELF arm64, il faut celui de la cible pour lire les NEEDED.
+            prefix = os.environ.get("MORF_CROSS_PREFIX", f"{triplet}-" if triplet else "")
+            objdump = f"{prefix}objdump"
+            if not shutil.which(objdump):
+                print(f"  [WARN] {objdump} introuvable : impossible de lire les "
+                      "dependances du binaire arm64. Installe binutils-aarch64-linux-gnu "
+                      "(ou crossbuild-essential-arm64).")
+                elf = []
+            else:
+                elf = cross_depends(binary, cross_sysroot, objdump)
+        else:
+            elf = []  # cross sans sysroot : deja refuse en amont, garde-fou
+    else:
+        elf = shlibdeps(binary)
     runtime = declared_runtime_debs(manifest)
-    print("  Depends -- from dpkg-shlibdeps (linked libraries):")
+    label = ("from the sysroot .shlibs (cross)" if cross_sysroot
+             else "from dpkg-shlibdeps (linked libraries)")
+    print(f"  Depends -- {label}:")
     for c in elf:
         print(f"      {c}")
     print("  Depends -- explicit runtime (declared, not linkage-visible):")
@@ -557,12 +641,31 @@ def _package_cross(manifest: Manifest, target, no_build: bool, out_dir: Path) ->
             f"no binary under {manifest.repo_root / build_dir} after cross-building. "
             "Is MORF_SYSROOT set and the sysroot built "
             "(morfDeploy/scripts/build-arm64-sysroot.sh)?")
-    print(f"\nTarget {target.name} ({target.format}) [cross aarch64]:")
-    verify_provenance(binary, target, manifest.repo_root)   # ELF-arch checked for cross
-    builder = _FORMAT_BUILDERS.get(target.format)
-    if builder is None:
-        raise PackageError(f"no builder for format '{target.format}'.")
-    return [builder(manifest, binary, target, out_dir)]
+    # Provenance a besoin du build-info.json (commit/dirty/version) ; seule l'arch
+    # vient de l'ELF pour un cross. On tamponne donc comme le flux natif, avec le
+    # meme repli si build-*/service/ a ete laisse root:root par un build privilegie.
+    pack_binary, stamp_tmp = binary, None
+    try:
+        write_build_info(manifest.repo_root, pack_binary,
+                         project=manifest.display_name)
+    except OSError:
+        stamp_tmp = tempfile.TemporaryDirectory(prefix="morfdeploy-stamp-")
+        pack_binary = Path(stamp_tmp.name) / binary.name
+        shutil.copy2(binary, pack_binary)
+        write_build_info(manifest.repo_root, pack_binary,
+                         project=manifest.display_name)
+        print(f"  cannot write build-info.json beside {binary}; "
+              f"provenance stamped in {stamp_tmp.name}")
+    try:
+        print(f"\nTarget {target.name} ({target.format}) [cross aarch64]:")
+        verify_provenance(pack_binary, target, manifest.repo_root)  # ELF-arch for cross
+        builder = _FORMAT_BUILDERS.get(target.format)
+        if builder is None:
+            raise PackageError(f"no builder for format '{target.format}'.")
+        return [builder(manifest, pack_binary, target, out_dir)]
+    finally:
+        if stamp_tmp is not None:
+            stamp_tmp.cleanup()
 
 
 def package(project, manifest: Manifest, target_name, no_build: bool,
