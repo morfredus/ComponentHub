@@ -30,14 +30,11 @@ beacon_status.md
 # =============================================================================
 # 2. CONFIGURATION ET CACHE DES ÉDITEURS / IDE (VS Code, etc.)
 # =============================================================================
-# Dossier de configuration de l'espace de travail VS Code. Exceptions : les
-# fichiers PORTABLES (settings/tasks/extensions), sans aucun chemin machine —
-# tout ce qui est propre a une plateforme vit dans CMakePresets.json ou dans
-# les cles per-OS de tasks.json. Ne jamais y versionner un chemin en dur.
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/extensions.json
+# Configuration VS Code : purement locale a chaque machine, deja exclue de la
+# consolidation robocopy. On l'ignore ENTIEREMENT (pas de whitelist) : un
+# settings.json cree par l'editeur ne doit jamais salir l'arbre ni bloquer la
+# chaine de publication (sa preflight refuse tout working tree non propre).
+.vscode/
 .vs/
 *.code-workspace
 *.user

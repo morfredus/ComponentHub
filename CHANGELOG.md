@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.8.10] - 2026-09-03
+
+### Fixed
+
+- `.gitignore` now ignores `.vscode/` entirely instead of whitelisting
+  `settings.json`/`tasks.json`/`extensions.json`. Those whitelisted-but-untracked
+  files, created locally by VS Code, made the working tree show as dirty under a
+  git without a matching global ignore (WSL), which blocked the release chain's
+  clean-tree preflight. VS Code config is machine-local and already excluded from
+  the robocopy consolidation, so it should never be tracked.
+
 ## [1.8.9] - 2026-09-03
 
 ### Fixed
