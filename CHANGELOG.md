@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.8.14] - 2026-09-04
+
+### Fixed
+
+- AppImage build failed with "Could not find suitable icon for Icon entry:
+  componenthub" -- the actual, verified cause was the `.desktop` file's CRLF line
+  endings, not the icon. linuxdeploy read `Icon=componenthub\r` and searched for an
+  icon literally named `componenthub\r`, which does not exist (the `\r` is invisible
+  when the name is printed). SiteWatch, whose `.gitattributes` already pinned
+  `*.desktop` to LF, was unaffected -- ComponentHub's did not. Three-layer fix: the
+  committed `componenthub.desktop` is normalised to LF; `.gitattributes` now pins
+  `*.desktop text eol=lf`; and `package-appimage.sh` strips any trailing CR from the
+  desktop file before handing it to linuxdeploy, so a Windows/WSL checkout can never
+  reintroduce the failure. The 1.8.13 icon-dimension work was a red herring for this
+  failure and is retained (still correct).
+
 ## [1.8.13] - 2026-09-04
 
 ### Fixed

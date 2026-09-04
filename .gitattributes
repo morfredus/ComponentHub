@@ -4,6 +4,10 @@
 
 # Scripts shell toujours en LF (un CRLF casse le shebang « bash\r » sous Linux).
 *.sh   text eol=lf
+# Fichiers .desktop toujours en LF : un CRLF fait lire « Icon=nom\r » a linuxdeploy,
+# qui cherche alors une icone nommee « nom\r » et echoue (« Could not find suitable
+# icon for Icon entry ») lors de la construction de l'AppImage.
+*.desktop text eol=lf
 # Scripts Windows en CRLF.
 *.ps1  text eol=crlf
 *.bat  text eol=crlf
