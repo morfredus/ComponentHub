@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.8.13] - 2026-09-04
+
+### Fixed
+
+- AppImage icon, real fix. The previous pixmaps fallback did not satisfy
+  linuxdeploy, which rejects an icon whose real dimensions do not match its
+  hicolor size folder. The script now reads the PNG's true dimensions from its
+  IHDR header and installs the icon into `hicolor/<w>x<h>/apps/` (no external tool
+  needed), and only uses a *native* (`/usr/bin`) ImageMagick for extra standard
+  sizes -- never the Windows `magick.exe` visible through `/mnt/c` on the WSL PATH,
+  which cannot read `/mnt` paths and produced the invalid icons. `--icon-file` now
+  points at the guaranteed icon. Also raised the cached-tool size floor to 4 MB so
+  a truncated linuxdeploy download is re-fetched.
+
 ## [1.8.12] - 2026-09-04
 
 ### Fixed

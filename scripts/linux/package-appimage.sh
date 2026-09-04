@@ -61,7 +61,10 @@ QT_URL="https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/c
 appimage_ok() {
     [ -s "$1" ] || return 1
     [ "$(od -An -tx1 -N4 "$1" 2>/dev/null | tr -d ' \n')" = "7f454c46" ] || return 1
-    [ "$(stat -c%s "$1" 2>/dev/null || echo 0)" -gt 100000 ] || return 1
+    # Seuil volontairement haut : linuxdeploy et son greffon Qt pesent >10 Mo.
+    # Un telechargement tronque (vu a 1,5 Mo) passe la magie ELF mais a un squashfs
+    # incomplet (« Failed to open squashfs image ») ; 4 Mo le rejette pour re-tirer.
+    [ "$(stat -c%s "$1" 2>/dev/null || echo 0)" -gt 4000000 ] || return 1
     return 0
 }
 fetch() {
@@ -83,22 +86,31 @@ rm -rf "$APPDIR"
 install -Dm755 "$BINARY" "$APPDIR/usr/bin/$CMD"
 install -Dm644 "$SCRIPT_DIR/componenthub.desktop" "$APPDIR/usr/share/applications/$CMD.desktop"
 
-if command -v magick >/dev/null 2>&1 || command -v convert >/dev/null 2>&1; then
-    CONVERT="convert"; command -v magick >/dev/null 2>&1 && CONVERT="magick"
+# --- Icone : garantir une icone AUX BONNES DIMENSIONS, sans outil externe ----
+# linuxdeploy exige une icone dont la taille REELLE du fichier corresponde au
+# dossier hicolor/<taille> ; sinon « Could not find suitable icon for Icon entry ».
+# On lit donc les dimensions dans l'entete PNG (IHDR, gros-boutiste) et on depose
+# l'icone dans le dossier exact -- fiable pour n'importe quelle source, meme sans
+# ImageMagick. (Le magick.exe de Windows, visible via /mnt/c sur le PATH WSL, est
+# volontairement ignore : il ne lit pas les chemins /mnt et fabrique des icones
+# invalides -- c'etait la cause du refus d'icone.)
+png_dim() { printf '%d' "0x$(od -An -tx1 -j"$1" -N4 "$2" | tr -d ' \n')"; }
+ICON_W="$(png_dim 16 "$ICON_SRC")"
+ICON_H="$(png_dim 20 "$ICON_SRC")"
+ICON_MAIN="$APPDIR/usr/share/icons/hicolor/${ICON_W}x${ICON_H}/apps/$CMD.png"
+install -Dm644 "$ICON_SRC" "$ICON_MAIN"
+install -Dm644 "$ICON_SRC" "$APPDIR/usr/share/pixmaps/$CMD.png"
+
+# Bonus : tailles standard supplementaires si un ImageMagick NATIF (Linux) existe.
+CONVERT=""
+for c in /usr/bin/magick /usr/bin/convert; do [ -x "$c" ] && { CONVERT="$c"; break; }; done
+if [ -n "$CONVERT" ]; then
     for size in 32 48 64 128 256; do
         dest="$APPDIR/usr/share/icons/hicolor/${size}x${size}/apps/$CMD.png"
         mkdir -p "$(dirname "$dest")"
-        "$CONVERT" "$ICON_SRC" -resize "${size}x${size}" "$dest"
+        "$CONVERT" "$ICON_SRC" -resize "${size}x${size}" "$dest" && ICON_MAIN="$dest"
     done
-else
-    install -Dm644 "$ICON_SRC" "$APPDIR/usr/share/icons/hicolor/256x256/apps/$CMD.png"
 fi
-
-# linuxdeploy peut juger une icône hicolor « non adaptée » quand ses dimensions
-# réelles ne correspondent pas au dossier de taille. usr/share/pixmaps/ n'impose
-# aucune taille : y déposer l'icône garantit une résolution de l'entrée Icon du
-# .desktop (« Could not find suitable icon for Icon entry »).
-install -Dm644 "$ICON_SRC" "$APPDIR/usr/share/pixmaps/$CMD.png"
 
 export APPIMAGE_EXTRACT_AND_RUN=1
 export VERSION
@@ -110,7 +122,7 @@ echo "Construction de l'AppImage (Qt embarqué)…"
     --appdir "$APPDIR" \
     --executable "$APPDIR/usr/bin/$CMD" \
     --desktop-file "$APPDIR/usr/share/applications/$CMD.desktop" \
-    --icon-file "$APPDIR/usr/share/icons/hicolor/256x256/apps/$CMD.png" \
+    --icon-file "$ICON_MAIN" \
     --plugin qt \
     --output appimage )
 
