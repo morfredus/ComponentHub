@@ -9,6 +9,7 @@
 
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QTimer>
 #include <QHostAddress>
 #include <QHostInfo>
 #include <QJsonObject>
@@ -117,14 +118,22 @@ void StatusServer::handleRequest(QTcpSocket* sock, const QByteArray& requestLine
     resp += body;
 
     sock->write(resp);
-    // Vider le tampon d'écriture AVANT de fermer : un /status riche (agrégation des
-    // capacités du parc) peut déborder du tampon socket (~20 Ko constaté) et
-    // `disconnectFromHost` seul en tronquerait la fin côté client. On draine jusqu'à
-    // ce qu'il ne reste rien à écrire, avec un délai de garde pour ne jamais bloquer.
-    while (sock->bytesToWrite() > 0)
-        if (!sock->waitForBytesWritten(2000))
-            break;
+    sock->flush();
+    // Fermeture ASYNCHRONE, jamais bloquante : Qt draine le tampon restant en
+    // arriere-plan (ClosingState) puis ferme (disconnected -> deleteLater). L'ancienne
+    // boucle waitForBytesWritten(2000) bloquait le thread principal le temps qu'un
+    // client lent absorbe un /status riche ; sur un lien degrade, ce blocage affamait
+    // le QTimer du heartbeat (MEME event-loop que ce serveur), si bien que le service
+    // cessait d'emettre sa presence alors qu'il tournait -- source de fausses alertes
+    // de panne dans tout le parc (ce serveur est le /status partage de morfBeacon).
     sock->disconnectFromHost();
+    // Garde-fou anti-accumulation : un client mort laisserait la socket en ClosingState.
+    // Coupure apres 10 s (large pour un client vivant). `sock` en objet-contexte :
+    // socket deja detruite => timer annule.
+    QTimer::singleShot(10000, sock, [sock]() {
+        if (sock->state() != QAbstractSocket::UnconnectedState)
+            sock->abort();
+    });
 }
 
 QByteArray StatusServer::buildStatusJson() const {
