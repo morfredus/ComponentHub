@@ -26,6 +26,12 @@ public:
 public slots:
     void run(const QString& operationId);
 
+    // Relance manuelle d'un service déjà installé : ni téléchargement, ni
+    // vérification, ni installation. Réutilise le journal d'opérations et le
+    // helper privilégié (verbe --restart), puis vérifie /healthz. Séparé de run()
+    // pour qu'un restart ne parte jamais dans le chemin d'installation.
+    void restart(const QString& operationId);
+
 private:
     bool fail(const QString& operationId, const QString& detail);
     AgentConfig m_config;

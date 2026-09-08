@@ -92,8 +92,11 @@ void LocalApiServer::handle(QTcpSocket* socket, QByteArray method, QByteArray pa
                                                      QStringLiteral("local")}}}});
         return;
     }
-    if (method == "GET" && path.startsWith("/api/v1/updates/")) {
-        const QString id = QString::fromUtf8(path.mid(QByteArray("/api/v1/updates/").size()));
+    // Statut d'une opération, mise à jour OU restart : le journal est commun, une
+    // opération se retrouve par son id quelle que soit la route qui l'a créée.
+    if (method == "GET" && (path.startsWith("/api/v1/updates/")
+                            || path.startsWith("/api/v1/restart/"))) {
+        const QString id = QString::fromUtf8(path.mid(path.lastIndexOf('/') + 1));
         const UpdateOperation* operation = m_operations->find(id);
         if (!operation) { reply(socket, 404, "Not Found", {{"error", "operation not found"}}); return; }
         reply(socket, 200, "OK", {{"id", operation->id}, {"project", operation->project},
@@ -101,6 +104,34 @@ void LocalApiServer::handle(QTcpSocket* socket, QByteArray method, QByteArray pa
               {"platform", operation->platform}, {"state", updateStateName(operation->state)},
               {"detail", operation->detail}, {"created_at", operation->createdAt.toString(Qt::ISODate)},
               {"updated_at", operation->updatedAt.toString(Qt::ISODate)}});
+        return;
+    }
+    // Relance manuelle d'un service bloqué : action bornée, pas de version ni de
+    // source. On valide que `project` est une cible DÉCLARÉE (même whitelist que
+    // les mises à jour) ; le service systemd réel (target.service) est résolu par
+    // le moteur, jamais reçu du client. Une seule opération à la fois (verrou
+    // partagé avec les updates) : on ne relance pas pendant une installation.
+    if (method == "POST" && path == "/api/v1/restart") {
+        const QJsonObject object = QJsonDocument::fromJson(body).object();
+        const QString project = object.value("project").toString();
+        if (!safeIdentifier(project) || !m_config.targets.contains(project)) {
+            reply(socket, 400, "Bad Request",
+                  {{"error", "project must be a declared identifier"}});
+            return;
+        }
+        if (const UpdateOperation* active = m_operations->active()) {
+            reply(socket, 409, "Conflict", {{"error", "another operation is active"},
+                  {"id", active->id}, {"state", updateStateName(active->state)}});
+            return;
+        }
+        QString error;
+        const UpdateOperation operation =
+            m_operations->create(project, QString(), QString(), platformName(), &error);
+        if (operation.id.isEmpty()) {
+            reply(socket, 500, "Internal Server Error", {{"error", error}}); return;
+        }
+        reply(socket, 202, "Accepted", {{"id", operation.id}, {"state", "queued"}});
+        emit restartQueued(operation.id);
         return;
     }
     if (method != "POST" || path != "/api/v1/updates") {

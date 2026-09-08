@@ -27,6 +27,11 @@ signals:
     // receive a truthful 202 response while installation starts afterwards.
     void operationQueued(const QString& operationId);
 
+    // Same contract as operationQueued, but for a manual service restart (no
+    // download/install). Wired to UpdateEngine::restart, kept separate so a
+    // restart operation is never mistaken for an update by the install path.
+    void restartQueued(const QString& operationId);
+
 private:
     void onSocketReadyRead(QTcpSocket* socket);
     void handle(QTcpSocket* socket, QByteArray method, QByteArray path,

@@ -345,4 +345,50 @@ void UpdateEngine::run(const QString& operationId) {
     m_operations->transition(operationId, UpdateState::Succeeded, QStringLiteral("installed version passed health check"), &error);
 }
 
+void UpdateEngine::restart(const QString& operationId) {
+    const UpdateOperation* operation = m_operations->find(operationId);
+    if (!operation || operation->state != UpdateState::Queued) return;
+    const AgentTarget target = m_config.targets.value(operation->project);
+    if (target.service.isEmpty()) {
+        fail(operationId, QStringLiteral("service is not configured for this project"));
+        return;
+    }
+    QString error;
+    if (!m_operations->transition(operationId, UpdateState::Restarting,
+                                  QStringLiteral("restarting service"), &error)) return;
+#ifdef Q_OS_WIN
+    // Périmètre volontaire : la relance manuelle est Linux d'abord (les Pi). La
+    // branche Windows (sc/schtasks) reste à ouvrir avec le reste du cross-host.
+    fail(operationId, QStringLiteral("manual restart is not supported on Windows yet"));
+    return;
+#else
+    // Le service systemd réel vient de la CONFIG (target.service), jamais du
+    // client. Le helper revalide (regex + declaredService) avant de devenir root.
+    if (!runProcess(QStringLiteral("/usr/lib/morfsystem/morfupdate/morfupdate-helper"),
+                    {QStringLiteral("--restart"), target.service}, &error)) {
+        fail(operationId, error);
+        return;
+    }
+    if (!m_operations->transition(operationId, UpdateState::HealthCheck,
+                                  QStringLiteral("checking service health"), &error)) return;
+    // Sans URL de santé déclarée, on ne peut pas sonder : le restart a réussi
+    // (systemctl is-active a confirmé côté helper), on s'arrête là sans mentir.
+    if (target.healthUrl.isEmpty()) {
+        m_operations->transition(operationId, UpdateState::Succeeded,
+                                 QStringLiteral("service restarted"), &error);
+        return;
+    }
+    // Comme pour une mise à jour, un /healthz encore lent ne transforme pas un
+    // restart réussi en échec : succès avec réserve explicite.
+    if (!healthCheck(target.healthUrl, &error)) {
+        m_operations->transition(operationId, UpdateState::Succeeded,
+                                 QStringLiteral("service restarted; health check still failing: ") + error,
+                                 &error);
+        return;
+    }
+    m_operations->transition(operationId, UpdateState::Succeeded,
+                             QStringLiteral("service restarted and healthy"), &error);
+#endif
+}
+
 } // namespace morfupdate

@@ -34,7 +34,11 @@ bool canTransition(UpdateState from, UpdateState to) {
     if (to == UpdateState::Rejected || to == UpdateState::Failed)
         return true;
     switch (from) {
-    case UpdateState::Queued:      return to == UpdateState::Downloading;
+    // Downloading = mise a jour (telechargement, verif, install). Restarting =
+    // relance directe (bouton « Relancer » d'un service bloque) : ni source, ni
+    // fichier, on saute droit au redemarrage.
+    case UpdateState::Queued:      return to == UpdateState::Downloading
+                                          || to == UpdateState::Restarting;
     case UpdateState::Downloading: return to == UpdateState::Verifying;
     case UpdateState::Verifying:   return to == UpdateState::Installing;
     case UpdateState::Installing:  return to == UpdateState::Restarting;
