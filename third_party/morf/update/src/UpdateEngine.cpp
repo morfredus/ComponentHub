@@ -17,6 +17,8 @@
 #include <QTimer>
 #include <QUrl>
 
+#include <optional>
+
 namespace morfupdate {
 namespace {
 
@@ -260,18 +262,21 @@ bool UpdateEngine::fail(const QString& operationId, const QString& detail) {
 }
 
 void UpdateEngine::run(const QString& operationId) {
-    const UpdateOperation* operation = m_operations->find(operationId);
-    if (!operation || operation->state != UpdateState::Queued) return;
-    const AgentTarget target = m_config.targets.value(operation->project);
+    // Snapshot par valeur : run() s'execute sur le thread WORKER (voir agent/main.cpp) ;
+    // on ne garde jamais de pointeur dans la QHash partagee avec le thread HTTP.
+    const std::optional<UpdateOperation> found = m_operations->find(operationId);
+    if (!found || found->state != UpdateState::Queued) return;
+    const UpdateOperation operation = *found;
+    const AgentTarget target = m_config.targets.value(operation.project);
     if (target.project.isEmpty()) { fail(operationId, QStringLiteral("project is not configured")); return; }
     const QByteArray token;
     QString error;
     if (!m_operations->transition(operationId, UpdateState::Downloading, QStringLiteral("reading release"), &error)) return;
     QJsonObject release;
     if (!jsonGet(QStringLiteral("repos/") + target.repository + QStringLiteral("/releases/tags/v")
-                 + operation->toVersion, token, &release, &error)) { fail(operationId, error); return; }
+                 + operation.toVersion, token, &release, &error)) { fail(operationId, error); return; }
     QString commit;
-    if (!taggedCommit(target.repository, operation->toVersion, token, &commit, &error)) { fail(operationId, error); return; }
+    if (!taggedCommit(target.repository, operation.toVersion, token, &commit, &error)) { fail(operationId, error); return; }
     QJsonObject manifestAsset;
     for (const QJsonValue& value : release.value("assets").toArray()) {
         const QJsonObject asset = value.toObject();
@@ -287,14 +292,14 @@ void UpdateEngine::run(const QString& operationId) {
         return;
     }
     ValidatedAsset asset;
-    if (!ReleaseValidator::selectAsset(manifestDoc.object(), operation->project, operation->toVersion,
-                                       operation->platform, commit, &asset, &error)) { fail(operationId, error); return; }
+    if (!ReleaseValidator::selectAsset(manifestDoc.object(), operation.project, operation.toVersion,
+                                       operation.platform, commit, &asset, &error)) { fail(operationId, error); return; }
     // Stratégie d'installation déclarée par le manifeste ; défaut "package" pour
     // les releases antérieures au champ (rétro-compat). morfUpdate lit QUOI
     // installer plutôt que de présumer un binaire compilé.
     const QString strategy = manifestDoc.object().value("install").toObject()
                                  .value("type").toString(QStringLiteral("package"));
-    const bool windows = operation->platform.startsWith(QStringLiteral("windows"));
+    const bool windows = operation.platform.startsWith(QStringLiteral("windows"));
     const QString expectedFormat = strategy == QStringLiteral("source-bundle")
                                        ? QStringLiteral("source-bundle")
                                        : (windows ? QStringLiteral("zip") : QStringLiteral("deb"));
@@ -323,7 +328,7 @@ void UpdateEngine::run(const QString& operationId) {
         fail(operationId, QStringLiteral("source-bundle install is not supported on Windows"));
         return;
 #else
-        if (!installSourceBundle(file, target, stage, operation->toVersion, &error)) { fail(operationId, error); return; }
+        if (!installSourceBundle(file, target, stage, operation.toVersion, &error)) { fail(operationId, error); return; }
 #endif
     } else {
 #ifdef Q_OS_WIN
@@ -346,9 +351,10 @@ void UpdateEngine::run(const QString& operationId) {
 }
 
 void UpdateEngine::restart(const QString& operationId) {
-    const UpdateOperation* operation = m_operations->find(operationId);
-    if (!operation || operation->state != UpdateState::Queued) return;
-    const AgentTarget target = m_config.targets.value(operation->project);
+    const std::optional<UpdateOperation> found = m_operations->find(operationId);
+    if (!found || found->state != UpdateState::Queued) return;
+    const UpdateOperation operation = *found;
+    const AgentTarget target = m_config.targets.value(operation.project);
     if (target.service.isEmpty()) {
         fail(operationId, QStringLiteral("service is not configured for this project"));
         return;

@@ -10,7 +10,10 @@
 
 #include <QHash>
 #include <QJsonObject>
+#include <QMutex>
 #include <QObject>
+
+#include <optional>
 
 namespace morfupdate {
 
@@ -23,8 +26,12 @@ public:
     explicit OperationStore(QString stateDirectory, QObject* parent = nullptr);
 
     bool load(QString* error = nullptr);
-    const UpdateOperation* active() const;
-    const UpdateOperation* find(const QString& id) const;
+    // Renvoient une COPIE (snapshot) sous verrou, pas un pointeur interne : le
+    // moteur d'update tourne sur un thread worker et le serveur HTTP sur le thread
+    // principal ; rendre un pointeur vers la QHash partagee serait une course de
+    // donnees des que l'un lit pendant que l'autre ecrit. std::nullopt = absent.
+    std::optional<UpdateOperation> active() const;
+    std::optional<UpdateOperation> find(const QString& id) const;
 
     // Returns an empty id when another operation is active.  Callers may show
     // active() to the client with HTTP 409, without ever queueing a second
@@ -42,6 +49,10 @@ private:
     QString m_stateDirectory;
     QHash<QString, UpdateOperation> m_operations;
     QString m_activeId;
+    // Recursif : create() appelle active(), toutes deux prennent le verrou sur le
+    // meme thread. save() est prive et n'est appele que sous verrou (il ne verrouille
+    // pas lui-meme). Protege l'acces concurrent thread HTTP <-> thread worker.
+    mutable QRecursiveMutex m_mutex;
 };
 
 } // namespace morfupdate

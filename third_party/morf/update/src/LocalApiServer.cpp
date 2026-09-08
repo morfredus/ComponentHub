@@ -97,7 +97,7 @@ void LocalApiServer::handle(QTcpSocket* socket, QByteArray method, QByteArray pa
     if (method == "GET" && (path.startsWith("/api/v1/updates/")
                             || path.startsWith("/api/v1/restart/"))) {
         const QString id = QString::fromUtf8(path.mid(path.lastIndexOf('/') + 1));
-        const UpdateOperation* operation = m_operations->find(id);
+        const auto operation = m_operations->find(id);   // std::optional (snapshot)
         if (!operation) { reply(socket, 404, "Not Found", {{"error", "operation not found"}}); return; }
         reply(socket, 200, "OK", {{"id", operation->id}, {"project", operation->project},
               {"from_version", operation->fromVersion}, {"to_version", operation->toVersion},
@@ -119,7 +119,7 @@ void LocalApiServer::handle(QTcpSocket* socket, QByteArray method, QByteArray pa
                   {{"error", "project must be a declared identifier"}});
             return;
         }
-        if (const UpdateOperation* active = m_operations->active()) {
+        if (const auto active = m_operations->active()) {
             reply(socket, 409, "Conflict", {{"error", "another operation is active"},
                   {"id", active->id}, {"state", updateStateName(active->state)}});
             return;
@@ -149,7 +149,7 @@ void LocalApiServer::handle(QTcpSocket* socket, QByteArray method, QByteArray pa
     if (project == QStringLiteral("morfUpdate")) {
         reply(socket, 409, "Conflict", {{"error", "morfUpdate cannot update itself"}}); return;
     }
-    if (const UpdateOperation* active = m_operations->active()) {
+    if (const auto active = m_operations->active()) {
         reply(socket, 409, "Conflict", {{"error", "another update is active"}, {"id", active->id},
               {"state", updateStateName(active->state)}}); return;
     }

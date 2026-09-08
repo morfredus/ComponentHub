@@ -46,6 +46,7 @@ OperationStore::OperationStore(QString stateDirectory, QObject* parent)
     : QObject(parent), m_stateDirectory(std::move(stateDirectory)) {}
 
 bool OperationStore::load(QString* error) {
+    QMutexLocker locker(&m_mutex);
     m_operations.clear();
     m_activeId.clear();
     QFile file(fileName(m_stateDirectory));
@@ -80,20 +81,27 @@ bool OperationStore::load(QString* error) {
     return save(error);
 }
 
-const UpdateOperation* OperationStore::active() const {
+std::optional<UpdateOperation> OperationStore::active() const {
+    QMutexLocker locker(&m_mutex);
     if (m_activeId.isEmpty())
-        return nullptr;
+        return std::nullopt;
     const auto it = m_operations.constFind(m_activeId);
-    return it == m_operations.constEnd() ? nullptr : &it.value();
+    if (it == m_operations.constEnd())
+        return std::nullopt;
+    return it.value();
 }
 
-const UpdateOperation* OperationStore::find(const QString& id) const {
+std::optional<UpdateOperation> OperationStore::find(const QString& id) const {
+    QMutexLocker locker(&m_mutex);
     const auto it = m_operations.constFind(id);
-    return it == m_operations.constEnd() ? nullptr : &it.value();
+    if (it == m_operations.constEnd())
+        return std::nullopt;
+    return it.value();
 }
 
 UpdateOperation OperationStore::create(QString project, QString fromVersion, QString toVersion,
                                        QString platform, QString* error) {
+    QMutexLocker locker(&m_mutex);
     if (active()) {
         if (error) *error = QStringLiteral("another update is active");
         return {};
@@ -118,6 +126,7 @@ UpdateOperation OperationStore::create(QString project, QString fromVersion, QSt
 
 bool OperationStore::transition(const QString& id, UpdateState state, QString detail,
                                 QString* error) {
+    QMutexLocker locker(&m_mutex);
     auto it = m_operations.find(id);
     if (it == m_operations.end()) {
         if (error) *error = QStringLiteral("unknown operation");

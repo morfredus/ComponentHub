@@ -41,12 +41,27 @@ bool AgentConfig::load(const QString& path, AgentConfig* config, QString* error)
             if (error) *error = QStringLiteral("agent target declarations are invalid");
             return false;
         }
+        // La PLATEFORME cible fait foi pour le « comment » (gestionnaire de service
+        // + dossier d'installation) ; la config ne declare que le « quoi » (projet,
+        // service, depot, health), commun a toutes les plateformes. On DERIVE donc
+        // ces deux champs de l'OS COURANT au lieu de faire confiance a la config.
+        // Sans cela, un morfupdate.json ecrit pour Windows (service_manager=task,
+        // app_dir=%ProgramData%/...) deploye tel quel sur un Pi Linux faisait croire
+        // a l'agent qu'il gerait une tache Windows dans %ProgramData% -- l'update
+        // echouait alors sur un ARM64 pourtant sain. La meme config marche desormais
+        // sur Windows, Linux x64 et ARM64.
 #ifdef Q_OS_WIN
+        // Windows offre deux gestionnaires (scm/task) : la config choisit, defaut task.
         if (target.serviceManager != QStringLiteral("scm")
-            && target.serviceManager != QStringLiteral("task")) {
-            if (error) *error = QStringLiteral("Windows target must declare service_manager scm or task");
-            return false;
-        }
+            && target.serviceManager != QStringLiteral("task"))
+            target.serviceManager = QStringLiteral("task");
+        if (target.appDir.isEmpty())
+            target.appDir = QStringLiteral("%ProgramData%/") + target.service;
+#else
+        // Linux : toujours systemd, toujours /opt/<service> (convention morfdeploy).
+        // On ecrase ce que dit la config : la machine cible est la source de verite.
+        target.serviceManager = QStringLiteral("systemd");
+        target.appDir = QStringLiteral("/opt/") + target.service;
 #endif
         parsed.targets.insert(target.project, target);
     }
