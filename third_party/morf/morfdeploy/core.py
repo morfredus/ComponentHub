@@ -92,6 +92,36 @@ class Deployer:
                 + self.backend.privilege_hint()
             )
 
+    def check_shared_prerequisite(self) -> None:
+        """Refuse to register a service that needs the shared parc config while
+        that file is absent -- without ever creating it ourselves.
+
+        The shared /etc/morfsystem/morfsystem.json has a single owner, morfTools
+        `config.py shared`. morfdeploy's job is only to VERIFY the prerequisite:
+        registering a parc supervisor on a machine that has no parc description
+        yet produces a unit with nothing to do, and hides the real first step.
+        We stop here with the exact command that places the file, so the fix is
+        obvious and stays in the hands of the tool that owns the file. `morf
+        install` runs that command for us beforehand; a bare `service.py
+        install` lands here, which is the intended, non-bypassable guard.
+        """
+        if not self.manifest.requires_shared_config:
+            return
+        shared = self.manifest.shared_config_path()
+        if shared.is_file():
+            return
+        raise DeployError("\n".join([
+            f"{self.manifest.display_name} requires the shared parc configuration, "
+            "which is absent:",
+            f"  expected: {shared}",
+            "",
+            "That file has a single owner -- morfTools `config.py shared` -- and "
+            "morfdeploy never creates it. Install it first, from the morfTools clone:",
+            "  ./config.py shared install     # or: merge, to keep local edits",
+            "",
+            "Then run this install again. Nothing has been registered.",
+        ]))
+
     # -- Step 1 -----------------------------------------------------------
 
     def ensure_binary(self, rebuild: bool = False) -> Path:
@@ -444,6 +474,10 @@ class Deployer:
         print()
 
         self.check_privileges()
+        # Prerequisite BEFORE the build: refuse fast if the shared parc config a
+        # supervisor needs is not in place yet, rather than compiling a binary
+        # only to decline to register it. The file is never created here.
+        self.check_shared_prerequisite()
         # System dependencies BEFORE the build: a missing required package (e.g.
         # a -dev needed to compile a driver) must stop here with a clear message,
         # not surface as a cryptic build error later. Optional ones only warn.

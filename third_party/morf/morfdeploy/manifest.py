@@ -242,6 +242,16 @@ class Manifest:
     description: str = ""
     status_url: str = ""
 
+    #: True when this service cannot do its job without the shared parc
+    #: configuration (/etc/morfsystem/morfsystem.json). morfdeploy then REQUIRES
+    #: that file to be present before it will register the unit -- and it NEVER
+    #: creates it: the shared file has a single owner, morfTools `config.py
+    #: shared`. Default False: a service that does not read the shared file
+    #: installs exactly as before. This is a prerequisite CHECK, not a config to
+    #: place, which is why it is not a `configs` entry (those name a source this
+    #: project ships and morfdeploy copies -- the shared file is neither).
+    requires_shared_config: bool = False
+
     #: Purgeable data categories this project announces. Empty is the norm and
     #: means exactly what it did before this field existed: nothing to purge
     #: selectively. A category here is what makes `service.py purge <id>`
@@ -346,6 +356,19 @@ class Manifest:
             base = os.environ.get("ProgramData", r"C:\ProgramData")
             return Path(base) / "morfsystem" / self.service_name / "state"
         return Path("/var/lib/morfsystem") / self.service_name
+
+    def shared_config_path(self) -> Path:
+        """Where the shared parc configuration lives on this platform.
+
+        morfdeploy only ever READS this path (to check it exists as a
+        prerequisite). The file is owned and placed by morfTools `config.py
+        shared`; the two must agree on its location, so the answer here mirrors
+        that tool exactly rather than inventing a second convention.
+        """
+        if platform.system() == "Windows":
+            base = os.environ.get("ProgramData", r"C:\ProgramData")
+            return Path(base) / "morfsystem" / "morfsystem.json"
+        return Path("/etc/morfsystem/morfsystem.json")
 
     def binary_name(self) -> str:
         """The executable's file name, with the platform's extension."""
@@ -479,6 +502,7 @@ class Manifest:
             configs=configs,
             description=raw.get("description", ""),
             status_url=raw.get("status_url", ""),
+            requires_shared_config=bool(raw.get("requires_shared_config", False)),
             legacy_binaries=tuple(raw.get("legacy_binaries", ())),
             purge_categories=purge_categories,
             system_dependencies=system_dependencies,
