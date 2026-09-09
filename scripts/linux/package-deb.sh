@@ -30,6 +30,18 @@ BUILD_CANDIDATES=("$ROOT/build" "$ROOT/build-arm64" "$ROOT/build-arm64-cross")
 
 die() { printf 'Erreur : %s\n' "$1" >&2; exit 1; }
 
+# Architecture reelle d'un ELF, lue dans l'entete (e_machine, offset 18, little-endian).
+# 0xb7 = aarch64, 0x3e = x86-64. Sert a reconnaitre un binaire croise sans se fier a
+# l'hote : sous WSL x86_64, un binaire arm64 (build-arm64-cross/) doit etre empaquete
+# en arm64, pas en amd64.
+_elf_arch() {
+    case "$(od -An -tx1 -j18 -N2 "$1" 2>/dev/null | tr -d ' ')" in
+        b700) echo arm64 ;;
+        3e00) echo x86_64 ;;
+        *)    echo "" ;;
+    esac
+}
+
 while [ $# -gt 0 ]; do
     case "$1" in
         --build)      BUILD_DIR="${2:-}"; shift ;;
@@ -69,7 +81,19 @@ echo "Binaire : $BINARY"
 VERSION="$(head -n1 "$ROOT/VERSION" | tr -d '[:space:]')"
 [ -n "$VERSION" ] || die "fichier VERSION vide ou absent."
 
-ARCH="$(dpkg --print-architecture)"
+# Build croise : un binaire aarch64 sur un hote qui n'est pas aarch64 (WSL x86_64).
+# L'arch du paquet et ses Depends ne peuvent alors PAS venir de l'hote -- `dpkg
+# --print-architecture` renvoie amd64, et `ldd`/`dpkg -S` sont aveugles a un ELF arm64.
+CROSS_ARM64=0
+if [ "$(_elf_arch "$BINARY")" = "arm64" ] && [ "$(uname -m)" != "aarch64" ]; then
+    CROSS_ARM64=1
+fi
+
+if [ "$CROSS_ARM64" = "1" ]; then
+    ARCH="arm64"
+else
+    ARCH="$(dpkg --print-architecture)"
+fi
 ICON_SRC="$ROOT/resources/logo.png"
 [ -f "$ICON_SRC" ] || die "icône introuvable : $ICON_SRC"
 
@@ -79,8 +103,33 @@ detect_depends() {
         | sort -u | paste -sd, - | sed 's/,/, /g'
 }
 
+# Depends d'un binaire croise : sonames NEEDED lus avec l'objdump de la cible, puis
+# resolus dans les .shlibs du sysroot -- la logique eprouvee de morfdeploy
+# (cross_depends), reutilisee depuis la copie vendoree plutot que reecrite.
+cross_depends() {
+    ROOT="$ROOT" python3 - "$BINARY" "$MORF_SYSROOT" "aarch64-linux-gnu-objdump" <<'PY'
+import os, sys
+from pathlib import Path
+sys.path.insert(0, os.path.join(os.environ["ROOT"], "third_party", "morf"))
+from morfdeploy.package import cross_depends as _cd
+print(", ".join(_cd(Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3])))
+PY
+}
+
 if [ -n "$DEPENDS_OVERRIDE" ]; then
     DEPENDS="$DEPENDS_OVERRIDE"
+elif [ "$CROSS_ARM64" = "1" ]; then
+    command -v aarch64-linux-gnu-objdump >/dev/null 2>&1 \
+        || die "objdump cible manquant : installe binutils-aarch64-linux-gnu."
+    [ -n "${MORF_SYSROOT:-}" ] && [ -d "$MORF_SYSROOT" ] \
+        || die "MORF_SYSROOT absent : sysroot arm64 requis pour les Depends croises."
+    DEPENDS="$(cross_depends)"
+    [ -n "$DEPENDS" ] || die "Depends croises vides (sysroot sans .shlibs ?)."
+    # Le plugin xcb (chargé par dlopen) exige libxcb-cursor0 depuis Qt 6.5.
+    case ", $DEPENDS," in
+        *", libxcb-cursor0,"*) : ;;
+        *) DEPENDS="$DEPENDS, libxcb-cursor0" ;;
+    esac
 else
     DEPENDS="$(detect_depends || true)"
     [ -n "$DEPENDS" ] || DEPENDS="libc6, libqt6core6, libqt6gui6, libqt6widgets6"
