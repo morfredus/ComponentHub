@@ -63,10 +63,12 @@ UpdateDialog::UpdateDialog(const QString& appName,
             QDesktopServices::openUrl(info.htmlUrl);
     });
 
-    if (!info.assets.isEmpty()) {
+    // Telecharger le binaire du systeme courant, pas le premier asset venu
+    // (souvent checksums.sha256). Si rien ne correspond, on n'offre que la page.
+    if (const ReleaseAsset* best = selectAssetForCurrentPlatform(info.assets)) {
         auto* dlBtn = buttons->addButton(tr("Telecharger"),
                                          QDialogButtonBox::AcceptRole);
-        const QUrl assetUrl = info.assets.first().url;
+        const QUrl assetUrl = best->url;
         connect(dlBtn, &QPushButton::clicked, this, [this, assetUrl]() {
             if (assetUrl.isValid())
                 QDesktopServices::openUrl(assetUrl);
