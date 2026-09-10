@@ -34,6 +34,14 @@ public slots:
 
 private:
     bool fail(const QString& operationId, const QString& detail);
+
+    // Auto-mise a jour : succession en deux temps (Linux seulement). Prepare le
+    // nouveau paquet ET le paquet de rollback, persiste l'operation en Delegated,
+    // puis delegue l'application a un applieur systemd detache. Ce processus est
+    // ensuite arrete par l'applieur ; le successeur reconcilie au demarrage. Voir
+    // Evolution/morfUpdate - auto-mise a jour (succession de processus).md.
+    void runSelfUpdate(const QString& operationId);
+
     AgentConfig m_config;
     OperationStore* m_operations;
     QString m_stateDirectory;

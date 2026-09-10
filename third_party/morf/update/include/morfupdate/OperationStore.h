@@ -37,9 +37,23 @@ public:
     // active() to the client with HTTP 409, without ever queueing a second
     // installation behind an unknown result.
     UpdateOperation create(QString project, QString fromVersion, QString toVersion,
-                           QString platform, QString* error = nullptr);
+                           QString platform, bool selfUpdate = false, QString* error = nullptr);
     bool transition(const QString& id, UpdateState state, QString detail,
                     QString* error = nullptr);
+
+    // Enregistre les references de paquets d'une self-update (chemins stagés) avant
+    // la delegation, pour que le journal porte de quoi tracer / rejouer. N'altere
+    // pas l'etat : c'est transition() qui fait avancer la machine.
+    bool setSelfUpdateRefs(const QString& id, const QString& rollbackRef,
+                           const QString& stagedRef, QString* error = nullptr);
+
+    // Reprise, au demarrage, des self-updates laissees non finales par la
+    // disparition volontaire du processus precedent. Le successeur tranche
+    // d'apres SA version compilee (runningVersion) : version cible -> Succeeded,
+    // version de depart (l'applieur a restaure) -> RolledBack, sinon Failed.
+    // L'installation n'est jamais presumee etre un succes. Renvoie le nombre
+    // d'operations reconciliees, ou -1 si l'ecriture du journal echoue.
+    int reconcileSelfUpdates(const QString& runningVersion, QString* error = nullptr);
 
 private:
     bool save(QString* error);

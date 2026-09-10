@@ -14,6 +14,10 @@ struct AgentTarget {
     QString healthUrl;
     QString appDir;
     QString serviceManager;
+    // Cible = morfUpdate lui-meme. Opt-in explicite ("self": true dans la config) :
+    // sans cela l'agent refuse toujours de se mettre a jour (comportement historique).
+    // Active le chemin de succession en deux temps (applieur systemd detache).
+    bool    isSelf = false;
 };
 
 struct AgentConfig {

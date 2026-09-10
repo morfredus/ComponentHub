@@ -34,6 +34,9 @@ UpdateState stateFromName(const QString& value, bool* valid) {
         {QStringLiteral("succeeded"), UpdateState::Succeeded},
         {QStringLiteral("rejected"), UpdateState::Rejected},
         {QStringLiteral("failed"), UpdateState::Failed},
+        {QStringLiteral("rollback_prepared"), UpdateState::RollbackPrepared},
+        {QStringLiteral("delegated"), UpdateState::Delegated},
+        {QStringLiteral("rolled_back"), UpdateState::RolledBack},
     };
     const auto it = states.constFind(value);
     *valid = it != states.constEnd();
@@ -69,15 +72,31 @@ bool OperationStore::load(QString* error) {
             return false;
         }
         if (!isFinal(operation.state)) {
-            // A previous process died mid-operation.  It cannot know whether an
-            // installer finished, so report the interruption honestly and do
-            // not let a second update start until an operator has seen it.
-            operation.state = UpdateState::Failed;
-            operation.detail = QStringLiteral("agent interrupted during this operation");
-            operation.updatedAt = QDateTime::currentDateTimeUtc();
+            if (operation.selfUpdate) {
+                // Self-update : le processus qui orchestrait a disparu PAR
+                // CONCEPTION (il s'est remplace lui-meme). Ne pas conclure a
+                // l'echec : laisser l'operation en l'etat pour la passe de
+                // reconciliation (reconcileSelfUpdates), qui tranchera d'apres la
+                // version reellement executee. On garde l'id actif pour bloquer
+                // tout nouvel update tant que le verdict n'est pas rendu.
+                m_activeId = operation.id;
+            } else {
+                // Un autre service : morfUpdate est reste vivant tout du long, une
+                // interruption est donc un vrai echec. Le signaler honnetement et
+                // ne pas laisser une seconde mise a jour demarrer avant qu'un
+                // operateur l'ait vu.
+                operation.state = UpdateState::Failed;
+                operation.detail = QStringLiteral("agent interrupted during this operation");
+                operation.updatedAt = QDateTime::currentDateTimeUtc();
+            }
         }
         m_operations.insert(operation.id, operation);
     }
+    // Relacher le handle de lecture AVANT de reecrire : sur Windows, QSaveFile ne
+    // peut pas remplacer atomiquement un fichier encore ouvert (« acces refuse »).
+    // Sous Linux le rename sur un fichier ouvert passe, d'ou un bug invisible en
+    // prod (Pi) mais reel des que morfUpdate tourne sous Windows.
+    file.close();
     return save(error);
 }
 
@@ -100,7 +119,7 @@ std::optional<UpdateOperation> OperationStore::find(const QString& id) const {
 }
 
 UpdateOperation OperationStore::create(QString project, QString fromVersion, QString toVersion,
-                                       QString platform, QString* error) {
+                                       QString platform, bool selfUpdate, QString* error) {
     QMutexLocker locker(&m_mutex);
     if (active()) {
         if (error) *error = QStringLiteral("another update is active");
@@ -112,6 +131,7 @@ UpdateOperation OperationStore::create(QString project, QString fromVersion, QSt
     operation.fromVersion = std::move(fromVersion);
     operation.toVersion = std::move(toVersion);
     operation.platform = std::move(platform);
+    operation.selfUpdate = selfUpdate;
     operation.createdAt = QDateTime::currentDateTimeUtc();
     operation.updatedAt = operation.createdAt;
     m_operations.insert(operation.id, operation);
@@ -142,6 +162,55 @@ bool OperationStore::transition(const QString& id, UpdateState state, QString de
     if (isFinal(state))
         m_activeId.clear();
     return save(error);
+}
+
+bool OperationStore::setSelfUpdateRefs(const QString& id, const QString& rollbackRef,
+                                       const QString& stagedRef, QString* error) {
+    QMutexLocker locker(&m_mutex);
+    auto it = m_operations.find(id);
+    if (it == m_operations.end()) {
+        if (error) *error = QStringLiteral("unknown operation");
+        return false;
+    }
+    it->selfUpdate = true;
+    it->rollbackRef = rollbackRef;
+    it->stagedRef = stagedRef;
+    it->updatedAt = QDateTime::currentDateTimeUtc();
+    return save(error);
+}
+
+int OperationStore::reconcileSelfUpdates(const QString& runningVersion, QString* error) {
+    QMutexLocker locker(&m_mutex);
+    // Le processus courant tourne : par definition il est "vivant". Le distinguo
+    // Succeeded / RolledBack vient de la version, pas d'une sonde HTTP vers
+    // soi-meme. (La porte de sante du redemarrage est portee par l'applieur
+    // detache, avant meme que ce successeur ne demarre - voir l'evolution.)
+    const bool healthy = true;
+    int reconciled = 0;
+    // Copie des ids : transition() reprend le verrou (recursif) et modifie la map.
+    const QList<QString> ids = m_operations.keys();
+    for (const QString& id : ids) {
+        const auto it = m_operations.constFind(id);
+        if (it == m_operations.constEnd() || !it->selfUpdate || isFinal(it->state))
+            continue;
+        const UpdateState verdict = reconcileSelfUpdate(it.value(), healthy, runningVersion);
+        const QString detail = verdict == UpdateState::Succeeded
+            ? QStringLiteral("successor runs the requested version %1").arg(runningVersion)
+            : verdict == UpdateState::RolledBack
+                ? QStringLiteral("applier restored the previous version %1").arg(runningVersion)
+                : QStringLiteral("successor runs an unexpected version %1 (expected %2)")
+                      .arg(runningVersion, it->toVersion);
+        // transition() valide la transition et persiste. Filet : si le verdict
+        // n'est pas atteignable depuis l'etat courant (ne devrait pas arriver),
+        // retomber sur Failed, toujours autorise depuis un etat non final.
+        QString ignored;
+        if (!transition(id, verdict, detail, &ignored))
+            transition(id, UpdateState::Failed, detail, &ignored);
+        ++reconciled;
+    }
+    if (reconciled > 0 && !save(error))
+        return -1;
+    return reconciled;
 }
 
 bool OperationStore::save(QString* error) {
@@ -177,6 +246,12 @@ QJsonObject OperationStore::toJson(const UpdateOperation& operation) {
         {QStringLiteral("detail"), operation.detail},
         {QStringLiteral("created_at"), operation.createdAt.toUTC().toString(Qt::ISODate)},
         {QStringLiteral("updated_at"), operation.updatedAt.toUTC().toString(Qt::ISODate)},
+        // Champs self-update. Toujours ecrits (defaut false / vide) : un journal
+        // ecrit par une version anterieure les omet, fromJson retombe alors sur
+        // les defauts - compat descendante assuree.
+        {QStringLiteral("self_update"), operation.selfUpdate},
+        {QStringLiteral("rollback_ref"), operation.rollbackRef},
+        {QStringLiteral("staged_ref"), operation.stagedRef},
     };
 }
 
@@ -198,6 +273,10 @@ bool OperationStore::fromJson(const QJsonObject& object, UpdateOperation* operat
     operation->detail = object.value(QStringLiteral("detail")).toString();
     operation->createdAt = created.toUTC();
     operation->updatedAt = updated.toUTC();
+    // Absents d'un journal ancien : defauts (mise a jour normale d'un service).
+    operation->selfUpdate = object.value(QStringLiteral("self_update")).toBool(false);
+    operation->rollbackRef = object.value(QStringLiteral("rollback_ref")).toString();
+    operation->stagedRef = object.value(QStringLiteral("staged_ref")).toString();
     return true;
 }
 

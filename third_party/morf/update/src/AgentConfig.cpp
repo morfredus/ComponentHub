@@ -35,7 +35,8 @@ bool AgentConfig::load(const QString& path, AgentConfig* config, QString* error)
                            obj.value(QStringLiteral("repository")).toString(),
                            obj.value(QStringLiteral("health_url")).toString(),
                            obj.value(QStringLiteral("app_dir")).toString(),
-                           obj.value(QStringLiteral("service_manager")).toString()};
+                           obj.value(QStringLiteral("service_manager")).toString(),
+                           obj.value(QStringLiteral("self")).toBool(false)};
         if (target.project.isEmpty() || target.service.isEmpty() || target.repository.isEmpty()
             || target.healthUrl.isEmpty() || parsed.targets.contains(target.project)) {
             if (error) *error = QStringLiteral("agent target declarations are invalid");

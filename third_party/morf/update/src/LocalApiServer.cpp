@@ -126,7 +126,7 @@ void LocalApiServer::handle(QTcpSocket* socket, QByteArray method, QByteArray pa
         }
         QString error;
         const UpdateOperation operation =
-            m_operations->create(project, QString(), QString(), platformName(), &error);
+            m_operations->create(project, QString(), QString(), platformName(), false, &error);
         if (operation.id.isEmpty()) {
             reply(socket, 500, "Internal Server Error", {{"error", error}}); return;
         }
@@ -146,15 +146,26 @@ void LocalApiServer::handle(QTcpSocket* socket, QByteArray method, QByteArray pa
         reply(socket, 400, "Bad Request", {{"error", "project and version must be declared identifiers"}});
         return;
     }
-    if (project == QStringLiteral("morfUpdate")) {
-        reply(socket, 409, "Conflict", {{"error", "morfUpdate cannot update itself"}}); return;
+    // morfUpdate ne se met a jour lui-meme QUE si une cible l'a explicitement
+    // declare (self: true) : succession en deux temps (applieur systemd detache).
+    // Sans ce drapeau, une cible nommee morfUpdate reste refusee - le comportement
+    // historique tient tant que l'auto-update n'est pas active dans la config.
+    const AgentTarget target = m_config.targets.value(project);
+    if (target.service == QStringLiteral("morfupdate") && !target.isSelf) {
+        reply(socket, 409, "Conflict",
+              {{"error", "morfUpdate self-update is not enabled (declare the target with self:true)"}});
+        return;
     }
     if (const auto active = m_operations->active()) {
         reply(socket, 409, "Conflict", {{"error", "another update is active"}, {"id", active->id},
               {"state", updateStateName(active->state)}}); return;
     }
+    // Pour une self-update, la version de depart = la version en cours d'execution
+    // (macro de compilation). C'est l'ancre du verdict RolledBack cote successeur.
+    const QString fromVersion = target.isSelf ? QStringLiteral(MORFUPDATE_VERSION) : QString();
     QString error;
-    const UpdateOperation operation = m_operations->create(project, QString(), version, platformName(), &error);
+    const UpdateOperation operation =
+        m_operations->create(project, fromVersion, version, platformName(), target.isSelf, &error);
     if (operation.id.isEmpty()) { reply(socket, 500, "Internal Server Error", {{"error", error}}); return; }
     reply(socket, 202, "Accepted", {{"id", operation.id}, {"state", "queued"}});
     emit operationQueued(operation.id);

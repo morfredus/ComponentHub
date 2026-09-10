@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.8.19] - 2026-09-10
+
+### Changed
+
+- Resynced vendored morfUpdate to 0.8.0 (opt-in self-update, stage 2). No behaviour
+  change in this application: the affected code is the update agent, which desktop
+  apps do not run.
+
+## [1.8.18] - 2026-09-10
+
+### Changed
+
+- Resynced vendored morfUpdate to 0.7.0 (self-update state contract, stage 1, plus
+  a Windows journal-rewrite fix). No behaviour change in this application: the
+  affected code is the update agent, which desktop apps do not run.
+
 ## [1.8.17] - 2026-09-10
 
 ### Fixed — update dialog offered the checksums file instead of the binary

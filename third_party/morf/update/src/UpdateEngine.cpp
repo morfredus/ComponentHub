@@ -143,6 +143,73 @@ bool installLinux(const QString& file, const AgentTarget& target, QString* error
                       {QStringLiteral("--install-deb"), file, target.service}, error);
 }
 
+// Telecharge et verifie le .deb d'une version PRECISE dans stageDir, renvoie son
+// chemin local (vide + *error si echec). Memes controles que le flux normal (tag
+// -> commit -> manifest -> selectAsset -> download -> SHA-256), mais isole pour le
+// chemin self-update, qui a besoin de DEUX paquets : le nouveau et celui du
+// rollback (la version en cours, encore disponible dans les releases GitHub).
+QString stageVerifiedDeb(const AgentTarget& target, const QString& version,
+                         const QString& platform, const QString& stageDir, QString* error) {
+    const QByteArray token;
+    QJsonObject release;
+    if (!jsonGet(QStringLiteral("repos/") + target.repository + QStringLiteral("/releases/tags/v")
+                 + version, token, &release, error))
+        return {};
+    QString commit;
+    if (!taggedCommit(target.repository, version, token, &commit, error))
+        return {};
+    QJsonObject manifestAsset;
+    for (const QJsonValue& value : release.value("assets").toArray())
+        if (value.toObject().value("name").toString() == QStringLiteral("manifest.json"))
+            manifestAsset = value.toObject();
+    if (manifestAsset.isEmpty()) {
+        *error = QStringLiteral("release v%1 has no manifest.json").arg(version);
+        return {};
+    }
+    const QByteArray rawManifest = get(QUrl(manifestAsset.value("url").toString()), token, error, true);
+    const QJsonDocument manifestDoc = QJsonDocument::fromJson(rawManifest);
+    if (!manifestDoc.isObject()) {
+        if (error->isEmpty()) *error = QStringLiteral("manifest is invalid");
+        return {};
+    }
+    if (manifestDoc.object().value("source").toObject().value("repository").toString()
+        != target.repository) {
+        *error = QStringLiteral("manifest declares a different source repository");
+        return {};
+    }
+    ValidatedAsset asset;
+    if (!ReleaseValidator::selectAsset(manifestDoc.object(), target.project, version, platform,
+                                       commit, &asset, error))
+        return {};
+    if (asset.format != QStringLiteral("deb")) {
+        *error = QStringLiteral("self-update requires a .deb asset (found %1)").arg(asset.format);
+        return {};
+    }
+    QJsonObject artifactAsset;
+    for (const QJsonValue& value : release.value("assets").toArray())
+        if (value.toObject().value("name").toString() == asset.name)
+            artifactAsset = value.toObject();
+    if (artifactAsset.isEmpty()) {
+        *error = QStringLiteral("manifest asset is absent from release");
+        return {};
+    }
+    if (!QDir().mkpath(stageDir)) {
+        *error = QStringLiteral("cannot create protected download directory");
+        return {};
+    }
+    const QString file = QDir(stageDir).filePath(asset.name);
+    const QByteArray bytes = get(QUrl(artifactAsset.value("url").toString()), token, error, true);
+    QSaveFile downloaded(file);
+    if (bytes.isEmpty() || !downloaded.open(QIODevice::WriteOnly)
+        || downloaded.write(bytes) != bytes.size() || !downloaded.commit()) {
+        if (error->isEmpty()) *error = QStringLiteral("cannot save release asset");
+        return {};
+    }
+    if (!ReleaseValidator::checksumMatches(file, asset.sha256, error))
+        return {};
+    return file;
+}
+
 // Stratégie "source-bundle" (projet non compilé, ex. morfDashboard) : l'archive
 // .tar.gz des fichiers applicatifs remplace l'installation, config et état
 // préservés. L'EXTRACTION se fait ici, NON privilégiée (utilisateur du service) :
@@ -269,6 +336,16 @@ void UpdateEngine::run(const QString& operationId) {
     const UpdateOperation operation = *found;
     const AgentTarget target = m_config.targets.value(operation.project);
     if (target.project.isEmpty()) { fail(operationId, QStringLiteral("project is not configured")); return; }
+    // Auto-mise a jour : chemin distinct (le flux normal ci-dessous suppose que le
+    // processus survit a l'installation, ce qui est faux pour soi-meme).
+    if (target.isSelf) {
+#ifdef Q_OS_WIN
+        fail(operationId, QStringLiteral("self-update is not supported on Windows yet"));
+#else
+        runSelfUpdate(operationId);
+#endif
+        return;
+    }
     const QByteArray token;
     QString error;
     if (!m_operations->transition(operationId, UpdateState::Downloading, QStringLiteral("reading release"), &error)) return;
@@ -395,6 +472,68 @@ void UpdateEngine::restart(const QString& operationId) {
     m_operations->transition(operationId, UpdateState::Succeeded,
                              QStringLiteral("service restarted and healthy"), &error);
 #endif
+}
+
+void UpdateEngine::runSelfUpdate(const QString& operationId) {
+    const std::optional<UpdateOperation> found = m_operations->find(operationId);
+    if (!found) return;
+    const UpdateOperation operation = *found;
+    const AgentTarget target = m_config.targets.value(operation.project);
+    QString error;
+
+    if (operation.fromVersion.isEmpty()) {
+        // Sans version de depart, le successeur ne pourrait pas distinguer un succes
+        // d'un rollback. On refuse plutot que d'installer a l'aveugle.
+        fail(operationId, QStringLiteral("self-update has no from-version anchor"));
+        return;
+    }
+    if (!m_operations->transition(operationId, UpdateState::Downloading,
+                                  QStringLiteral("staging new and rollback packages"), &error))
+        return;
+
+    const QString stage = QDir(m_stateDirectory).filePath(QStringLiteral("downloads/") + operationId);
+    // Nouveau paquet (version cible) et paquet de rollback (version en cours). Les
+    // deux sont telecharges et verifies AVANT de toucher a quoi que ce soit : si le
+    // rollback n'est pas recuperable, on echoue sans avoir rien casse.
+    const QString newDeb = stageVerifiedDeb(target, operation.toVersion, operation.platform,
+                                            QDir(stage).filePath(QStringLiteral("new")), &error);
+    if (newDeb.isEmpty()) { fail(operationId, error); return; }
+    const QString oldDeb = stageVerifiedDeb(target, operation.fromVersion, operation.platform,
+                                            QDir(stage).filePath(QStringLiteral("rollback")), &error);
+    if (oldDeb.isEmpty()) {
+        fail(operationId, QStringLiteral("cannot stage rollback package: ") + error);
+        return;
+    }
+
+    if (!m_operations->transition(operationId, UpdateState::Verifying,
+                                  QStringLiteral("new and rollback packages verified"), &error))
+        return;
+    if (!m_operations->transition(operationId, UpdateState::RollbackPrepared,
+                                  QStringLiteral("rollback package staged"), &error))
+        return;
+    if (!m_operations->setSelfUpdateRefs(operationId, oldDeb, newDeb, &error)) {
+        fail(operationId, error);
+        return;
+    }
+    if (!m_operations->transition(operationId, UpdateState::Delegated,
+                                  QStringLiteral("handing off to the detached applier"), &error))
+        return;
+
+    // Delegation : le helper setuid lance un applieur DETACHE (unite systemd
+    // transitoire), HORS du cgroup de morfupdate, qui arrete/installe/redemarre et
+    // roule en arriere si la sante echoue. On ne verifie PAS le resultat ici : ce
+    // processus va etre arrete par l'applieur. Le successeur (neuf, ou ancien
+    // restaure) tranchera Succeeded / RolledBack au demarrage (reconcileSelfUpdates).
+    QString handoff;
+    if (!runProcess(QStringLiteral("/usr/lib/morfsystem/morfupdate/morfupdate-helper"),
+                    {QStringLiteral("--self-apply"), newDeb, oldDeb, target.service,
+                     target.healthUrl}, &handoff)) {
+        // Le handoff a echoue AVANT tout arret : rien n'a ete touche, le service
+        // tourne toujours l'ancienne version. Echec franc.
+        fail(operationId, QStringLiteral("could not hand off to the applier: ") + handoff);
+        return;
+    }
+    // Handoff reussi : ne rien transitionner de plus, l'applieur va nous arreter.
 }
 
 } // namespace morfupdate
