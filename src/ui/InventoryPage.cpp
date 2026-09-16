@@ -8,6 +8,15 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QEvent>
+#include <QHelpEvent>
+#include <QToolTip>
+#include <QPixmap>
+#include <QLabel>
+#include <QHBoxLayout>
+#include <QTimer>
+#include <QDir>
+#include <QFile>
 #include <map>
 
 #include "AppContext.h"
@@ -87,6 +96,9 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
     connect(kind_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &InventoryPage::refresh);
     connect(lowStock_, &QCheckBox::toggled, this, &InventoryPage::refresh);
     connect(table_, &QTableWidget::cellDoubleClicked, this, [this](int row, int) { editComponentRow(row); });
+
+    // Filtre d'événements pour détecter le survol de la souris et afficher le tooltip avec photo
+    table_->viewport()->installEventFilter(this);
 
     // Raccourcis d'action via double-clic ; boutons contextuels en bas.
     auto* actions = new QHBoxLayout;
@@ -171,4 +183,71 @@ void InventoryPage::deleteCurrent() {
     if (QMessageBox::question(this, "Supprimer", "Supprimer « " + name + " » ?") != QMessageBox::Yes) return;
     ctx_.inventory.removeComponent(id);
     refresh();
+}
+
+bool InventoryPage::eventFilter(QObject* watched, QEvent* event) {
+    if (watched == table_->viewport() && event->type() == QEvent::ToolTip) {
+        const QHelpEvent* helpEvent = static_cast<const QHelpEvent*>(event);
+        const QModelIndex index = table_->indexAt(helpEvent->pos());
+        if (index.isValid()) {
+            const QString tooltip = buildPhotoTooltip(index.row());
+            if (!tooltip.isEmpty()) {
+                QToolTip::showText(helpEvent->globalPos(), tooltip, this);
+                return true;
+            }
+        }
+    }
+    return QWidget::eventFilter(watched, event);
+}
+
+QString InventoryPage::buildPhotoTooltip(int row) {
+    if (row < 0) return QString();
+    const Id id = table_->item(row, 0)->data(Qt::UserRole).toString().toStdString();
+    if (id.empty()) return QString();
+
+    // Récupérer les documents du composant (photos)
+    const auto documents = ctx_.documents_service.listForOwner(DocumentOwnerKind::Component, id);
+
+    // Chercher la première photo (fichier image)
+    for (const auto& doc : documents) {
+        if (!doc.isFile()) continue;
+
+        // Vérifier si c'est une image par extension
+        const QString fileName = QString::fromStdString(doc.fileName);
+        const QString ext = fileName.section('.', -1).toLower();
+        if (ext != "jpg" && ext != "jpeg" && ext != "png" && ext != "gif" && ext != "bmp" && ext != "webp")
+            continue;
+
+        // Vérifier si le contenu est disponible
+        if (!ctx_.attachments.has(doc.blobHash)) continue;
+
+        // Charger l'image depuis le magasin
+        std::string bytes;
+        if (!ctx_.attachments.get(doc.blobHash, bytes)) continue;
+
+        QPixmap pixmap;
+        if (!pixmap.loadFromData(reinterpret_cast<const unsigned char*>(bytes.data()), static_cast<int>(bytes.size())))
+            continue;
+
+        // Redimensionner l'image pour le tooltip (max 400x400)
+        const int maxSize = 400;
+        if (pixmap.width() > maxSize || pixmap.height() > maxSize) {
+            pixmap = pixmap.scaled(maxSize, maxSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
+
+        // Sauvegarder l'image dans un fichier temporaire pour l'afficher dans le tooltip
+        const QString tmpDir = QDir::tempPath() + "/componenthub-tooltips";
+        QDir().mkpath(tmpDir);
+        const QString tmpPath = tmpDir + "/" + QString::fromStdString(doc.blobHash) + ".png";
+        if (pixmap.save(tmpPath)) {
+            // Afficher le tooltip avec l'image
+            const QString html = QString("<img src=\"%1\" width=\"%2\" height=\"%3\">")
+                .arg(tmpPath)
+                .arg(pixmap.width())
+                .arg(pixmap.height());
+            return html;
+        }
+    }
+
+    return QString();
 }

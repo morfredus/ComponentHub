@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.8.20] - 2026-09-16
+
+### Added
+
+- **Photo tooltip on inventory hover.** When the mouse hovers over a component in the inventory, a tooltip displays the first attached photo (if any). The image is resized to a maximum of 400×400 pixels (aspect ratio preserved) and displayed in a readable size via a temporary file. Supports JPG, JPEG, PNG, GIF, BMP and WEBP formats from the attachment store.
+
 ## [1.8.19] - 2026-09-10
 
 ### Changed
