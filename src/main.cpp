@@ -2,6 +2,7 @@
 #include <QApplication>
 #include <QStandardPaths>
 #include <QDir>
+#include <QMessageBox>
 
 #include "AppContext.h"
 #include "ui/MainWindow.h"
@@ -11,6 +12,9 @@
 #include <morfbeacon/PresenceService.h>
 #include <morfbeacon/IMetricsProvider.h>
 #include <QJsonObject>
+
+#include <exception>
+#include <memory>
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
@@ -24,7 +28,15 @@ int main(int argc, char* argv[]) {
 
     Theme::instance().apply(Theme::savedMode());
 
-    chdesktop::AppContext ctx(dir.toStdString());
+    std::unique_ptr<chdesktop::AppContext> context;
+    try {
+        context = std::make_unique<chdesktop::AppContext>(dir.toStdString());
+    } catch (const std::exception& e) {
+        QMessageBox::critical(nullptr, "ComponentHub - démarrage impossible",
+            "La base de données locale ne peut pas être ouverte.\n\n" + QString::fromUtf8(e.what()));
+        return 1;
+    }
+    auto& ctx = *context;
     MainWindow window(ctx);
     window.setWindowIcon(icons::icon(icons::Glyph::Chip, QColor(Theme::instance().color("accent")), 32));
     window.show();

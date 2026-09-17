@@ -11,25 +11,25 @@ contrainte mémoire de l'ESP32 (voir
   `ProjectService`, `ImportExportService`…), CSV - sans aucune dépendance Qt ni
   Arduino. Depuis la séparation d'avec le firmware, ce dépôt en possède **sa
   propre copie** (le firmware satellite `ComponentHub-ESP32` a la sienne).
-- **Format des données** : les tables sont des fichiers JSON `{ "nextId", "items" }`
-  **encore identiques** à ceux du firmware ESP32. Une sauvegarde `.tar` faite
-  sur la carte se restaure ici, et inversement - interopérabilité préservée
-  tant que le lien maître ↔ satellite n'est pas en place.
+- **Format des données** : une base SQLite `componenthub.sqlite` regroupe les
+  tables de l'atelier. Les échanges manuels passent par les imports et exports
+  CSV de l'application, et la sauvegarde `.tar` protège les données locales.
 
-Spécifique au bureau : le **stockage fichier** (`storage/`, nlohmann/json), l'archive
+Spécifique au bureau : le **stockage SQLite** (`storage/`), l'archive
 `.tar` (`platform/Tar.cpp`) et l'**interface Qt** (`ui/`).
 
 ## Dépendances
 
 - CMake ≥ 3.21, un compilateur C++17, Ninja
 - Qt 6 (module *Widgets*)
-- nlohmann-json
+- SQLite 3 et ses en-têtes de développement
+- nlohmann-json (protocole de synchronisation)
 
 ## Compilation
 
 ### Windows (MSYS2 / MinGW)
 
-Paquets : `mingw-w64-x86_64-{gcc,cmake,ninja,qt6-base,nlohmann-json}`.
+Paquets : `mingw-w64-x86_64-{gcc,cmake,ninja,qt6-base,sqlite3,nlohmann-json}`.
 
 ```sh
 cmake --preset mingw
@@ -39,7 +39,7 @@ cmake --build --preset mingw
 
 ### Linux (x86_64)
 
-Paquets (Debian/Ubuntu/Mint) : `cmake ninja-build qt6-base-dev nlohmann-json3-dev`.
+Paquets (Debian/Ubuntu/Mint) : `cmake ninja-build qt6-base-dev libsqlite3-dev nlohmann-json3-dev`.
 
 ```sh
 cmake --preset linux

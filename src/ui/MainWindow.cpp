@@ -332,7 +332,7 @@ void MainWindow::showHelpDialog() {
         "</ul>"
 
         "<h3>Où sont mes données ?</h3>"
-        "<p>Toutes vos tables sont des fichiers JSON dans votre dossier de données"
+        "<p>Vos données sont regroupées dans une base SQLite dans votre dossier de données"
         " personnel (menu <i>Fichier → Ouvrir le dossier de données</i>, chemin aussi"
         " rappelé en bas de la fenêtre). Pensez à la <b>sauvegarde <code>.tar</code></b>"
         " (section Import/Export) : elle emporte tout l'atelier en un seul fichier,"

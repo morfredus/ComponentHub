@@ -10,18 +10,19 @@ contrainte mémoire de l'ESP32 (voir
 - **Domaine** (`../src/domain/`) : entités, services (`InventoryService`,
   `ProjectService`, `ImportExportService`…), CSV - sans aucune dépendance à la
   plateforme (ni Qt, ni système embarqué). Ce dépôt en détient sa propre copie.
-- **Format des données** : chaque table est un fichier JSON
-  `{ "nextId", "items" }` ; une sauvegarde `.tar` (menu Import/Export) réunit
-  tout l'atelier en un seul fichier.
+- **Format des données** : une base SQLite `componenthub.sqlite` regroupe les
+  tables de l'atelier ; une sauvegarde `.tar` (menu Import/Export) réunit les
+  données et la configuration dans un seul fichier.
 
-Spécifique au bureau : le **stockage fichier** (`storage/`, nlohmann/json), l'archive
+Spécifique au bureau : le **stockage SQLite** (`storage/`), l'archive
 `.tar` (`platform/Tar.cpp`) et l'**interface Qt** (`ui/`).
 
 ## Dépendances
 
 - CMake ≥ 3.21, un compilateur C++17, Ninja
 - Qt 6 (module *Widgets*)
-- nlohmann-json
+- SQLite 3 et ses en-têtes de développement
+- nlohmann-json (protocole de synchronisation)
 
 ## Compilation
 

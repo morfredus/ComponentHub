@@ -3,7 +3,7 @@
  *
  * Ne connaît que les interfaces de dépôt (IComponentRepository,
  * ILocationRepository, IStockMovementRepository), jamais leur implémentation
- * (fichiers JSON, SQLite...). Indépendant de la plateforme (Windows, Linux,
+ * (SQLite). Indépendant de la plateforme (Windows, Linux,
  * Raspberry Pi).
  */
 

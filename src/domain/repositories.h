@@ -1,7 +1,7 @@
 /**
  * Interfaces de dépôt (Repository) — seule porte d'accès à la persistance
  * vue depuis le domaine. Aucune implémentation ici : voir src/storage/
- * (fichiers JSON). Changer de moteur de stockage (ex. SQLite) ne demande que
+ * (SQLite aujourd'hui). Changer de moteur de stockage ne demande que
  * de ré-implémenter ces interfaces, sans toucher à InventoryService.
  */
 

@@ -1,5 +1,5 @@
 // Test de fumée (headless) : vérifie que le domaine compile et tourne sur PC,
-// et que le stockage JSON round-trip correctement (accents + €).
+// et que le stockage SQLite conserve correctement les données (accents + €).
 // Non inclus dans l'application finale.
 #include <cstdio>
 #include <filesystem>
@@ -36,6 +36,33 @@ int main() {
     mv.timestamp = chdesktop::nowIso();
     ctx.inventory.recordMovement(mv);
 
+    // Les autres tables doivent elles aussi traverser une fermeture/réouverture
+    // de base : c'est le minimum pour détecter une colonne ou un dépôt oublié.
+    Location location;
+    location.name = "Étagère A";
+    location = ctx.inventory.saveLocation(location);
+
+    Project project;
+    project.name = "Test SQLite";
+    project = ctx.projects_service.saveProject(project);
+
+    ProjectComponent projectComponent;
+    projectComponent.projectId = project.id;
+    projectComponent.componentId = c.id;
+    projectComponent.quantityRequired = 2;
+    ctx.projectComponents.save(projectComponent);
+
+    Document document;
+    document.ownerId = c.id;
+    document.title = "Fiche test";
+    document.url = "https://example.test/datasheet";
+    ctx.documents.save(document);
+
+    RefItem reference;
+    reference.list = "manufacturers";
+    reference.value = "morfredus";
+    ctx.referentials.save(reference);
+
     // Relecture depuis le disque via une nouvelle instance.
     chdesktop::AppContext reloaded(dir.string());
     auto all = reloaded.inventory.listComponents();
@@ -44,9 +71,18 @@ int main() {
         std::printf("  #%s %-20s qty=%d cat=%s notes=\"%s\"\n",
                     x.id.c_str(), x.name.c_str(), x.quantity, x.category.c_str(), x.notes.c_str());
 
-    // La catégorie doit avoir été créée automatiquement par saveComponent.
-    std::printf("categories: %zu\n", reloaded.inventory.listCategories().size());
+    // La catégorie doit avoir été créée automatiquement par saveComponent et
+    // toutes les tables doivent être relues depuis SQLite.
+    const bool complete = all.size() == 1 &&
+        reloaded.inventory.listCategories().size() == 1 &&
+        reloaded.inventory.listLocations().size() == 1 &&
+        reloaded.projects_service.listProjects().size() == 1 &&
+        reloaded.projectComponents.findByProject(project.id).size() == 1 &&
+        reloaded.documents.findByOwner(DocumentOwnerKind::Component, c.id).size() == 1 &&
+        reloaded.referentials.findByList("manufacturers").size() == 1 &&
+        reloaded.inventory.history(c.id).size() == 1;
+    std::printf("all SQLite repositories: %s\n", complete ? "ok" : "failed");
 
-    std::printf("component file: %s\n", (dir / "inventory_components.json").string().c_str());
-    return all.size() == 1 ? 0 : 1;
+    std::printf("database: %s\n", (dir / "componenthub.sqlite").string().c_str());
+    return complete ? 0 : 1;
 }

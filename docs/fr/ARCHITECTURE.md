@@ -17,7 +17,7 @@ ComponentHub est découpé en couches. Une couche ne connaît que celles située
   Services métier (src/domain/)       ← les règles, indépendantes de tout
         │  s'appuient sur des interfaces
         ▼
-  Dépôts / stockage (src/storage/)    ← lecture/écriture des fichiers JSON
+  Dépôts / stockage (src/storage/)    ← lecture/écriture SQLite
         │
   Aides plateforme (src/platform/)    ← archive .tar, horloge (API portable)
 ```
@@ -30,7 +30,7 @@ ComponentHub est découpé en couches. Une couche ne connaît que celles située
 Concrètement, cela veut dire qu'on peut :
 
 - changer l'**interface** (une page Qt) sans toucher aux règles métier ;
-- changer le **stockage** (passer un jour de JSON à SQLite) sans toucher ni à
+- changer le **stockage** sans toucher ni à
   l'interface ni aux règles ;
 - **tester** la logique métier sans lancer d'interface graphique.
 
@@ -40,7 +40,7 @@ Concrètement, cela veut dire qu'on peut :
 src/
 ├── domain/     Cœur métier : entités + interfaces de dépôt + services.
 │               AUCUNE dépendance Qt/Arduino/OS. C++17 pur.
-├── storage/    Persistance bureau : fichiers JSON (nlohmann/json) qui
+├── storage/    Persistance bureau : base SQLite qui
 │               implémentent les interfaces de dépôt du domaine.
 ├── platform/   Aides proches de l'OS derrière une API portable (Tar, Clock).
 ├── ui/         La SEULE couche qui connaît Qt (Theme, Icons, pages, dialogues).
@@ -68,14 +68,10 @@ implémentation. C'est ce qui rend le cœur portable et testable.
 
 ### `src/storage/` - la persistance bureau
 
-`FileRepositories` fournit **l'unique implémentation actuelle** des interfaces du
-domaine : chaque table est un fichier JSON `{ "nextId": N, "items": [ … ] }`
-(`JsonStore.h`). Les écritures sont **atomiques** (fichier `.tmp` puis
-renommage), et un fichier illisible est signalé plutôt que traité en silence
-comme vide.
-
-Un futur backend (SQLite, par exemple) se limiterait à ré-implémenter ces
-interfaces - le reste du programme ne changerait pas.
+`SQLiteRepositories` fournit l'implémentation des interfaces du domaine. Toutes
+les tables sont regroupées dans `componenthub.sqlite`, créée et initialisée au
+premier lancement. Les requêtes préparées et le journal SQLite protègent les
+écritures, sans faire remonter ce détail au cœur métier.
 
 ### `src/platform/` - les aides proches du système
 
@@ -108,7 +104,7 @@ les services du domaine via l'`AppContext`.
 ### L'assemblage : `AppContext` et `main.cpp`
 
 `AppContext` (dans `src/AppContext.h`) est le **point d'assemblage** : pour un
-dossier de données donné, il crée les dépôts fichier puis les services qui s'en
+dossier de données donné, il ouvre la base SQLite, crée les dépôts puis les services qui s'en
 servent, et les expose. Chaque page reçoit une référence à cet `AppContext`.
 `main.cpp` se contente de : choisir le dossier de données
 (`QStandardPaths::AppDataLocation`), appliquer le thème, créer l'`AppContext`,
@@ -125,7 +121,7 @@ main.cpp ─► AppContext(dossier) ─► crée dépôts (storage/) + services 
 | Ce que vous ajoutez | Où |
 |---|---|
 | Une règle / un calcul métier | un **service** dans `src/domain/` |
-| Un champ ou une table à stocker | une entité + interface (`src/domain/`) + son implémentation JSON (`src/storage/`) |
+| Un champ ou une table à stocker | une entité + interface (`src/domain/`) + son implémentation SQLite (`src/storage/`) |
 | Un écran, un bouton, un dialogue | `src/ui/` (qui appelle les services) |
 | Un service rendu par l'OS (fichiers, temps, archive) | une aide portable dans `src/platform/` |
 
@@ -134,14 +130,11 @@ les bugs restent localisés, et chaque couche évolue sans casser les autres.
 
 ## Le format des données
 
-Chaque table est un fichier JSON dans le dossier de données de l'utilisateur
-(voir [USER_MANUAL.md](USER_MANUAL.md) pour le chemin exact) :
-`inventory_components.json`, `inventory_locations.json`,
-`inventory_categories.json`, `inventory_stock_movements.json`,
-`inventory_documents.json`, `projects.json`, `project_components.json`,
-`referentials.json`. Chacun a la forme `{ "nextId": N, "items": [ … ] }`. Une
-**sauvegarde `.tar`** (menu Import/Export) emballe tout cela en un seul fichier,
-restaurable à tout moment.
+Les données sont regroupées dans `componenthub.sqlite`, dans le dossier de
+données de l'utilisateur (voir [USER_MANUAL.md](USER_MANUAL.md) pour le chemin
+exact). Une **sauvegarde `.tar`** (menu Import/Export) emballe la base et la
+configuration dans un seul fichier, restaurable à tout moment. Les échanges
+manuels de données passent par les imports et exports CSV de l'application.
 
 ## Modules communs : supervision réseau et mises à jour
 

@@ -2,7 +2,7 @@
 
 *Lire dans une autre langue : [English](README.md) · **Français** (ce document).*
 
-[![Version](https://img.shields.io/badge/version-1.8.20-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.9.1-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -49,8 +49,9 @@ autrefois issus d'un cœur commun, **évoluent maintenant séparément**. Cette
 séparation en couches (domaine ⟷ stockage ⟷ interface) est décrite dans
 [docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md).
 
-L'application bureau stocke chaque table dans un fichier JSON et sauvegarde tout
-l'atelier dans une archive `.tar` unique.
+L'application bureau regroupe les données de l'atelier dans une base SQLite
+locale (`componenthub.sqlite`) et les sauvegarde dans une archive `.tar` unique.
+Les imports et exports CSV restent disponibles dans l'application.
 
 ## Supervision réseau et mises à jour
 
@@ -79,7 +80,8 @@ stock, documents, notes) :
 ## Compilation (bureau)
 
 Dépendances : CMake ≥ 3.21, un compilateur C++17, Ninja, **Qt 6 (Widgets)**,
-**nlohmann-json**. Guide détaillé et pas à pas (débutant compris) :
+**SQLite 3** et **nlohmann-json** (utilisé par le protocole de synchronisation).
+Guide détaillé et pas à pas (débutant compris) :
 [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) ; référence
 multi-plateforme : [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md).
 
@@ -133,7 +135,7 @@ ComponentHub/
 ├── src/
 │   ├── domain/             cœur métier (aucune dépendance Qt/Arduino)
 │   ├── ui/                 interface Qt (Theme, Icons, pages, dialogues)
-│   ├── storage/            dépôts fichier JSON (desktop)
+│   ├── storage/            dépôts SQLite (desktop)
 │   ├── platform/           archive .tar, horloge
 │   └── main.cpp
 ├── docs/

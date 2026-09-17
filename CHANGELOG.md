@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.9.1] - 2026-09-17
+
+### Changed
+
+- **Storage moved to SQLite — JSON persistence removed.** The local database
+  is now stored exclusively in `componenthub.sqlite` (SQLite 3) in the
+  application data folder. All JSON files (`inventory_components.json`,
+  `inventory_locations.json`, etc.) are no longer written or read.
+  - `AppContext` opens (or creates) the SQLite database at startup; the schema
+    is initialized automatically on first run.
+  - All repository members (`components`, `locations`, `categories`, `movements`,
+    `documents`, `projects`, `projectComponents`, `referentials`) are now
+    instances of the `SQLite*Repository` classes defined in
+    `src/storage/SQLiteRepositories.h`.
+  - Existing JSON data is not converted by ComponentHub. Use the application's
+    CSV export/import workflow when you choose to transfer a dataset.
+
 ## [1.8.20] - 2026-09-16
 
 ### Added

@@ -2,7 +2,7 @@
  * Component — Fiche complète d'un composant électronique (cœur métier).
  *
  * Type de valeur pur : aucune dépendance plateforme. La couche storage/
- * (persistance) se charge de le convertir vers/depuis son format (JSON fichier).
+ * (persistance) se charge de le convertir vers/depuis son format SQLite.
  */
 
 #pragma once

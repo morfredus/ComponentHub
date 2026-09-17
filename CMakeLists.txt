@@ -36,7 +36,7 @@ add_subdirectory(third_party/morf/beacon)
 add_subdirectory(third_party/morf/update)
 
 # =====================================================================
-# Cœur portable : le domaine (src/domain/) + le stockage fichier desktop.
+# Cœur portable : le domaine (src/domain/) + le stockage SQLite desktop.
 # Ne dépend NI de Qt NI d'Arduino.
 # =====================================================================
 add_library(componenthub_core STATIC
@@ -44,13 +44,15 @@ add_library(componenthub_core STATIC
     ${CH_DOMAIN}/inventory_service.cpp
     ${CH_DOMAIN}/project_service.cpp
     ${CH_DOMAIN}/import_export_service.cpp
-    src/storage/FileRepositories.cpp
+    src/storage/SQLiteRepositories.cpp
     src/platform/Tar.cpp
     src/net/HttpClient.cpp        # client HTTP minimal (synchro HomeServerHub)
     src/sync/SyncService.cpp      # orchestration PUSH/PULL vers le hub
 )
 target_include_directories(componenthub_core PUBLIC ${CH_DOMAIN} ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(componenthub_core PUBLIC nlohmann_json::nlohmann_json)
+find_package(SQLite3 REQUIRED)
+target_link_libraries(componenthub_core PUBLIC nlohmann_json::nlohmann_json SQLite::SQLite3)
+
 if(WIN32)
     target_link_libraries(componenthub_core PUBLIC ws2_32)   # winsock2 (HttpClient)
 endif()

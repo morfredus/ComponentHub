@@ -2,7 +2,7 @@
 
 *Read in another language: **English** (this document) · [Français](README.fr.md).*
 
-[![Version](https://img.shields.io/badge/version-1.8.20-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.9.1-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -54,8 +54,9 @@ built on a shared core, now **evolve separately**. This layered separation
 [docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md) *(FR)* and in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-The desktop app stores each table as a JSON file and can back up the whole
-workshop into a single `.tar` archive.
+The desktop app stores workshop data in one local SQLite database
+(`componenthub.sqlite`) and can back it up in a single `.tar` archive. CSV
+imports and exports remain available from the application.
 
 ## Network supervision & updates
 
@@ -99,7 +100,8 @@ purchase/stock, documents, notes):
 ## Building (desktop)
 
 Dependencies: CMake ≥ 3.21, a C++17 compiler, Ninja, **Qt 6 (Widgets)**,
-**nlohmann-json**. Detailed, beginner-friendly walkthrough:
+**SQLite 3** and **nlohmann-json** (used by the synchronization protocol).
+Detailed, beginner-friendly walkthrough:
 [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) *(FR)*; multi-platform
 reference: [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md) *(FR)*.
 
@@ -153,7 +155,7 @@ ComponentHub/
 ├── src/
 │   ├── domain/             business core (no Qt/Arduino dependency)
 │   ├── ui/                 Qt interface (Theme, Icons, pages, dialogs)
-│   ├── storage/            JSON file repositories (desktop)
+│   ├── storage/            SQLite repositories (desktop)
 │   ├── platform/           .tar archive, clock
 │   └── main.cpp
 ├── docs/
