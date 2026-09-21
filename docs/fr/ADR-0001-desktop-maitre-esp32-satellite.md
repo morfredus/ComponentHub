@@ -1,6 +1,6 @@
 # ADR-0001 - Version bureau maître, ESP32 satellite
 
-- **Statut** : accepté
+- **Statut** : remplacé le 2026-09-17
 - **Date** : 2026-07-12
 - **Version** : 1.4.0 (bureau et firmware)
 - **Portée** : les deux dépôts - `ComponentHub` (bureau) et
@@ -10,6 +10,11 @@
 > prise, son contexte et ses conséquences - pour que le choix reste
 > compréhensible dans plusieurs années, conformément à la vision « mémoire
 > technique de l'atelier ».
+
+> **Mise à jour du 17 septembre 2026.** La version ESP32 de ComponentHub est
+> abandonnée. Le chantier satellite, son protocole et toute promesse
+> d'interopérabilité sont arrêtés. Cette ADR est conservée pour expliquer le
+> chemin qui a conduit au choix d'une application de bureau autonome.
 
 ## Contexte
 

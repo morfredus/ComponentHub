@@ -2,15 +2,14 @@
 
 Application native **Qt 6 / C++17**. C'est le **projet maître** de ComponentHub,
 détenteur de la base de référence de l'atelier, sur PC ou Raspberry Pi - sans la
-contrainte mémoire de l'ESP32 (voir
-[ADR-0001](ADR-0001-desktop-maitre-esp32-satellite.md)).
+contrainte mémoire de l'ESP32. La piste ESP32 est abandonnée ; l'ADR associé est
+conservé uniquement comme [historique](ADR-0001-desktop-maitre-esp32-satellite.md).
 
 ## Cœur métier et format de données
 
 - **Domaine** (`../src/domain/`) : entités, services (`InventoryService`,
   `ProjectService`, `ImportExportService`…), CSV - sans aucune dépendance Qt ni
-  Arduino. Depuis la séparation d'avec le firmware, ce dépôt en possède **sa
-  propre copie** (le firmware satellite `ComponentHub-ESP32` a la sienne).
+  Arduino. Il appartient entièrement à cette application de bureau.
 - **Format des données** : une base SQLite `componenthub.sqlite` regroupe les
   tables de l'atelier. Les échanges manuels passent par les imports et exports
   CSV de l'application, et la sauvegarde `.tar` protège les données locales.

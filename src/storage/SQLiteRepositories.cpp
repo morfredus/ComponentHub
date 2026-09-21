@@ -48,6 +48,28 @@ void bindMeta(sqlite3_stmt* stmt, int offset, const SyncMeta& m) {
     sqlite3_bind_int64(stmt, offset + 4, m.localSeq);
 }
 
+// Une séquence est locale à une table et doit avancer à chaque modification
+// locale. Le marqueur négatif est réservé au PULL : il conserve alors la
+// révision distante sans préparer un PUSH de rebond.
+constexpr std::int64_t kRemoteSequence = -1;
+
+void prepareMetaForSave(sqlite3* db, const char* table, SyncMeta& meta) {
+    if (meta.localSeq == kRemoteSequence) {
+        meta.localSeq = 0;
+        return;
+    }
+
+    stampForSave(meta);
+    const std::string sql = "SELECT COALESCE(MAX(localSeq), 0) + 1 FROM " +
+                            std::string(table) + ";";
+    sqlite3_stmt* stmt = nullptr;
+    checkSqlite(sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr), db,
+                "prepare next local sequence");
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+        meta.localSeq = sqlite3_column_int64(stmt, 0);
+    sqlite3_finalize(stmt);
+}
+
 // --- Conversion Component ↔ SQLite ------------------------------------
 json componentToJson(const Component& c) {
     return {
@@ -403,7 +425,7 @@ std::optional<Component> SQLiteComponentRepository::findById(Id id) const {
 }
 
 Component SQLiteComponentRepository::save(Component c) {
-    stampForSave(c.meta);
+    prepareMetaForSave(db_, "components", c.meta);
     
     const char* sql = "INSERT OR REPLACE INTO components (id, kind, name, reference, manufacturer, "
                      "description, category, subcategory, type, voltage, current, interfaceType, "
@@ -480,12 +502,15 @@ std::vector<Component> SQLiteComponentRepository::saveAll(const std::vector<Comp
 }
 
 bool SQLiteComponentRepository::remove(Id id) {
-    const char* sql = "UPDATE components SET deleted = 1, localSeq = localSeq + 1 WHERE id = ?;";
+    const char* sql = "UPDATE components SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
+                      "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM components) WHERE id = ?;";
     
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
-    sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
+    const std::string updatedAt = nowIso8601Utc();
+    sqlite3_bind_text(stmt, 1, updatedAt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
@@ -598,7 +623,7 @@ bool SQLiteComponentRepository::applyRemote(const SyncRecord& rec) {
     Component c = componentFromJson(rec.data);
     c.id = rec.id;
     c.meta = rec.meta;
-    c.meta.localSeq = 0; // Neutraliser pour éviter le re-push
+    c.meta.localSeq = kRemoteSequence;
     
     return save(c).id == rec.id;
 }
@@ -652,7 +677,7 @@ std::optional<Location> SQLiteLocationRepository::findById(Id id) const {
 }
 
 Location SQLiteLocationRepository::save(Location l) {
-    stampForSave(l.meta);
+    prepareMetaForSave(db_, "locations", l.meta);
     
     const char* sql = "INSERT OR REPLACE INTO locations (id, name, parentId, createdAt, updatedAt, rev, deleted, localSeq) "
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
@@ -677,11 +702,14 @@ Location SQLiteLocationRepository::save(Location l) {
 }
 
 bool SQLiteLocationRepository::remove(Id id) {
-    const char* sql = "UPDATE locations SET deleted = 1, localSeq = localSeq + 1 WHERE id = ?;";
+    const char* sql = "UPDATE locations SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
+                      "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM locations) WHERE id = ?;";
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
-    sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
+    const std::string updatedAt = nowIso8601Utc();
+    sqlite3_bind_text(stmt, 1, updatedAt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
@@ -753,7 +781,7 @@ bool SQLiteLocationRepository::applyRemote(const SyncRecord& rec) {
     l.name = rec.data.value("name", "");
     l.parentId = rec.data.value("parentId", "");
     l.meta = rec.meta;
-    l.meta.localSeq = 0;
+    l.meta.localSeq = kRemoteSequence;
     
     return save(l).id == rec.id;
 }
@@ -805,7 +833,7 @@ std::optional<Category> SQLiteCategoryRepository::findById(Id id) const {
 }
 
 Category SQLiteCategoryRepository::save(Category c) {
-    stampForSave(c.meta);
+    prepareMetaForSave(db_, "categories", c.meta);
     
     const char* sql = "INSERT OR REPLACE INTO categories (id, name, createdAt, updatedAt, rev, deleted, localSeq) "
                      "VALUES (?, ?, ?, ?, ?, ?, ?);";
@@ -829,11 +857,14 @@ Category SQLiteCategoryRepository::save(Category c) {
 }
 
 bool SQLiteCategoryRepository::remove(Id id) {
-    const char* sql = "UPDATE categories SET deleted = 1, localSeq = localSeq + 1 WHERE id = ?;";
+    const char* sql = "UPDATE categories SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
+                      "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM categories) WHERE id = ?;";
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
-    sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
+    const std::string updatedAt = nowIso8601Utc();
+    sqlite3_bind_text(stmt, 1, updatedAt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
@@ -903,7 +934,7 @@ bool SQLiteCategoryRepository::applyRemote(const SyncRecord& rec) {
     c.id = rec.id;
     c.name = rec.data.value("name", "");
     c.meta = rec.meta;
-    c.meta.localSeq = 0;
+    c.meta.localSeq = kRemoteSequence;
     
     return save(c).id == rec.id;
 }
@@ -997,7 +1028,7 @@ std::vector<Document> SQLiteDocumentRepository::findByOwner(DocumentOwnerKind ow
 }
 
 Document SQLiteDocumentRepository::save(Document d) {
-    stampForSave(d.meta);
+    prepareMetaForSave(db_, "documents", d.meta);
     
     const char* sql = "INSERT OR REPLACE INTO documents (id, ownerKind, ownerId, title, category, url, notes, blobHash, fileName, sizeBytes, mime, "
                      "createdAt, updatedAt, rev, deleted, localSeq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
@@ -1030,11 +1061,14 @@ Document SQLiteDocumentRepository::save(Document d) {
 }
 
 bool SQLiteDocumentRepository::remove(Id id) {
-    const char* sql = "UPDATE documents SET deleted = 1, localSeq = localSeq + 1 WHERE id = ?;";
+    const char* sql = "UPDATE documents SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
+                      "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM documents) WHERE id = ?;";
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
-    sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
+    const std::string updatedAt = nowIso8601Utc();
+    sqlite3_bind_text(stmt, 1, updatedAt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
@@ -1125,7 +1159,7 @@ bool SQLiteDocumentRepository::applyRemote(const SyncRecord& rec) {
     d.sizeBytes = rec.data.value("sizeBytes", std::int64_t(0));
     d.mime = rec.data.value("mime", "");
     d.meta = rec.meta;
-    d.meta.localSeq = 0;
+    d.meta.localSeq = kRemoteSequence;
     
     return save(d).id == rec.id;
 }
@@ -1206,7 +1240,7 @@ std::optional<Project> SQLiteProjectRepository::findById(Id id) const {
 }
 
 Project SQLiteProjectRepository::save(Project p) {
-    stampForSave(p.meta);
+    prepareMetaForSave(db_, "projects", p.meta);
     
     const char* sql = "INSERT OR REPLACE INTO projects (id, name, description, version, firmware, gitRepo, status, notes, "
                      "createdAt, updatedAt, rev, deleted, localSeq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
@@ -1236,11 +1270,14 @@ Project SQLiteProjectRepository::save(Project p) {
 }
 
 bool SQLiteProjectRepository::remove(Id id) {
-    const char* sql = "UPDATE projects SET deleted = 1, localSeq = localSeq + 1 WHERE id = ?;";
+    const char* sql = "UPDATE projects SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
+                      "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM projects) WHERE id = ?;";
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
-    sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
+    const std::string updatedAt = nowIso8601Utc();
+    sqlite3_bind_text(stmt, 1, updatedAt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
@@ -1325,7 +1362,7 @@ bool SQLiteProjectRepository::applyRemote(const SyncRecord& rec) {
     p.status = rec.data.value("status", "");
     p.notes = rec.data.value("notes", "");
     p.meta = rec.meta;
-    p.meta.localSeq = 0;
+    p.meta.localSeq = kRemoteSequence;
     
     return save(p).id == rec.id;
 }
@@ -1359,7 +1396,7 @@ std::vector<ProjectComponent> SQLiteProjectComponentRepository::findByProject(Id
 }
 
 ProjectComponent SQLiteProjectComponentRepository::save(ProjectComponent link) {
-    stampForSave(link.meta);
+    prepareMetaForSave(db_, "project_components", link.meta);
     
     const char* sql = "INSERT OR REPLACE INTO project_components (id, projectId, componentId, label, quantityRequired, "
                      "createdAt, updatedAt, rev, deleted, localSeq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
@@ -1386,11 +1423,14 @@ ProjectComponent SQLiteProjectComponentRepository::save(ProjectComponent link) {
 }
 
 bool SQLiteProjectComponentRepository::remove(Id id) {
-    const char* sql = "UPDATE project_components SET deleted = 1, localSeq = localSeq + 1 WHERE id = ?;";
+    const char* sql = "UPDATE project_components SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
+                      "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM project_components) WHERE id = ?;";
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
-    sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
+    const std::string updatedAt = nowIso8601Utc();
+    sqlite3_bind_text(stmt, 1, updatedAt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
@@ -1398,11 +1438,14 @@ bool SQLiteProjectComponentRepository::remove(Id id) {
 }
 
 bool SQLiteProjectComponentRepository::removeByProject(Id projectId) {
-    const char* sql = "UPDATE project_components SET deleted = 1, localSeq = localSeq + 1 WHERE projectId = ?;";
+    const char* sql = "UPDATE project_components SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
+                      "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM project_components) WHERE projectId = ?;";
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare removeByProject");
-    sqlite3_bind_text(stmt, 1, projectId.c_str(), -1, SQLITE_TRANSIENT);
+    const std::string updatedAt = nowIso8601Utc();
+    sqlite3_bind_text(stmt, 1, updatedAt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, projectId.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
@@ -1481,7 +1524,7 @@ bool SQLiteProjectComponentRepository::applyRemote(const SyncRecord& rec) {
     link.label = rec.data.value("label", "");
     link.quantityRequired = rec.data.value("quantityRequired", 1);
     link.meta = rec.meta;
-    link.meta.localSeq = 0;
+    link.meta.localSeq = kRemoteSequence;
     
     return save(link).id == rec.id;
 }
@@ -1537,7 +1580,7 @@ std::vector<RefItem> SQLiteReferentialRepository::findByList(const std::string& 
 }
 
 RefItem SQLiteReferentialRepository::save(RefItem item) {
-    stampForSave(item.meta);
+    prepareMetaForSave(db_, "referentials", item.meta);
     
     const char* sql = "INSERT OR REPLACE INTO referentials (id, list, value, position, createdAt, updatedAt, rev, deleted, localSeq) "
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
@@ -1582,11 +1625,14 @@ std::vector<RefItem> SQLiteReferentialRepository::saveAll(const std::vector<RefI
 }
 
 bool SQLiteReferentialRepository::remove(Id id) {
-    const char* sql = "UPDATE referentials SET deleted = 1, localSeq = localSeq + 1 WHERE id = ?;";
+    const char* sql = "UPDATE referentials SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
+                      "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM referentials) WHERE id = ?;";
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
-    sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
+    const std::string updatedAt = nowIso8601Utc();
+    sqlite3_bind_text(stmt, 1, updatedAt.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
@@ -1663,7 +1709,7 @@ bool SQLiteReferentialRepository::applyRemote(const SyncRecord& rec) {
     item.value = rec.data.value("value", "");
     item.position = rec.data.value("position", 0);
     item.meta = rec.meta;
-    item.meta.localSeq = 0;
+    item.meta.localSeq = kRemoteSequence;
     
     return save(item).id == rec.id;
 }

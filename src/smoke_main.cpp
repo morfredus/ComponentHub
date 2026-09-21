@@ -63,6 +63,11 @@ int main() {
     reference.value = "morfredus";
     ctx.referentials.save(reference);
 
+    // Chaque écriture locale doit être visible pour le PUSH incrémental.
+    bool allPendingForSync = true;
+    for (auto* repository : ctx.syncables())
+        allPendingForSync = allPendingForSync && !repository->exportForSync(0).empty();
+
     // Relecture depuis le disque via une nouvelle instance.
     chdesktop::AppContext reloaded(dir.string());
     auto all = reloaded.inventory.listComponents();
@@ -80,7 +85,7 @@ int main() {
         reloaded.projectComponents.findByProject(project.id).size() == 1 &&
         reloaded.documents.findByOwner(DocumentOwnerKind::Component, c.id).size() == 1 &&
         reloaded.referentials.findByList("manufacturers").size() == 1 &&
-        reloaded.inventory.history(c.id).size() == 1;
+        reloaded.inventory.history(c.id).size() == 1 && allPendingForSync;
     std::printf("all SQLite repositories: %s\n", complete ? "ok" : "failed");
 
     std::printf("database: %s\n", (dir / "componenthub.sqlite").string().c_str());

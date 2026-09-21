@@ -156,7 +156,7 @@ Détails et maintenance : [SUPERVISION_ET_MAJ.md](SUPERVISION_ET_MAJ.md).
 
 - Supervision réseau et mises à jour :
   [SUPERVISION_ET_MAJ.md](SUPERVISION_ET_MAJ.md).
-- Pourquoi le bureau est le maître et l'ESP32 un satellite :
+- Historique de l'ancienne piste satellite ESP32 :
   [ADR-0001](ADR-0001-desktop-maitre-esp32-satellite.md).
 - Compiler le projet : [GETTING_STARTED.md](GETTING_STARTED.md) et
   [BUILD_DESKTOP.md](BUILD_DESKTOP.md).

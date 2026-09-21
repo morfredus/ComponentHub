@@ -12,7 +12,7 @@ Until then, here are the existing guides (in French, under [`docs/fr/`](../fr/))
 | [Build reference](../fr/BUILD_DESKTOP.md) | Multi-platform build details (native and cross-compilation). |
 | [Architecture](../fr/ARCHITECTURE.md) | The layered design (domain / storage / UI) and how to read the code. |
 | [LAN supervision & updates](../fr/SUPERVISION_ET_MAJ.md) | The shared "morf" modules: LAN presence/metrics (morfBeacon) and GitHub update check (morfUpdate). |
-| [ADR-0001](../fr/ADR-0001-desktop-maitre-esp32-satellite.md) | Why the desktop app is the master and the ESP32 became a satellite. |
+| [ADR-0001](../fr/ADR-0001-desktop-maitre-esp32-satellite.md) | Historical record of the discontinued ESP32 satellite path. |
 
 The root-level documents are already in English:
 [README](../../README.md) · [CHANGELOG](../../CHANGELOG.md) ·

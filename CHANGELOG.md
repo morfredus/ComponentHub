@@ -22,6 +22,11 @@ file at the repository root).
     `src/storage/SQLiteRepositories.h`.
   - Existing JSON data is not converted by ComponentHub. Use the application's
     CSV export/import workflow when you choose to transfer a dataset.
+  - The incremental synchronization state is preserved across the storage change:
+    local writes now receive a SQLite sequence, remote records do not bounce
+    back to the hub, and an obsolete JSON-era watermark triggers one full push.
+  - The ESP32 satellite path is discontinued. ComponentHub is now maintained as
+    a self-contained desktop application.
 
 ## [1.8.20] - 2026-09-16
 

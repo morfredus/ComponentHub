@@ -2,8 +2,8 @@
 
 Application native **Qt 6 / C++17**. C'est le **projet maître** de ComponentHub,
 détenteur de la base de référence de l'atelier, sur PC ou Raspberry Pi - sans la
-contrainte mémoire de l'ESP32 (voir
-[ADR-0001](ADR-0001-desktop-maitre-esp32-satellite.md)).
+contrainte mémoire de l'ESP32. La piste ESP32 est abandonnée ; l'ADR associé est
+conservé uniquement comme [historique](ADR-0001-desktop-maitre-esp32-satellite.md).
 
 ## Cœur métier et format de données
 

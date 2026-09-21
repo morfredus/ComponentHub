@@ -23,11 +23,10 @@ that use it.
 ComponentHub is a **Qt / C++17 desktop application**, native on **Windows, Linux
 (x86_64) and Raspberry Pi (ARM64)**. It is the **master project**, the holder of
 the workshop's reference database - on reliable storage, free of the ESP32's
-memory limits. An **ESP32 firmware**, now developed in a **separate repository**
-(`ComponentHub-ESP32`, a sibling of this one), becomes a **satellite**: a mobile
-terminal to browse and update stock (QR scanning) that will eventually read the
-desktop database. The rationale for this split is documented in
-[docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md) *(FR)*.
+memory limits. The ESP32 satellite path has been discontinued: ComponentHub is
+now a self-contained desktop application. The former master/satellite decision
+is retained in [docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md)
+*(FR)* as historical context.
 
 ## Get started in 3 minutes
 
@@ -47,9 +46,8 @@ Once the app is running, the beginner's user manual is here:
 ## Business core
 
 The business core [`src/domain/`](src/domain/) - entities, services (inventory,
-projects, documents, import/export), CSV - depends on neither Qt nor Arduino. The
-ESP32 firmware keeps **its own copy** in its repository: the two projects, once
-built on a shared core, now **evolve separately**. This layered separation
+projects, documents, import/export), CSV - depends on neither Qt nor Arduino.
+This layered separation
 (domain ⟷ storage ⟷ UI) is described in
 [docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md) *(FR)* and in
 [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -167,9 +165,6 @@ ComponentHub/
 └── LICENSE
 ```
 
-> The ESP32 firmware lives in a separate repository (`ComponentHub-ESP32`) and is
-> no longer included here.
-
 ## Documentation
 
 | Document | Contents |
@@ -180,13 +175,11 @@ ComponentHub/
 | [docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md) *(FR)* | Layered architecture (domain / storage / UI) |
 | [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)* | LAN supervision (presence + metrics) and update checking |
 | [docs/fr/SYNCHRONISATION.md](docs/fr/SYNCHRONISATION.md) *(FR)* | LAN synchronization with morfSync (offline-first) |
-| [docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md) *(FR)* | Decision: desktop master, ESP32 satellite |
+| [docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md) *(FR)* | Historical record of the former ESP32 satellite path |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, portability rules |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 | [docs/en/README.md](docs/en/README.md) | English documentation index |
 
-> The firmware-specific documentation (embedded architecture, REST API, WiFi,
-> boot log) lives in the `ComponentHub-ESP32` repository.
 
 ## License
 

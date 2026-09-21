@@ -58,6 +58,11 @@ public:
     // réinitialisé) et remet le curseur à zéro automatiquement le cas échéant.
     SyncOutcome sync(const SyncConfig& cfg);
 
+    // Réinitialise le seul domaine ComponentHub sur le hub, oublie les repères
+    // locaux puis republie intégralement cette copie locale. Action destructive
+    // à réserver à une confirmation explicite dans l'interface.
+    SyncOutcome resetHubAndRepublish(const SyncConfig& cfg);
+
     const std::string& deviceId() const { return deviceId_; }
     std::int64_t lastSeq() const { return lastSeq_; }
 

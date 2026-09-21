@@ -101,6 +101,29 @@ SyncOutcome SyncService::sync(const SyncConfig& cfg) {
     return syncOnce(cfg, /*mayReset=*/true);
 }
 
+SyncOutcome SyncService::resetHubAndRepublish(const SyncConfig& cfg) {
+    SyncOutcome out;
+    const std::string url = base(cfg);
+    const auto headers = authHeaders(cfg);
+
+    auto health = chnet::httpGet(url + "/api/health", headers);
+    if (!health.ok)           { out.error = health.error; return out; }
+    if (health.status != 200) { out.error = "hub injoignable (HTTP " + std::to_string(health.status) + ")"; return out; }
+
+    auto reset = chnet::httpPost(url + "/api/" + cfg.domain + "/reset", "{}", headers);
+    if (!reset.ok)            { out.error = reset.error; return out; }
+    if (reset.status == 401)  { out.error = "authentification refusée (jeton ?)"; return out; }
+    if (reset.status != 200)  { out.error = "réinitialisation du hub refusée (HTTP " + std::to_string(reset.status) + ")"; return out; }
+
+    // Le hub vient de créer une nouvelle époque : aucun curseur ni repère de
+    // PUSH précédent ne doit empêcher la republication de la copie locale.
+    lastSeq_ = 0;
+    journalId_.clear();
+    pushWatermarks_.clear();
+    saveState();
+    return syncOnce(cfg, /*mayReset=*/false);
+}
+
 SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
     SyncOutcome out;
     const std::string url = base(cfg);
@@ -125,6 +148,13 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
             // tout (since=-1 inclut les entités héritées à localSeq=0).
             std::int64_t since = -1;
             if (auto it = pushWatermarks_.find(type); it != pushWatermarks_.end()) since = it->second;
+
+            // Le passage JSON -> SQLite repart avec des séquences locales à 0.
+            // Un repère conservé dans sync_state.json peut donc être supérieur à
+            // la base courante et masquer toutes les lignes. On le rend alors
+            // invalide pour republier la table une seule fois.
+            if (repo->maxLocalSeq() < since)
+                since = -1;
             for (const auto& rec : repo->exportForSync(since))
                 changes.push_back(toEnvelope(rec, deviceId_));
             newWatermarks[type] = repo->maxLocalSeq();  // repère à valider si l'envoi réussit
