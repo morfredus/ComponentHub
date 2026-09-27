@@ -1,5 +1,5 @@
 /**
- * InventoryService — Logique métier de l'inventaire.
+ * InventoryService - Logique métier de l'inventaire.
  *
  * Ne connaît que les interfaces de dépôt (IComponentRepository,
  * ILocationRepository, IStockMovementRepository), jamais leur implémentation
@@ -34,10 +34,9 @@ public:
         : _components(components), _locations(locations), _categories(categories), _movements(movements) {}
 
     std::vector<Component> listComponents(const ComponentFilter& filter = {}) const;
-    std::optional<Component> getComponent(Id id) const;
     // Enregistre le composant ; si son champ `category` est renseigné et ne
     // correspond à aucune Category existante, elle est créée à la volée
-    // (voir _ensureCategoryExists) — la fiche composant garde un champ texte
+    // (voir _ensureCategoryExists) - la fiche composant garde un champ texte
     // libre, la liste des catégories gérées reste cependant toujours à jour.
     Component saveComponent(Component component);
     bool removeComponent(Id id);
@@ -56,7 +55,7 @@ public:
     std::optional<Component> recordMovement(StockMovement movement);
     std::vector<StockMovement> history(Id componentId) const;
 
-    // Composants sous leur seuil minimum — base de la liste d'achats automatique.
+    // Composants sous leur seuil minimum - base de la liste d'achats automatique.
     std::vector<Component> lowStock() const;
 
 private:

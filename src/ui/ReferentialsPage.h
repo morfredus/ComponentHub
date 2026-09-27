@@ -1,4 +1,4 @@
-// ReferentialsPage — administration des référentiels (listes de valeurs
+// ReferentialsPage - administration des référentiels (listes de valeurs
 // normalisées) : ajout, modification, suppression, réordonnancement, fusion,
 // import/export. Pour les référentiels liés à un champ de composant (type,
 // fabricant, fournisseur, état), les renommages et fusions sont propagés aux

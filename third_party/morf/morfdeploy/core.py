@@ -764,12 +764,6 @@ class Deployer:
 
     # -- System dependencies ---------------------------------------------
 
-    def dependency_statuses(self):
-        """(family, manager, [DepStatus]) for the declared system dependencies."""
-        family, manager = detect_package_manager()
-        return family, manager, resolve(self.manifest.system_dependencies,
-                                        family, manager)
-
     def _print_dep_status(self, statuses, family) -> None:
         for status in statuses:
             dep = status.dep
@@ -877,12 +871,6 @@ class Deployer:
         return True
 
     # -- Build dependencies ----------------------------------------------
-
-    def build_dependency_statuses(self):
-        """(family, manager, [BuildDepStatus]) for the declared build deps."""
-        family, manager = detect_package_manager()
-        return family, manager, builddeps.resolve(
-            self.manifest.build_dependencies, family, manager)
 
     def ensure_build_dependencies(self, dry_run: bool = False,
                                   assume_yes: bool = False) -> bool:

@@ -6,11 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.9.4] - 2026-09-27
+
+### Changed
+
+- Re-vendored morfBeacon to 0.7.2 (documentation-only release; `include/` and
+  `src/` unchanged).
+- Re-vendored morfUpdate to 0.8.2 (vendoring-only release; `include/` and
+  `src/` unchanged).
+
+## [1.9.3] - 2026-09-27
+
+### Changed
+
+- Re-vendored morfDeploy to 0.20.7 (dead-code removal and punctuation only; no
+  behaviour change).
+
+## [1.9.2] - 2026-09-27
+
+### Fixed
+
+- **`docs/fr/SUPERVISION_ET_MAJ.md` gave the old `/status` port 8787.** ComponentHub
+  listens on 8880 (application range 8880-8899 of `morfTools/ecosystem.json`); the
+  port list of the other apps is corrected too.
+- **The inventory photo tooltip (1.8.20) was undocumented**; both READMEs mention it.
+
+### Removed
+
+- **Dead code with no caller:** `InventoryService::getComponent` and
+  `ProjectService::missingComponents` (the Projects page derives missing
+  quantities from `bom()` itself).
+
+### Changed
+
+- Re-vendored morfUpdate to 0.8.1 (documentation-only release; clears the
+  `morf doctor` vendored-copy drift).
+- Em dashes replaced by `-` in the project's own files.
+
 ## [1.9.1] - 2026-09-17
 
 ### Changed
 
-- **Storage moved to SQLite — JSON persistence removed.** The local database
+- **Storage moved to SQLite - JSON persistence removed.** The local database
   is now stored exclusively in `componenthub.sqlite` (SQLite 3) in the
   application data folder. All JSON files (`inventory_components.json`,
   `inventory_locations.json`, etc.) are no longer written or read.
@@ -52,7 +89,7 @@ file at the repository root).
 
 ## [1.8.17] - 2026-09-10
 
-### Fixed — update dialog offered the checksums file instead of the binary
+### Fixed - update dialog offered the checksums file instead of the binary
 
 - Resynced vendored morfUpdate to 0.6.0. The "Check for updates" dialog now picks
   the release asset matching the running OS and CPU architecture (the Windows
@@ -61,14 +98,14 @@ file at the repository root).
 
 ## [1.8.16] - 2026-09-10
 
-### Fixed — arm64 `.deb` cross-built from WSL, with complete dependencies
+### Fixed - arm64 `.deb` cross-built from WSL, with complete dependencies
 
 - `package-deb.sh` now recognises a cross build (an aarch64 binary in
   `build-arm64-cross/` on an x86_64 host): it labels the package `arm64` and reads
   its `Depends` from the sysroot's `.shlibs` (vendored morfdeploy `cross_depends`),
   where the host's `dpkg`/`ldd` cannot. With the parc tooling fix (morfTools
   0.35.12), an x86_64 WSL run now builds ComponentHub's arm64 `.deb` with full,
-  versioned Qt dependencies — no longer only from a native build on the Pi.
+  versioned Qt dependencies - no longer only from a native build on the Pi.
 
 ## [1.8.15] - 2026-09-07
 

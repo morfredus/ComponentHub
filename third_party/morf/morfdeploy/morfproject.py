@@ -80,11 +80,6 @@ class MorfProject:
     targets: dict = field(default_factory=dict)
     path: Path | None = None
 
-    @property
-    def is_morfdeploy(self) -> bool:
-        """The default provider is morfdeploy (a target may still override)."""
-        return self.provider == "morfdeploy"
-
     def morfdeploy_targets(self) -> list:
         """Targets whose EFFECTIVE provider is morfdeploy -- what this tool packages."""
         return [t for t in self.targets.values() if t.provider == "morfdeploy"]

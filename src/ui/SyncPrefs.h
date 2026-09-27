@@ -1,5 +1,5 @@
 /**
- * SyncPrefs.h — Préférences de synchronisation persistées (QSettings), partagées
+ * SyncPrefs.h - Préférences de synchronisation persistées (QSettings), partagées
  * entre la page Réglages et la fenêtre principale. Un seul endroit pour les clés.
  */
 

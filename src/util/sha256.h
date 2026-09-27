@@ -1,5 +1,5 @@
 /**
- * sha256.h — SHA-256 autonome (RFC 6234), sans dépendance.
+ * sha256.h - SHA-256 autonome (RFC 6234), sans dépendance.
  *
  * Le cœur (componenthub_core) est indépendant de Qt : il ne peut donc pas
  * s'appuyer sur QCryptographicHash. Le magasin de pièces jointes nomme chaque

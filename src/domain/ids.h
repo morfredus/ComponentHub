@@ -1,5 +1,5 @@
 /**
- * Identifiants du domaine — aucune dépendance plateforme ici.
+ * Identifiants du domaine - aucune dépendance plateforme ici.
  */
 
 #pragma once

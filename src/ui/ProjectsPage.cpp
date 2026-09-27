@@ -236,7 +236,7 @@ void ProjectsPage::addBomLine() {
             QStringList meta;
             if (!c.type.empty())         meta << QString::fromStdString(c.type);
             if (!c.manufacturer.empty()) meta << QString::fromStdString(c.manufacturer);
-            if (!meta.isEmpty()) label += "  —  " + meta.join(" · ");
+            if (!meta.isEmpty()) label += "  -  " + meta.join(" · ");
             auto* it = new QListWidgetItem(label);
             it->setData(Qt::UserRole, QString::fromStdString(c.id));
             results->addItem(it);

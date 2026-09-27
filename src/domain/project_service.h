@@ -1,9 +1,9 @@
 /**
- * ProjectService — Logique métier des projets : nomenclature (BOM) et
+ * ProjectService - Logique métier des projets : nomenclature (BOM) et
  * calcul des composants manquants par rapport au stock courant.
  *
  * Dépend d'IComponentRepository (lecture seule) pour connaître les
- * quantités disponibles, mais ne modifie jamais l'inventaire — la
+ * quantités disponibles, mais ne modifie jamais l'inventaire - la
  * responsabilité des mouvements de stock reste à InventoryService.
  */
 
@@ -58,7 +58,6 @@ public:
     bool removeComponent(Id linkId) { return _projectComponents.remove(linkId); }
 
     std::vector<ProjectComponentView> bom(Id projectId) const;
-    std::vector<ProjectComponentView> missingComponents(Id projectId) const;
 
 private:
     IProjectRepository&          _projects;

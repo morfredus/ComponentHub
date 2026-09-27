@@ -35,12 +35,4 @@ std::vector<ProjectComponentView> ProjectService::bom(Id projectId) const {
     return out;
 }
 
-std::vector<ProjectComponentView> ProjectService::missingComponents(Id projectId) const {
-    std::vector<ProjectComponentView> out;
-    for (auto& view : bom(projectId)) {
-        if (view.quantityMissing > 0) out.push_back(view);
-    }
-    return out;
-}
-
 } // namespace domain

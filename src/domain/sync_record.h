@@ -1,5 +1,5 @@
 /**
- * sync_record.h — Abstraction générique de synchronisation d'une table.
+ * sync_record.h - Abstraction générique de synchronisation d'une table.
  *
  * Pour synchroniser TOUTES les entités (composants, emplacements, catégories,
  * projets, nomenclatures, référentiels, documents) sans dupliquer la logique,

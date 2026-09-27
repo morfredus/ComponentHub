@@ -1,5 +1,5 @@
 /**
- * Component — Fiche complète d'un composant électronique (cœur métier).
+ * Component - Fiche complète d'un composant électronique (cœur métier).
  *
  * Type de valeur pur : aucune dépendance plateforme. La couche storage/
  * (persistance) se charge de le convertir vers/depuis son format SQLite.
@@ -12,7 +12,7 @@
 
 namespace domain {
 
-// Grande famille de l'objet — permet de traiter modules, outils et
+// Grande famille de l'objet - permet de traiter modules, outils et
 // consommables comme des facettes filtrables du même inventaire plutôt que
 // des systèmes séparés (cf. cahier des charges : "Filtres : ESP32, OLED,
 // GPS, Raspberry, Outils, Capteurs, Modules récupérés, Stock faible").

@@ -156,7 +156,7 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
         QApplication::setOverrideCursor(Qt::WaitCursor);
         const bool ok = svc.testConnection(chui::readSyncConfig(), info);
         QApplication::restoreOverrideCursor();
-        status->setText((ok ? "✅ Connecté — " : "❌ Échec — ") + QString::fromStdString(info));
+        status->setText((ok ? "✅ Connecté - " : "❌ Échec - ") + QString::fromStdString(info));
     });
 
     connect(syncBtn, &QPushButton::clicked, this, [this, persist, status, lastSync, statePath] {
@@ -166,17 +166,17 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
         const chsync::SyncOutcome o = svc.sync(chui::readSyncConfig());
         QApplication::restoreOverrideCursor();
         if (!o.ok) {
-            status->setText("❌ Échec — " + QString::fromStdString(o.error));
+            status->setText("❌ Échec - " + QString::fromStdString(o.error));
             return;
         }
-        status->setText(QString("✅ Synchronisé — %1 envoyé(s), %2 reçu(s), %3 conflit(s).")
+        status->setText(QString("✅ Synchronisé - %1 envoyé(s), %2 reçu(s), %3 conflit(s).")
                             .arg(o.accepted).arg(o.applied).arg(o.conflicts));
         chui::recordLastSync(o.applied, o.accepted);
         lastSync->setText(chui::lastSyncSummary());
     });
 
     // --- À propos ---
-    auto* about = new QLabel(QString("ComponentHub Desktop — version %1\n"
+    auto* about = new QLabel(QString("ComponentHub Desktop - version %1\n"
                                      "Mémoire technique d'atelier. © morfredus.")
                                  .arg(CH_APP_VERSION));
     about->setProperty("hint", true);

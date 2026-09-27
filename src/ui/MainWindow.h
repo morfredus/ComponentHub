@@ -1,4 +1,4 @@
-// MainWindow — coquille de l'application : barre latérale de navigation +
+// MainWindow - coquille de l'application : barre latérale de navigation +
 // pile de pages (QStackedWidget). Chaque page reçoit une référence à
 // l'AppContext (accès aux services du domaine).
 #pragma once

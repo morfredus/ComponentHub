@@ -1,5 +1,5 @@
 /**
- * HttpClient — client HTTP/1.1 minimal, bloquant, sans dépendance externe.
+ * HttpClient - client HTTP/1.1 minimal, bloquant, sans dépendance externe.
  *
  * Pendant client du serveur de morfSync : même philosophie (pas de TLS, LAN
  * privé, on écrit les deux bouts). Portable Windows (winsock2) / Linux / ARM64

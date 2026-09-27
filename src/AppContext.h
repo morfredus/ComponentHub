@@ -1,4 +1,4 @@
-// ComponentHub Desktop — AppContext SQLite.
+// ComponentHub Desktop - AppContext SQLite.
 // Le stockage est uniquement SQLite : componenthub.sqlite dans le dossier de données.
 // Le schéma est créé automatiquement au premier lancement.
 #pragma once

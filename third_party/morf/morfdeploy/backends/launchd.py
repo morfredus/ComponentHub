@@ -1,4 +1,4 @@
-"""launchd backend — macOS. Architecturally provided, not supported.
+"""launchd backend - macOS. Architecturally provided, not supported.
 
 The parc supports what it can test. There is no macOS development or validation
 machine, so no claim is made that this works: the methods raise rather than run

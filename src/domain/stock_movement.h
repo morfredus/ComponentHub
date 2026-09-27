@@ -1,5 +1,5 @@
 /**
- * StockMovement — Mouvement de stock enregistré pour un composant.
+ * StockMovement - Mouvement de stock enregistré pour un composant.
  *
  * In/Out ajustent la quantité de façon relative ; Correction/Inventory la
  * fixent à la valeur donnée (voir InventoryService::recordMovement).

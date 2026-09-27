@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# ComponentHub — construction d'une AppImage autonome.
+# ComponentHub - construction d'une AppImage autonome.
 #
 # Produit dist/ComponentHub-<version>-x86_64.AppImage : un fichier unique et
-# portable embarquant Qt. L'utilisateur final le rend exécutable et le lance —
+# portable embarquant Qt. L'utilisateur final le rend exécutable et le lance -
 # aucune compilation, aucune installation de Qt.
 #
 # Prérequis : ComponentHub compilé en Release (cmake --preset linux && cmake
@@ -142,4 +142,4 @@ FINAL="$ROOT/dist/${APP_NAME}-${VERSION}-${ARCH}.AppImage"
 chmod +x "$FINAL"
 
 SIZE="$(du -h "$FINAL" | cut -f1)"
-echo "OK — $FINAL ($SIZE)"
+echo "OK - $FINAL ($SIZE)"

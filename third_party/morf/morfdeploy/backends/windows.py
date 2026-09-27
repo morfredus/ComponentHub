@@ -1,4 +1,4 @@
-"""Windows backend — x64.
+"""Windows backend - x64.
 
 A note on what a Windows service actually requires, because it decides the
 shape of this file.

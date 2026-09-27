@@ -52,10 +52,6 @@ std::vector<Component> InventoryService::listComponents(const ComponentFilter& f
     return out;
 }
 
-std::optional<Component> InventoryService::getComponent(Id id) const {
-    return _components.findById(id);
-}
-
 Component InventoryService::saveComponent(Component component) {
     _ensureCategoryExists(component.category);
     return _components.save(std::move(component));

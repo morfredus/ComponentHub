@@ -1,5 +1,5 @@
 /*
- * ComponentHub Desktop — feuille de style maître.
+ * ComponentHub Desktop - feuille de style maître.
  *
  * Aucune couleur en dur : jetons @{nom} remplacés au chargement par le thème
  * actif (light.theme / dark.theme). Cf. desktop/ui/Theme.cpp.
@@ -114,7 +114,7 @@ QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover { background: @{b
 QSpinBox::up-button:pressed, QDoubleSpinBox::up-button:pressed,
 QSpinBox::down-button:pressed, QDoubleSpinBox::down-button:pressed { background: @{accent}; }
 /* Flèches : dès qu'un QSS cible le QSpinBox, Qt ne dessine plus les flèches
- * natives — il faut fournir une image. On utilise deux petits PNG gris
+ * natives - il faut fournir une image. On utilise deux petits PNG gris
  * (lisibles sur fond clair comme sombre), centrés dans les boutons agrandis. */
 QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
     image: url(:/icons/spin-up.png); width: 12px; height: 12px;

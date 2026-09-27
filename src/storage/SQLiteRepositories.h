@@ -1,4 +1,4 @@
-// ComponentHub Desktop — implémentations SQLite des interfaces de dépôt du
+// ComponentHub Desktop - implémentations SQLite des interfaces de dépôt du
 // domaine (src/domain/repositories.h, project_repositories.h,
 // document_repository.h). Chaque dépôt lit/écrit dans une base SQLite unique
 // pour des performances supérieures et des requêtes complexes.

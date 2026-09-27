@@ -1,5 +1,5 @@
 /**
- * Document — Pièce jointe "documentation" (datasheet, manuel, schéma,
+ * Document - Pièce jointe "documentation" (datasheet, manuel, schéma,
  * pinout, lien utile...) rattachée à un composant ou à un projet.
  *
  * `url` pointe soit vers un lien externe (http...), soit vers un fichier local

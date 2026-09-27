@@ -130,7 +130,7 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
     const auto headers = authHeaders(cfg);
 
     // 1) Joignabilité (base locale souveraine : si le hub est absent, on n'échoue
-    //    pas silencieusement — l'appelant décide, l'appli continue en local).
+    //    pas silencieusement - l'appelant décide, l'appli continue en local).
     auto health = chnet::httpGet(url + "/api/health", headers);
     if (!health.ok)           { out.error = health.error; return out; }
     if (health.status != 200) { out.error = "hub injoignable (HTTP " + std::to_string(health.status) + ")"; return out; }

@@ -1,4 +1,4 @@
-// icons — pictogrammes d'interface dessinés vectoriellement (QPainter) sur une
+// icons - pictogrammes d'interface dessinés vectoriellement (QPainter) sur une
 // grille 24×24, teintés à la couleur passée (donc au thème). Aucune police ni
 // module SVG requis : rendu net et identique sur Windows, Linux et Raspberry,
 // sans dépendance à installer.

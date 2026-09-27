@@ -1,5 +1,5 @@
 /**
- * RefItem — une valeur d'un référentiel administrable.
+ * RefItem - une valeur d'un référentiel administrable.
  *
  * Un référentiel est une liste de valeurs normalisées proposée à la saisie
  * (types de composants, fabricants, boîtiers, fournisseurs...). Toutes les

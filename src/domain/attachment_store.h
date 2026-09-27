@@ -1,5 +1,5 @@
 /**
- * attachment_store.h — Magasin local des pièces jointes, adressé par contenu.
+ * attachment_store.h - Magasin local des pièces jointes, adressé par contenu.
  *
  * Une pièce jointe « fichier » (par opposition à un simple lien http) est copiée
  * ici, dans un fichier nommé par le SHA-256 de son contenu. Le Document n'en

@@ -1,5 +1,5 @@
 /**
- * ProjectComponent — Ligne de nomenclature : un élément nécessaire à un
+ * ProjectComponent - Ligne de nomenclature : un élément nécessaire à un
  * projet, en une certaine quantité.
  *
  * Deux cas :

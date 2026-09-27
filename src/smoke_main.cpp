@@ -20,7 +20,7 @@ int main() {
     Component c;
     c.name = "Résistance 10kΩ";
     c.reference = "R-10K";
-    c.notes = "Prix ~0,05 € — boîtier CMS";
+    c.notes = "Prix ~0,05 € - boîtier CMS";
     c.category = "Passifs";
     c.price = 0.05;
     c.quantity = 3;

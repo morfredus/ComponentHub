@@ -240,7 +240,7 @@ ImportResult ImportExportService::_importNative(const std::string& csv) {
 // Tables secondaires : catégories, emplacements (hiérarchie), projets.
 // Chaque CSV porte l'`id` interne : au réimport, une ligne dont l'id existe
 // déjà met à jour l'entrée correspondante, sinon elle est (re)créée avec cet
-// id — ce qui préserve les références croisées (composant -> emplacement,
+// id - ce qui préserve les références croisées (composant -> emplacement,
 // nomenclature -> composant/projet) lors d'une restauration table par table.
 // ---------------------------------------------------------------------------
 

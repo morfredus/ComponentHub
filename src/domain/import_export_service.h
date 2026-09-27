@@ -1,5 +1,5 @@
 /**
- * ImportExportService — Export/import CSV de l'inventaire.
+ * ImportExportService - Export/import CSV de l'inventaire.
  *
  * Deux formats :
  *   - Native  : toutes les colonnes de Component, réimportables tel quel
@@ -41,11 +41,11 @@ public:
         : _components(components), _locations(locations),
           _categories(categories), _projects(projects) {}
 
-    // Composants (inventaire) — formats natif ComponentHub et Bomist.
+    // Composants (inventaire) - formats natif ComponentHub et Bomist.
     std::string exportCsv(CsvFormat format) const;
     ImportResult importCsv(const std::string& csv, CsvFormat format);
 
-    // Tables secondaires — un CSV par table, réimportable à l'identique.
+    // Tables secondaires - un CSV par table, réimportable à l'identique.
     // Les emplacements exportent leur hiérarchie (parentId + chemin lisible).
     std::string exportCategoriesCsv() const;
     std::string exportLocationsCsv() const;

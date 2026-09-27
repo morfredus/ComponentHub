@@ -1,4 +1,4 @@
-"""systemd backend — Linux x64 and ARM64.
+"""systemd backend - Linux x64 and ARM64.
 
 Reproduces what the install-service.sh scripts did, including the details that
 look incidental and are not: the unit is generated from a template committed in

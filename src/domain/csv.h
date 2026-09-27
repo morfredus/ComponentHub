@@ -1,5 +1,5 @@
 /**
- * Utilitaires CSV génériques (RFC 4180 simplifié) — aucune dépendance
+ * Utilitaires CSV génériques (RFC 4180 simplifié) - aucune dépendance
  * plateforme. Gère les champs cités ("...") pouvant contenir le
  * délimiteur, un guillemet (échappé en "") ou un retour à la ligne.
  */

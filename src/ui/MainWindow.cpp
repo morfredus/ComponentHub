@@ -103,7 +103,7 @@ void MainWindow::maybeSyncOnStartup() {
     // Sonde courte : si le hub ne répond pas vite, on reste sur la base locale
     // (souveraine) sans bloquer le démarrage ni afficher d'erreur bloquante.
     if (!svc.testConnection(chui::readSyncConfig(), info, 1500)) {
-        statusBar()->showMessage("Hub de synchronisation indisponible — travail en local.", 5000);
+        statusBar()->showMessage("Hub de synchronisation indisponible - travail en local.", 5000);
         return;
     }
 
@@ -207,7 +207,7 @@ void MainWindow::retintNav() {
         nav_->item(i)->setIcon(icons::icon(icons::Glyph(entries_[i].glyph), c, 20));
 }
 
-// Barre de menus classique — doublonne volontairement la navigation latérale
+// Barre de menus classique - doublonne volontairement la navigation latérale
 // (accès souris ET clavier/menu, attendu d'une application de bureau native) et
 // ajoute ce que la barre latérale ne couvre pas : quitter, thème, aide, à propos.
 void MainWindow::buildMenuBar() {
@@ -282,7 +282,7 @@ void MainWindow::syncThemeMenu() {
 void MainWindow::showAboutDialog() {
     const QString text = QStringLiteral(
         "<h3 style='margin-bottom:2px'>ComponentHub <span style='font-weight:normal'>%1</span></h3>"
-        "<p style='margin-top:0'>Mémoire technique d'atelier — inventaire, stock,"
+        "<p style='margin-top:0'>Mémoire technique d'atelier - inventaire, stock,"
         " emplacements, projets et documentation.</p>"
         "<p><b>Version</b> : %1<br>"
         "<b>Qt</b> : %2<br>"
@@ -309,26 +309,26 @@ void MainWindow::showHelpDialog() {
 
         "<h3>Les sections (barre de gauche)</h3>"
         "<ul>"
-        "<li><b>Inventaire</b> — vos composants, modules, outils et consommables."
+        "<li><b>Inventaire</b> - vos composants, modules, outils et consommables."
         " Recherche globale et filtres ; ouvrez une fiche pour voir/éditer tous ses"
         " champs, ses documents et ses mouvements de stock.</li>"
-        "<li><b>Catégories</b> — la liste des catégories de composants.</li>"
-        "<li><b>Emplacements</b> — vos rangements, <i>hiérarchisés</i> (Atelier &gt;"
+        "<li><b>Catégories</b> - la liste des catégories de composants.</li>"
+        "<li><b>Emplacements</b> - vos rangements, <i>hiérarchisés</i> (Atelier &gt;"
         " Armoire &gt; Tiroir…).</li>"
-        "<li><b>Projets</b> — chaque projet et sa nomenclature ; l'application"
+        "<li><b>Projets</b> - chaque projet et sa nomenclature ; l'application"
         " calcule les composants <i>manquants</i>.</li>"
-        "<li><b>Référentiels</b> — les listes normalisées (types, fabricants,"
+        "<li><b>Référentiels</b> - les listes normalisées (types, fabricants,"
         " fournisseurs, boîtiers…) pour une saisie homogène.</li>"
-        "<li><b>Import/Export</b> — import/export CSV par table et"
+        "<li><b>Import/Export</b> - import/export CSV par table et"
         " <b>sauvegarde/restauration complète</b> en une archive <code>.tar</code>.</li>"
-        "<li><b>Réglages</b> — thème clair/sombre et dossier de données.</li>"
+        "<li><b>Réglages</b> - thème clair/sombre et dossier de données.</li>"
         "</ul>"
 
         "<h3>Raccourcis clavier</h3>"
         "<ul>"
-        "<li><b>Ctrl+1</b> à <b>Ctrl+7</b> — aller directement à une section.</li>"
-        "<li><b>F1</b> — cette aide.</li>"
-        "<li><b>Ctrl+Q</b> — quitter.</li>"
+        "<li><b>Ctrl+1</b> à <b>Ctrl+7</b> - aller directement à une section.</li>"
+        "<li><b>F1</b> - cette aide.</li>"
+        "<li><b>Ctrl+Q</b> - quitter.</li>"
         "</ul>"
 
         "<h3>Où sont mes données ?</h3>"
@@ -339,7 +339,7 @@ void MainWindow::showHelpDialog() {
         " à ranger en lieu sûr et à restaurer quand vous voulez.</p>");
 
     QDialog dlg(this);
-    dlg.setWindowTitle("Aide — ComponentHub");
+    dlg.setWindowTitle("Aide - ComponentHub");
     dlg.resize(580, 560);
     auto* v = new QVBoxLayout(&dlg);
     auto* browser = new QTextBrowser(&dlg);

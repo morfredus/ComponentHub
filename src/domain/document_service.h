@@ -1,5 +1,5 @@
 /**
- * DocumentService — Façade métier au-dessus d'IDocumentRepository.
+ * DocumentService - Façade métier au-dessus d'IDocumentRepository.
  *
  * Volontairement fine (aucune règle métier au-delà du CRUD) : conservée pour
  * rester cohérent avec le reste du domaine (le module n'appelle jamais un

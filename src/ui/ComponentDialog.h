@@ -1,4 +1,4 @@
-// ComponentDialog — création/édition d'une fiche composant complète, organisée
+// ComponentDialog - création/édition d'une fiche composant complète, organisée
 // en onglets (Général, Caractéristiques, Achat & stock, Documents, Notes).
 // Les documents et mouvements de stock ne sont disponibles qu'une fois la
 // fiche enregistrée (ils référencent son id).

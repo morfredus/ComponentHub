@@ -1,5 +1,5 @@
 /**
- * Project — Fiche projet (cf. cahier des charges : nom, description,
+ * Project - Fiche projet (cf. cahier des charges : nom, description,
  * version, firmware, dépôt Git, documentation, composants utilisés).
  */
 

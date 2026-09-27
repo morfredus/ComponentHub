@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# ComponentHub — construction d'un paquet Debian (.deb).
+# ComponentHub - construction d'un paquet Debian (.deb).
 #
 # Produit dist/componenthub_<version>_<arch>.deb, installable via
 #   sudo apt install ./componenthub_<version>_<arch>.deb
@@ -49,9 +49,9 @@ while [ $# -gt 0 ]; do
         --depends)    DEPENDS_OVERRIDE="${2:-}"; shift ;;
         -h|--help)
             cat <<'EOF'
-ComponentHub — construction d'un paquet Debian (.deb).
+ComponentHub - construction d'un paquet Debian (.deb).
 Usage : scripts/linux/package-deb.sh [options]
-  --build <dossier>            Dossier de compilation (défaut : auto — build/ puis build-arm64/)
+  --build <dossier>            Dossier de compilation (défaut : auto - build/ puis build-arm64/)
   --maintainer "Nom <email>"   Champ Maintainer du paquet
   --depends "pkg, pkg…"        Force les dépendances (sinon détection auto)
   -h, --help                   Affiche cette aide
@@ -216,6 +216,6 @@ else
 fi
 
 SIZE="$(du -h "$OUT" | cut -f1)"
-echo "OK — $OUT ($SIZE, $ARCH)"
+echo "OK - $OUT ($SIZE, $ARCH)"
 echo "Dépendances : $DEPENDS"
 echo "Installation :  sudo apt install \"$OUT\""

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# ComponentHub — intégration au bureau Linux.
+# ComponentHub - intégration au bureau Linux.
 #
 # Copie un binaire ComponentHub DÉJÀ COMPILÉ dans les dossiers standards et crée
 # l'icône de lancement. Utilise le Qt du système (ne regroupe aucune
@@ -22,7 +22,7 @@ die() { printf 'Erreur : %s\n' "$1" >&2; exit 1; }
 
 usage() {
     cat <<'EOF'
-ComponentHub — intégration au bureau Linux.
+ComponentHub - intégration au bureau Linux.
 Usage : scripts/linux/install.sh [options]
   --system            Installation pour tous les utilisateurs (/usr/local, sudo)
                       Défaut : utilisateur courant (~/.local, sans sudo)

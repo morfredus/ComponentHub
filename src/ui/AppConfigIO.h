@@ -1,5 +1,5 @@
 /**
- * AppConfigIO.h — Sauvegarde / restauration de la configuration applicative.
+ * AppConfigIO.h - Sauvegarde / restauration de la configuration applicative.
  *
  * La configuration (adresse du hub, jeton, options de synchro, apparence…) vit
  * dans QSettings (registre Windows / fichier INI), donc HORS du dossier de

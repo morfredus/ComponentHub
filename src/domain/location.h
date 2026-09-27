@@ -1,5 +1,5 @@
 /**
- * Location — Emplacement physique, arbitrairement hiérarchisable via
+ * Location - Emplacement physique, arbitrairement hiérarchisable via
  * parentId (ex: Atelier > Armoire A > Tiroir A12 > Boîte ESD > Sachet 3).
  */
 

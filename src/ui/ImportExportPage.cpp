@@ -29,7 +29,7 @@ ImportExportPage::ImportExportPage(chdesktop::AppContext& ctx, QWidget* parent)
     auto* backupBox = new QGroupBox("Sauvegarde complète (tout compris)");
     auto* bl = new QVBoxLayout(backupBox);
     bl->addWidget(uikit::hint("Archive .tar réunissant toutes les tables de données, les fichiers "
-                              "joints ET la configuration (adresse du hub, options…) — un seul "
+                              "joints ET la configuration (adresse du hub, options…) - un seul "
                               "fichier pour tout sauvegarder puis tout restaurer."));
     auto* brow = new QHBoxLayout;
     auto* doBackup = uikit::button("Sauvegarder…", icons::Glyph::Backup);
@@ -44,7 +44,7 @@ ImportExportPage::ImportExportPage(chdesktop::AppContext& ctx, QWidget* parent)
     auto* cfgBox = new QGroupBox("Configuration seule");
     auto* cl = new QVBoxLayout(cfgBox);
     cl->addWidget(uikit::hint("Sauvegarde/restaure uniquement les réglages (adresse du hub, jeton, "
-                              "options de synchro, apparence) — sans les données. Pratique pour "
+                              "options de synchro, apparence) - sans les données. Pratique pour "
                               "déployer les mêmes réglages sur un autre poste."));
     auto* crow = new QHBoxLayout;
     auto* cfgBackup = uikit::button("Sauvegarder la config…", icons::Glyph::Backup, "ghost");

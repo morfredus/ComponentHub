@@ -1,5 +1,5 @@
 /**
- * Category — Catégorie de composant, gérée comme une petite liste plate
+ * Category - Catégorie de composant, gérée comme une petite liste plate
  * (contrairement à Location, aucune hiérarchie n'est demandée par le cahier
  * des charges pour les catégories).
  */

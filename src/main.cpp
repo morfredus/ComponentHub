@@ -1,4 +1,4 @@
-// ComponentHub Desktop — point d'entrée.
+// ComponentHub Desktop - point d'entrée.
 #include <QApplication>
 #include <QStandardPaths>
 #include <QDir>

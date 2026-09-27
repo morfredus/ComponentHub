@@ -1,5 +1,5 @@
 /**
- * IReferentialRepository — accès aux valeurs des référentiels.
+ * IReferentialRepository - accès aux valeurs des référentiels.
  *
  * Une seule interface pour TOUTES les listes (mécanisme générique) : le
  * paramètre `list` sélectionne le référentiel concerné.

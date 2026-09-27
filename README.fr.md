@@ -2,7 +2,7 @@
 
 *Lire dans une autre langue : [English](README.md) · **Français** (ce document).*
 
-[![Version](https://img.shields.io/badge/version-1.9.1-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.9.4-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -65,6 +65,9 @@ l'exécutable - rien d'externe à installer. Voir
 stock, documents, notes) :
 
 ![Fiche composant](docs/pictures/fiche-composant.png)
+
+Dans l'inventaire, survoler un composant affiche sa première photo jointe, sans
+ouvrir la fiche.
 
 **Projets** - nomenclature (BOM) et calcul des composants manquants :
 

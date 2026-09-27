@@ -1,4 +1,4 @@
-// Theme — apparence centralisée (repris de la mécanique éprouvée de SiteWatch).
+// Theme - apparence centralisée (repris de la mécanique éprouvée de SiteWatch).
 //
 // Charge app.qss, y injecte les couleurs du thème choisi (light/dark.theme) et
 // l'applique. En mode « Système », suit le thème clair/sombre de l'OS (Windows

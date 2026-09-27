@@ -2,7 +2,7 @@
 
 *Read in another language: **English** (this document) · [Français](README.fr.md).*
 
-[![Version](https://img.shields.io/badge/version-1.9.1-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.9.4-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -86,6 +86,9 @@ are sent (incremental). Identity is a per-entity **UUID** since 1.7. See
 purchase/stock, documents, notes):
 
 ![Component sheet](docs/pictures/fiche-composant.png)
+
+In the inventory, hovering over a component shows its first attached photo,
+without opening the sheet.
 
 **Projects** - bill of materials (BOM) and computation of missing components:
 

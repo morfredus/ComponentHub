@@ -1,4 +1,4 @@
-# ComponentHub — thème sombre.
+# ComponentHub - thème sombre.
 # Format : token = valeur. Lignes vides et # ignorées. Injectés dans app.qss.
 # Contrastes pensés pour rester lisibles sur fond sombre (texte clair / fond foncé).
 
