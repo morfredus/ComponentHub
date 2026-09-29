@@ -66,6 +66,14 @@ class ConfigFile:
     #: where nothing else could see it or learn from it.
     migrate_from: tuple = ()
 
+    #: Keys a version RETIRED from this configuration, as dotted paths
+    #: (`a.b`; `modules[].x` = key `x` in every object of list `modules`).
+    #: Update deletes them from the installed file (after a backup) instead of
+    #: leaving a dead setting behind. Declared, never guessed: a key simply
+    #: missing from the example may be one the user added on purpose. Entries
+    #: stay in the manifest for good, so a machine updated late still cleans up.
+    removed_keys: tuple = ()
+
     def find_predecessor(self) -> Path | None:
         """An earlier home of this configuration that still holds a file."""
         for candidate in self.migrate_from:
@@ -479,6 +487,7 @@ class Manifest:
                 overwrite=bool(entry.get("overwrite", False)),
                 migrate_from=tuple(entry.get("migrate_from", ())),
                 mode=str(entry.get("mode", "0644")),
+                removed_keys=tuple(str(k) for k in entry.get("removed_keys", ())),
             )
             for entry in raw.get("configs", [])
             if entry.get("source") and entry.get("dest")

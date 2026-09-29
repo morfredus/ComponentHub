@@ -280,18 +280,18 @@ class Deployer:
 
         return written
 
-    def enrich_configs(self, config_dir: Path, deep_lists: bool = False) -> bool:
-        """Bring every installed configuration up to the new version's keys.
+    def enrich_configs(self, config_dir: Path) -> bool:
+        """Bring every installed configuration up to the version being deployed.
 
-        Runs after the configs are in place, in install and update alike: a
-        config that was kept, or migrated from an older layout, may predate keys
-        this version introduced. A fresh one copied from the example already has
-        them, so the merge is a no-op there. Enriching only -- never touches a
-        value the user set, never removes a key.
+        Runs after the configs are in place, in install, update and `config`
+        alike: a config that was kept, or migrated from an older layout, may
+        predate keys this version introduced -- including inside a module the
+        user already has -- or carry keys it retired. Never touches a value the
+        user set; see configmerge for the full rules.
 
-        Returns True when a key was actually added, because that decides whether
-        the service must be restarted: a new option written into a file the
-        running process read at startup changes nothing until it reads it again.
+        Returns True when the file actually changed, because that decides whether
+        the service must be restarted: a setting written into a file the running
+        process read at startup changes nothing until it reads it again.
         """
         from .configmerge import merge_config
 
@@ -311,26 +311,26 @@ class Deployer:
                 continue
 
             try:
-                added, obsolete = merge_config(reference, dest, deep_lists=deep_lists)
+                report = merge_config(reference, dest, removed_keys=config.removed_keys)
             except (OSError, ValueError) as exc:
-                print(f"  could not enrich {dest}: {exc}")
+                print(f"  could not update {dest}: {exc}")
                 continue
 
-            settings = [k for k in added if not k.rsplit(".", 1)[-1].startswith("_comment")]
-            comments = len(added) - len(settings)
-            if settings:
-                print(f"  config enriched: {dest}")
-                for key in settings:
-                    print(f"    + {key}  (new option, default applied -- review it)")
-                if comments:
-                    print(f"    + {comments} documentation comment(s)")
-            if added:
+            if report.changed:
                 changed = True
-            if obsolete:
-                # Reported, never removed -- and not a change: nothing was
-                # written, so it cannot justify restarting anything.
-                print(f"  {dest}: keys no longer in the reference, kept as-is:")
-                for key in obsolete:
+                print(f"  config updated: {dest}  (backup kept next to it)")
+                for key in report.added:
+                    print(f"    + {key}  (new option, default applied -- review it)")
+                for key in report.removed:
+                    print(f"    - {key}  (retired by this version)")
+                if report.comments:
+                    print(f"    ~ {report.comments} documentation comment(s) refreshed")
+            if report.obsolete:
+                # Reported, never removed: not declared retired, so it may be the
+                # user's own. Not a change either -- nothing was written for it.
+                print(f"  {dest}: keys unknown to this version, kept as-is "
+                      "(retire them in service.json removed_keys if they are dead):")
+                for key in report.obsolete:
                     print(f"    ? {key}")
 
         return changed
@@ -563,17 +563,16 @@ class Deployer:
     def config(self, mode: str = "merge", force: bool = False) -> None:
         """Refresh an installed service's configuration from the repository.
 
-        Fills the gap between `update` (which ships code and adds only
-        top-level keys) and editing the deployed file by hand: a scripted,
-        repeatable way to take a new version's settings into account WITHOUT
-        reinstalling. Two modes, non-destructive by default -- a timestamped
-        `.bak` is written before any change:
+        The configuration step of `update`, on its own: a scripted, repeatable
+        way to take a version's settings into account WITHOUT reinstalling or
+        touching the binary. Two modes, non-destructive by default -- a
+        timestamped `.bak` is written before any change:
 
-          merge (default): deep-enrich the deployed config with the keys this
-            version's example introduced, INCLUDING new keys inside a module the
-            user already has (matched by id). Existing values are always kept,
-            and no list entry is ever added. This is how a new option such as a
-            module's `morfsync_url` reaches an installation on its own.
+          merge (default): exactly what `update` does to the config (since
+            0.21.0) -- new keys added at any depth, including inside a module
+            the user already has (matched by id), retired keys declared in
+            `removed_keys` deleted, comments refreshed. Existing values are
+            always kept, and no list entry is ever added.
 
           push (requires --force): replace the deployed config with the
             repository's. The occasional, deliberate "start from the shipped
@@ -612,7 +611,7 @@ class Deployer:
                 )
             changed = self._push_configs(config_dir)
         else:  # merge -- the safe default
-            changed = self.enrich_configs(config_dir, deep_lists=True)
+            changed = self.enrich_configs(config_dir)
             if not changed:
                 print("  every key of this version is already present.")
 

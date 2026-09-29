@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.9.5] - 2026-09-29
+
+### Changed
+
+- **Vendored morfDeploy 0.21.0.** An update now brings the installed config fully up
+  to the example: new keys also reach modules already present (matched by `id`),
+  documentation comments follow the example, and keys a version declares in
+  `removed_keys` (service.json) are deleted after a backup.
+
 ## [1.9.4] - 2026-09-27
 
 ### Changed
