@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.9.11] - 2026-10-11
+
+### Fixed
+
+- CMake warning on every configuration with CMake 4.x: the target `SQLite::SQLite3` is deprecated in
+  favour of `SQLite3::SQLite3`. The build now links `SQLite3::SQLite3` when it exists and falls back
+  on `SQLite::SQLite3` for older CMake (the Debian of the Raspberry Pi only knows the old name).
+
 ## [1.9.10] - 2026-10-10
 
 ### Changed

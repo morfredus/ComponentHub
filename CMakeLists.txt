@@ -51,7 +51,15 @@ add_library(componenthub_core STATIC
 )
 target_include_directories(componenthub_core PUBLIC ${CH_DOMAIN} ${CMAKE_SOURCE_DIR}/src)
 find_package(SQLite3 REQUIRED)
-target_link_libraries(componenthub_core PUBLIC nlohmann_json::nlohmann_json SQLite::SQLite3)
+# Nom de la cible SQLite : CMake recent (4.x) fournit SQLite3::SQLite3 et declare l'ancien
+# SQLite::SQLite3 obsolete (avertissement a chaque configuration) ; un CMake plus ancien (Debian
+# des Raspberry Pi) ne connait QUE l'ancien nom. On prend donc celui qui existe.
+if(TARGET SQLite3::SQLite3)
+    set(CH_SQLITE_TARGET SQLite3::SQLite3)
+else()
+    set(CH_SQLITE_TARGET SQLite::SQLite3)
+endif()
+target_link_libraries(componenthub_core PUBLIC nlohmann_json::nlohmann_json ${CH_SQLITE_TARGET})
 
 if(WIN32)
     target_link_libraries(componenthub_core PUBLIC ws2_32)   # winsock2 (HttpClient)
