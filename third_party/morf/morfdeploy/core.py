@@ -175,6 +175,17 @@ class Deployer:
         print(f"  binary installed: {target}")
         written = [target]
 
+        # VERSION a cote du binaire, comme dans le paquet (package.py) : sans cette
+        # copie, un install/update depuis le clone laissait l'ancien fichier, donc
+        # une version fausse. Lecture seule (644) ; ajoute a ``written`` pour que
+        # chown_to_user() en fasse la propriete du compte du service.
+        version_src = self.manifest.repo_root / "VERSION"
+        if version_src.is_file():
+            version_dst = app_dir / "VERSION"
+            shutil.copy2(version_src, version_dst)
+            version_dst.chmod(0o644)
+            written.append(version_dst)
+
         # The binary alone is not enough where its shared libraries do not come
         # from a system location: on Windows the Qt and compiler DLLs must sit
         # beside it. The backend decides -- a no-op wherever the system already
@@ -647,6 +658,12 @@ class Deployer:
                     source = real
             if not source.exists():
                 print(f"  no repository source for {dest.name}, kept as-is")
+                continue
+
+            # Deja identique : ni sauvegarde ni remplacement (une copie de plus
+            # n'aurait rien a restaurer), et le service n'a pas a redemarrer.
+            if dest.exists() and dest.read_bytes() == source.read_bytes():
+                print(f"  config unchanged: {dest}")
                 continue
 
             if dest.exists():
