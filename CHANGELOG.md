@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.9.9] - 2026-10-10
+
+### Changed
+
+- Resync the vendored morfUpdate (0.8.6).
+
 ## [1.9.8] - 2026-10-10
 
 ### Changed
