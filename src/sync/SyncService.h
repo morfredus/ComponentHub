@@ -49,7 +49,7 @@ public:
     SyncService(std::vector<domain::ISyncableRepository*> repos, std::string statePath,
                 domain::AttachmentStore* attachments = nullptr);
 
-    // Teste la joignabilité du hub via GET /api/health. `info` reçoit un résumé
+    // Teste la joignabilité du hub via GET /healthz. `info` reçoit un résumé
     // lisible en cas de succès, le message d'erreur sinon.
     bool testConnection(const SyncConfig& cfg, std::string& info, int timeoutMs = 0);
 

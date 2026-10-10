@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.9.10] - 2026-10-10
+
+### Changed
+
+- **Sync hub health check uses `/healthz`** (the parc-wide name) instead of `/api/health`.
+  Requires morfSync >= 0.7.11 (the old route remains on the hub as an alias).
+
 ## [1.9.9] - 2026-10-10
 
 ### Changed

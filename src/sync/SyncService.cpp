@@ -86,7 +86,7 @@ void SyncService::saveState() const {
 }
 
 bool SyncService::testConnection(const SyncConfig& cfg, std::string& info, int timeoutMs) {
-    auto r = chnet::httpGet(base(cfg) + "/api/health", authHeaders(cfg), timeoutMs);
+    auto r = chnet::httpGet(base(cfg) + "/healthz", authHeaders(cfg), timeoutMs);
     if (!r.ok)            { info = r.error; return false; }
     if (r.status != 200)  { info = "HTTP " + std::to_string(r.status); return false; }
     try {
@@ -106,7 +106,7 @@ SyncOutcome SyncService::resetHubAndRepublish(const SyncConfig& cfg) {
     const std::string url = base(cfg);
     const auto headers = authHeaders(cfg);
 
-    auto health = chnet::httpGet(url + "/api/health", headers);
+    auto health = chnet::httpGet(url + "/healthz", headers);
     if (!health.ok)           { out.error = health.error; return out; }
     if (health.status != 200) { out.error = "hub injoignable (HTTP " + std::to_string(health.status) + ")"; return out; }
 
@@ -131,7 +131,7 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
 
     // 1) Joignabilité (base locale souveraine : si le hub est absent, on n'échoue
     //    pas silencieusement - l'appelant décide, l'appli continue en local).
-    auto health = chnet::httpGet(url + "/api/health", headers);
+    auto health = chnet::httpGet(url + "/healthz", headers);
     if (!health.ok)           { out.error = health.error; return out; }
     if (health.status != 200) { out.error = "hub injoignable (HTTP " + std::to_string(health.status) + ")"; return out; }
 
