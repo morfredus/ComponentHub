@@ -16,6 +16,7 @@
 
 #include "AppContext.h"
 #include "ui/UiKit.h"
+#include "ui/Language.h"
 #include "csv.h"
 
 using domain::RefItem;
@@ -36,11 +37,18 @@ const RefDef kDefs[] = {
     {"keywords",        "Mots-clés",           None},
 };
 
-// Valeurs par défaut du premier référentiel (types de composants).
-const char* kDefaultTypes[] = {
+// Default values for the first reference list, selected by UI language.
+const char* kDefaultTypesFr[] = {
     "Résistance","Condensateur","Diode","LED","Transistor","MOSFET","Régulateur",
     "Circuit intégré","Microcontrôleur","Capteur","Afficheur","Connecteur","Relais",
     "Module","Alimentation","Quartz","Inductance","Fusible","Bouton poussoir","Potentiomètre",
+    nullptr,
+};
+const char* kDefaultTypesEn[] = {
+    "Resistor","Capacitor","Diode","LED","Transistor","MOSFET","Regulator",
+    "Integrated circuit","Microcontroller","Sensor","Display","Connector","Relay",
+    "Module","Power supply","Crystal","Inductor","Fuse","Push button","Potentiometer",
+    nullptr,
 };
 
 std::string* fieldOf(Component& c, int bind) {
@@ -59,11 +67,8 @@ ReferentialsPage::ReferentialsPage(chdesktop::AppContext& ctx, QWidget* parent)
     auto* v = new QVBoxLayout(this);
     v->setContentsMargins(20, 20, 20, 20);
     v->setSpacing(12);
-    v->addWidget(uikit::pageTitle("Référentiels"));
-    v->addWidget(uikit::hint("Listes de valeurs normalisées proposées à la saisie, pour une nomenclature "
-                             "homogène (éviter « Capteur / Capteurs / Sensor »). Renommer ou fusionner une "
-                             "valeur d'un référentiel lié (type, fabricant, fournisseur, état) met à jour les "
-                             "composants concernés."));
+    v->addWidget(uikit::pageTitle(chui::tr("Référentiels")));
+    v->addWidget(uikit::hint(chui::tr("Listes de valeurs normalisées proposées à la saisie, pour une nomenclature homogène (éviter « Capteur / Capteurs / Sensor »). Renommer ou fusionner une valeur d'un référentiel lié (type, fabricant, fournisseur, état) met à jour les composants concernés.")));
 
     auto* split = new QHBoxLayout;
     v->addLayout(split, 1);
@@ -74,17 +79,17 @@ ReferentialsPage::ReferentialsPage(chdesktop::AppContext& ctx, QWidget* parent)
 
     auto* right = new QVBoxLayout;
     auto* bar = new QHBoxLayout;
-    auto* add = uikit::button("Ajouter", icons::Glyph::Add);
-    auto* edit = uikit::button("Renommer", icons::Glyph::Edit, "ghost");
-    auto* del = uikit::button("Supprimer", icons::Glyph::Delete, "danger");
+    auto* add = uikit::button(chui::tr("Ajouter"), icons::Glyph::Add);
+    auto* edit = uikit::button(chui::tr("Renommer"), icons::Glyph::Edit, "ghost");
+    auto* del = uikit::button(chui::tr("Supprimer"), icons::Glyph::Delete, "danger");
     auto* up = uikit::button("", icons::Glyph::MoveUp, "ghost");
     auto* down = uikit::button("", icons::Glyph::MoveDown, "ghost");
-    auto* merge = uikit::button("Fusionner", icons::Glyph::Merge, "ghost");
+    auto* merge = uikit::button(chui::tr("Fusionner"), icons::Glyph::Merge, "ghost");
     bar->addWidget(add); bar->addWidget(edit); bar->addWidget(del);
     bar->addWidget(up); bar->addWidget(down); bar->addWidget(merge);
     bar->addStretch(1);
-    auto* imp = uikit::button("Importer", icons::Glyph::Restore, "ghost");
-    auto* exp = uikit::button("Exporter", icons::Glyph::Backup, "ghost");
+    auto* imp = uikit::button(chui::tr("Importer"), icons::Glyph::Restore, "ghost");
+    auto* exp = uikit::button(chui::tr("Exporter"), icons::Glyph::Backup, "ghost");
     bar->addWidget(imp); bar->addWidget(exp);
     right->addLayout(bar);
 
@@ -115,7 +120,7 @@ void ReferentialsPage::showEvent(QShowEvent*) {
 void ReferentialsPage::loadDefinitions() {
     referentials_->clear();
     for (const auto& d : kDefs) {
-        auto* it = new QListWidgetItem(QString::fromUtf8(d.label));
+        auto* it = new QListWidgetItem(chui::tr(d.label));
         it->setData(Qt::UserRole, QString::fromUtf8(d.key));
         it->setData(Qt::UserRole + 1, d.bind);
         referentials_->addItem(it);
@@ -151,8 +156,11 @@ void ReferentialsPage::seedIfEmpty(const QString& key, int bind) {
                 if (!f->empty()) values.insert(*f);
         }
     }
-    if (key == "component_types")
-        for (const char* v : kDefaultTypes) values.insert(v);
+    if (key == "component_types") {
+        const auto* defaults = chui::language() == chui::Language::English
+            ? kDefaultTypesEn : kDefaultTypesFr;
+        for (const char* const* v = defaults; *v; ++v) values.insert(*v);
+    }
     if (values.empty()) return;
 
     std::vector<RefItem> items;
@@ -214,11 +222,10 @@ void ReferentialsPage::addValue() {
     QString val;
     while (true) {
         bool ok = false;
-        val = QInputDialog::getText(this, "Nouvelle valeur", "Valeur :", QLineEdit::Normal, val, &ok).trimmed();
+        val = QInputDialog::getText(this, chui::tr("Nouvelle valeur"), chui::tr("Valeur :"), QLineEdit::Normal, val, &ok).trimmed();
         if (!ok || val.isEmpty()) return;
         if (!exists(val)) break;
-        QMessageBox::warning(this, "Nom déjà utilisé",
-            "« " + val + " » existe déjà dans ce référentiel.\nChoisissez un autre nom ou corrigez la saisie.");
+        QMessageBox::warning(this, chui::tr("Nom déjà utilisé"), chui::tr("« ") + val + chui::tr(" » existe déjà dans ce référentiel.\nChoisissez un autre nom ou corrigez la saisie."));
     }
 
     RefItem r;
@@ -247,11 +254,10 @@ void ReferentialsPage::editValue() {
     QString val = oldVal;
     while (true) {
         bool ok = false;
-        val = QInputDialog::getText(this, "Renommer", "Valeur :", QLineEdit::Normal, val, &ok).trimmed();
+        val = QInputDialog::getText(this, chui::tr("Renommer"), chui::tr("Valeur :"), QLineEdit::Normal, val, &ok).trimmed();
         if (!ok || val.isEmpty() || val == oldVal) return;
         if (!existsOther(val)) break;
-        QMessageBox::warning(this, "Nom déjà utilisé",
-            "« " + val + " » existe déjà dans ce référentiel.\nChoisissez un autre nom ou corrigez la saisie.");
+        QMessageBox::warning(this, chui::tr("Nom déjà utilisé"), chui::tr("« ") + val + chui::tr(" » existe déjà dans ce référentiel.\nChoisissez un autre nom ou corrigez la saisie."));
     }
 
     RefItem r;
@@ -263,7 +269,7 @@ void ReferentialsPage::editValue() {
 
     const int n = reassignComponentField(oldVal, val, currentBind());
     reloadValues();
-    if (n > 0) QMessageBox::information(this, "Renommé", QString("%1 composant(s) mis à jour.").arg(n));
+    if (n > 0) QMessageBox::information(this, chui::tr("Renommé"), QString(chui::tr("%1 composant(s) mis à jour.")).arg(n));
 }
 
 void ReferentialsPage::deleteValue() {
@@ -275,7 +281,7 @@ void ReferentialsPage::deleteValue() {
     if (used > 0)
         msg += QString("\n\n%1 composant(s) l'utilisent encore ; leur champ ne sera pas modifié "
                        "(pensez à fusionner plutôt que supprimer pour réaffecter).").arg(used);
-    if (QMessageBox::question(this, "Supprimer", msg) != QMessageBox::Yes) return;
+    if (QMessageBox::question(this, chui::tr("Supprimer"), msg) != QMessageBox::Yes) return;
     ctx_.referentials.remove(it->data(Qt::UserRole).toString().toStdString());
     reloadValues();
 }
@@ -295,8 +301,7 @@ void ReferentialsPage::moveValue(int delta) {
 void ReferentialsPage::mergeValues() {
     auto selected = values_->selectedItems();
     if (selected.size() < 2) {
-        QMessageBox::information(this, "Fusion", "Sélectionnez au moins deux valeurs à fusionner "
-                                                 "(Ctrl+clic pour une sélection multiple).");
+        QMessageBox::information(this, chui::tr("Fusion"), chui::tr("Sélectionnez au moins deux valeurs à fusionner (Ctrl+clic pour une sélection multiple)."));
         return;
     }
     QStringList names;
@@ -304,11 +309,11 @@ void ReferentialsPage::mergeValues() {
 
     // Choix de la valeur cible (celle conservée).
     QDialog dlg(this);
-    dlg.setWindowTitle("Fusionner des valeurs");
+    dlg.setWindowTitle(chui::tr("Fusionner des valeurs"));
     auto* f = new QFormLayout(&dlg);
-    f->addRow(new QLabel("Les valeurs sélectionnées seront fusionnées en une seule."));
+    f->addRow(new QLabel(chui::tr("Les valeurs sélectionnées seront fusionnées en une seule.")));
     auto* target = new QComboBox; target->addItems(names);
-    f->addRow("Valeur conservée", target);
+    f->addRow(chui::tr("Valeur conservée"), target);
     auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     f->addRow(bb);
     QObject::connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
@@ -325,31 +330,31 @@ void ReferentialsPage::mergeValues() {
         ctx_.referentials.remove(it->data(Qt::UserRole).toString().toStdString());  // supprime la valeur source du référentiel
     }
     reloadValues();
-    QMessageBox::information(this, "Fusion terminée",
-        QString("Valeurs fusionnées en « %1 ».%2").arg(keep)
-            .arg(reassigned > 0 ? QString("\n%1 composant(s) réaffecté(s).").arg(reassigned) : QString()));
+    QMessageBox::information(this, chui::tr("Fusion terminée"),
+        QString(chui::tr("Valeurs fusionnées en « %1 ».%2")).arg(keep)
+            .arg(reassigned > 0 ? QString(chui::tr("\n%1 composant(s) réaffecté(s).")).arg(reassigned) : QString()));
 }
 
 void ReferentialsPage::exportCsv() {
     if (currentKey().isEmpty()) return;
-    const QString path = QFileDialog::getSaveFileName(this, "Exporter le référentiel",
+    const QString path = QFileDialog::getSaveFileName(this, chui::tr("Exporter le référentiel"),
         "referentiel_" + currentKey() + ".csv", "CSV (*.csv)");
     if (path.isEmpty()) return;
     QFile f(path);
-    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) { QMessageBox::warning(this, "Export", "Écriture impossible."); return; }
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) { QMessageBox::warning(this, chui::tr("Export"), chui::tr("Écriture impossible.")); return; }
     f.write(domain::kUtf8Bom);
     for (const auto& r : ctx_.referentials.findByList(currentKey().toStdString()))
         f.write((r.value + "\n").c_str());
     f.close();
-    QMessageBox::information(this, "Export", "Référentiel exporté :\n" + path);
+    QMessageBox::information(this, chui::tr("Export"), chui::tr("Référentiel exporté :\n") + path);
 }
 
 void ReferentialsPage::importCsv() {
     if (currentKey().isEmpty()) return;
-    const QString path = QFileDialog::getOpenFileName(this, "Importer un référentiel", QString(), "CSV (*.csv)");
+    const QString path = QFileDialog::getOpenFileName(this, chui::tr("Importer un référentiel"), QString(), "CSV (*.csv)");
     if (path.isEmpty()) return;
     QFile f(path);
-    if (!f.open(QIODevice::ReadOnly)) { QMessageBox::warning(this, "Import", "Lecture impossible."); return; }
+    if (!f.open(QIODevice::ReadOnly)) { QMessageBox::warning(this, chui::tr("Import"), chui::tr("Lecture impossible.")); return; }
     QString text = QString::fromUtf8(f.readAll());
     f.close();
     if (text.startsWith(QChar(0xFEFF))) text.remove(0, 1);  // BOM
@@ -369,5 +374,5 @@ void ReferentialsPage::importCsv() {
         added++;
     }
     reloadValues();
-    QMessageBox::information(this, "Import terminé", QString("%1 valeur(s) ajoutée(s).").arg(added));
+    QMessageBox::information(this, chui::tr("Import terminé"), QString(chui::tr("%1 valeur(s) ajoutée(s).")).arg(added));
 }

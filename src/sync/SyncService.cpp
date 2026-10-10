@@ -88,12 +88,12 @@ void SyncService::saveState() const {
 bool SyncService::testConnection(const SyncConfig& cfg, std::string& info, int timeoutMs) {
     auto r = chnet::httpGet(base(cfg) + "/healthz", authHeaders(cfg), timeoutMs);
     if (!r.ok)            { info = r.error; return false; }
-    if (r.status != 200)  { info = "HTTP " + std::to_string(r.status); return false; }
+    if (r.status != 200)  { info = "sync.http_status|" + std::to_string(r.status); return false; }
     try {
         json j = json::parse(r.body);
         info = "hub v" + j.value("version", std::string("?")) +
                " (" + j.value("status", std::string("?")) + ")";
-    } catch (...) { info = "réponse inattendue"; }
+    } catch (...) { info = "sync.unexpected_response"; }
     return true;
 }
 
@@ -108,12 +108,12 @@ SyncOutcome SyncService::resetHubAndRepublish(const SyncConfig& cfg) {
 
     auto health = chnet::httpGet(url + "/healthz", headers);
     if (!health.ok)           { out.error = health.error; return out; }
-    if (health.status != 200) { out.error = "hub injoignable (HTTP " + std::to_string(health.status) + ")"; return out; }
+    if (health.status != 200) { out.error = "sync.hub_unreachable|" + std::to_string(health.status); return out; }
 
     auto reset = chnet::httpPost(url + "/api/" + cfg.domain + "/reset", "{}", headers);
     if (!reset.ok)            { out.error = reset.error; return out; }
-    if (reset.status == 401)  { out.error = "authentification refusée (jeton ?)"; return out; }
-    if (reset.status != 200)  { out.error = "réinitialisation du hub refusée (HTTP " + std::to_string(reset.status) + ")"; return out; }
+    if (reset.status == 401)  { out.error = "sync.authentication_refused"; return out; }
+    if (reset.status != 200)  { out.error = "sync.reset_refused|" + std::to_string(reset.status); return out; }
 
     // Le hub vient de créer une nouvelle époque : aucun curseur ni repère de
     // PUSH précédent ne doit empêcher la republication de la copie locale.
@@ -133,7 +133,7 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
     //    pas silencieusement - l'appelant décide, l'appli continue en local).
     auto health = chnet::httpGet(url + "/healthz", headers);
     if (!health.ok)           { out.error = health.error; return out; }
-    if (health.status != 200) { out.error = "hub injoignable (HTTP " + std::to_string(health.status) + ")"; return out; }
+    if (health.status != 200) { out.error = "sync.hub_unreachable|" + std::to_string(health.status); return out; }
 
     const std::string changesUrl = url + "/api/" + cfg.domain + "/changes";
 
@@ -165,12 +165,12 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
             json body{{"deviceId", deviceId_}, {"changes", changes}};
             auto pr = chnet::httpPost(changesUrl, body.dump(), headers);
             if (!pr.ok)            { out.error = pr.error; return out; }
-            if (pr.status == 401)  { out.error = "authentification refusée (jeton ?)"; return out; }
-            if (pr.status != 200)  { out.error = "PUSH a échoué (HTTP " + std::to_string(pr.status) + ")"; return out; }
+            if (pr.status == 401)  { out.error = "sync.authentication_refused"; return out; }
+            if (pr.status != 200)  { out.error = "sync.push_failed|" + std::to_string(pr.status); return out; }
             try {
                 json j = json::parse(pr.body);
                 out.conflicts = j.contains("conflicts") ? (int)j["conflicts"].size() : 0;
-            } catch (...) { out.error = "réponse PUSH illisible"; return out; }
+            } catch (...) { out.error = "sync.push_invalid_response"; return out; }
         }
         // Envoi réussi (ou rien à envoyer) : on avance les repères et on persiste
         // immédiatement (évite de tout re-pousser si le PULL échoue ensuite).
@@ -184,7 +184,7 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
     for (;;) {
         auto gr = chnet::httpGet(changesUrl + "?since=" + std::to_string(since) + "&limit=500", headers);
         if (!gr.ok)           { out.error = gr.error; return out; }
-        if (gr.status != 200) { out.error = "PULL a échoué (HTTP " + std::to_string(gr.status) + ")"; return out; }
+        if (gr.status != 200) { out.error = "sync.pull_failed|" + std::to_string(gr.status); return out; }
 
         bool hasMore = false;
         try {
@@ -215,7 +215,7 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
             }
             since   = j.value("lastSeq", since);
             hasMore = j.value("hasMore", false);
-        } catch (...) { out.error = "réponse PULL illisible"; return out; }
+        } catch (...) { out.error = "sync.pull_invalid_response"; return out; }
 
         if (!hasMore) break;
     }

@@ -3,11 +3,13 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QMessageBox>
+#include <QTranslator>
 
 #include "AppContext.h"
 #include "ui/MainWindow.h"
 #include "ui/Theme.h"
 #include "ui/Icons.h"
+#include "ui/Language.h"
 
 #include <morfbeacon/PresenceService.h>
 #include <morfbeacon/IMetricsProvider.h>
@@ -20,6 +22,12 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("ComponentHub");
     app.setOrganizationName("morfredus");
+    app.setApplicationDisplayName("ComponentHub");
+
+    QTranslator translator;
+    const QString locale = chui::language() == chui::Language::English ? "en" : "fr";
+    if (translator.load(QStringLiteral(":/i18n/componenthub_%1.qm").arg(locale)))
+        app.installTranslator(&translator);
 
     // Dossier de données par utilisateur.
     QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -32,8 +40,18 @@ int main(int argc, char* argv[]) {
     try {
         context = std::make_unique<chdesktop::AppContext>(dir.toStdString());
     } catch (const std::exception& e) {
-        QMessageBox::critical(nullptr, "ComponentHub - démarrage impossible",
-            "La base de données locale ne peut pas être ouverte.\n\n" + QString::fromUtf8(e.what()));
+        const QString error = QString::fromUtf8(e.what());
+        const bool openFailed = error.startsWith("sqlite_open_failed:");
+        const bool initializeFailed = error.startsWith("sqlite_initialize_failed:");
+        const QString path = (openFailed || initializeFailed)
+            ? error.section(':', 1) : error;
+        const QString message = openFailed
+            ? chui::tr("The local SQLite database could not be opened.")
+            : initializeFailed
+                ? chui::tr("The local SQLite database could not be initialized.")
+                : chui::tr("The local database could not be opened.");
+        QMessageBox::critical(nullptr, chui::tr("ComponentHub - startup failed"),
+            message + (path.isEmpty() ? QString() : "\n\n" + chui::tr("Path: ") + path));
         return 1;
     }
     auto& ctx = *context;

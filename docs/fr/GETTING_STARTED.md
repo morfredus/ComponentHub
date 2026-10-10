@@ -60,10 +60,11 @@ Testé sur Debian / Ubuntu / Linux Mint. Ouvrez un **terminal**.
 
 ```sh
 sudo apt update
-sudo apt install git cmake ninja-build g++ qt6-base-dev nlohmann-json3-dev
+sudo apt install git cmake ninja-build g++ qt6-base-dev qt6-tools-dev qt6-tools-dev-tools qt6-l10n-tools nlohmann-json3-dev
 ```
 
-C'est **tout**. Vous avez le compilateur, CMake, Ninja, Qt 6 et nlohmann-json.
+C'est **tout**. Vous avez le compilateur, CMake, Ninja, Qt 6, les outils de
+traduction Qt Linguist et nlohmann-json.
 
 ### 2. Récupérer le code
 
@@ -96,7 +97,7 @@ un Raspberry Pi OS **64 bits** (`uname -m` doit afficher `aarch64`).
 
 ```sh
 sudo apt update
-sudo apt install git cmake ninja-build g++ qt6-base-dev nlohmann-json3-dev
+sudo apt install git cmake ninja-build g++ qt6-base-dev qt6-tools-dev qt6-tools-dev-tools qt6-l10n-tools nlohmann-json3-dev
 
 git clone https://github.com/morfredus/ComponentHub.git ComponentHub
 cd ComponentHub
@@ -136,6 +137,7 @@ pacman -S --needed git \
   mingw-w64-x86_64-cmake \
   mingw-w64-x86_64-ninja \
   mingw-w64-x86_64-qt6-base \
+  mingw-w64-x86_64-qt6-tools \
   mingw-w64-x86_64-nlohmann-json
 ```
 

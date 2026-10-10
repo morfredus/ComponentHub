@@ -101,7 +101,8 @@ without opening the sheet.
 ## Building (desktop)
 
 Dependencies: CMake ≥ 3.21, a C++17 compiler, Ninja, **Qt 6 (Widgets)**,
-**SQLite 3** and **nlohmann-json** (used by the synchronization protocol).
+**Qt Linguist tools** (`lrelease`), **SQLite 3** and **nlohmann-json** (used by
+the synchronization protocol).
 Detailed, beginner-friendly walkthrough:
 [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) *(FR)*; multi-platform
 reference: [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md) *(FR)*.
