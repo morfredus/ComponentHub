@@ -72,10 +72,10 @@ private:
     static std::unique_ptr<SQLiteDatabase> _openDb(const std::string& dir) {
         auto db = std::make_unique<SQLiteDatabase>(dir + "/componenthub.sqlite");
         if (!db->isOpen()) {
-            throw std::runtime_error("Impossible d'ouvrir la base SQLite : " + dir + "/componenthub.sqlite");
+            throw std::runtime_error("sqlite_open_failed:" + dir + "/componenthub.sqlite");
         }
         if (!db->initialize()) {
-            throw std::runtime_error("Impossible d'initialiser la base SQLite : " + dir + "/componenthub.sqlite");
+            throw std::runtime_error("sqlite_initialize_failed:" + dir + "/componenthub.sqlite");
         }
         return db;
     }

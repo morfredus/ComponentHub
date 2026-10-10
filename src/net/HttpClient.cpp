@@ -76,25 +76,25 @@ HttpResult request(const std::string& method, const std::string& url, const std:
     ensureNetwork();
 
     std::string host, port, path;
-    if (!parseUrl(url, host, port, path)) { r.error = "URL invalide (http:// attendu) : " + url; return r; }
+    if (!parseUrl(url, host, port, path)) { r.error = "http.invalid_url|" + url; return r; }
 
     addrinfo hints{};
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     addrinfo* res = nullptr;
     if (getaddrinfo(host.c_str(), port.c_str(), &hints, &res) != 0 || !res) {
-        r.error = "hôte introuvable : " + host + ":" + port;
+        r.error = "http.host_not_found|" + host + ":" + port;
         return r;
     }
 
     socket_t fd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (fd == kInvalidSocket) { freeaddrinfo(res); r.error = "socket() a échoué"; return r; }
+    if (fd == kInvalidSocket) { freeaddrinfo(res); r.error = "http.socket_failed"; return r; }
     applyTimeout(fd, timeoutMs);
 
     if (::connect(fd, res->ai_addr, static_cast<int>(res->ai_addrlen)) != 0) {
         freeaddrinfo(res);
         closeSocket(fd);
-        r.error = "connexion refusée à " + host + ":" + port + " (hub arrêté ?)";
+        r.error = "http.connection_refused|" + host + ":" + port;
         return r;
     }
     freeaddrinfo(res);
@@ -121,7 +121,7 @@ HttpResult request(const std::string& method, const std::string& url, const std:
     std::size_t sent = 0;
     while (sent < payload.size()) {
         int n = ::send(fd, payload.data() + sent, static_cast<int>(payload.size() - sent), 0);
-        if (n <= 0) { closeSocket(fd); r.error = "échec d'envoi de la requête"; return r; }
+        if (n <= 0) { closeSocket(fd); r.error = "http.send_failed"; return r; }
         sent += static_cast<std::size_t>(n);
     }
 
@@ -135,7 +135,7 @@ HttpResult request(const std::string& method, const std::string& url, const std:
     }
     closeSocket(fd);
 
-    if (raw.empty()) { r.error = "réponse vide (délai dépassé ?)"; return r; }
+    if (raw.empty()) { r.error = "http.empty_response"; return r; }
 
     // Statut : "HTTP/1.1 200 OK".
     std::size_t sp = raw.find(' ');
@@ -144,7 +144,7 @@ HttpResult request(const std::string& method, const std::string& url, const std:
     std::size_t hdrEnd = raw.find("\r\n\r\n");
     r.body = (hdrEnd == std::string::npos) ? "" : raw.substr(hdrEnd + 4);
     r.ok = (r.status != 0);
-    if (!r.ok) r.error = "réponse HTTP illisible";
+    if (!r.ok) r.error = "http.invalid_response";
     return r;
 }
 
