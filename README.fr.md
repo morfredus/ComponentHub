@@ -80,6 +80,7 @@ ouvrir la fiche.
 ## Compilation (bureau)
 
 Dépendances : CMake ≥ 3.21, un compilateur C++17, Ninja, **Qt 6 (Widgets)**,
+les outils **Qt Linguist** (`lrelease`),
 **SQLite 3** et **nlohmann-json** (utilisé par le protocole de synchronisation).
 Guide détaillé et pas à pas (débutant compris) :
 [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) ; référence

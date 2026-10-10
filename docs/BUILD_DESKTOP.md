@@ -20,7 +20,7 @@ Spécifique au bureau : le **stockage SQLite** (`storage/`), l'archive
 ## Dépendances
 
 - CMake ≥ 3.21, un compilateur C++17, Ninja
-- Qt 6 (module *Widgets*)
+- Qt 6 (module *Widgets* et outils Linguist, notamment `lrelease`)
 - SQLite 3 et ses en-têtes de développement
 - nlohmann-json (protocole de synchronisation)
 
@@ -28,7 +28,7 @@ Spécifique au bureau : le **stockage SQLite** (`storage/`), l'archive
 
 ### Windows (MSYS2 / MinGW)
 
-Paquets : `mingw-w64-x86_64-{gcc,cmake,ninja,qt6-base,sqlite3,nlohmann-json}`.
+Paquets : `mingw-w64-x86_64-{gcc,cmake,ninja,qt6-base,qt6-tools,sqlite3,nlohmann-json}`.
 
 ```sh
 cmake --preset mingw
@@ -38,7 +38,10 @@ cmake --build --preset mingw
 
 ### Linux (x86_64)
 
-Paquets (Debian/Ubuntu/Mint) : `cmake ninja-build qt6-base-dev libsqlite3-dev nlohmann-json3-dev`.
+Paquets (Debian/Ubuntu/Mint) : `cmake ninja-build qt6-base-dev qt6-tools-dev qt6-tools-dev-tools qt6-l10n-tools libsqlite3-dev nlohmann-json3-dev`.
+
+Les outils Qt Linguist fournissent `lrelease`, nécessaire pour compiler les
+catalogues de traduction `.ts` en ressources `.qm`.
 
 ```sh
 cmake --preset linux
