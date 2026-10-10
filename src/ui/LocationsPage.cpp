@@ -10,6 +10,7 @@
 
 #include "AppContext.h"
 #include "ui/UiKit.h"
+#include "ui/Language.h"
 
 using domain::Location;
 
@@ -18,20 +19,19 @@ LocationsPage::LocationsPage(chdesktop::AppContext& ctx, QWidget* parent)
     auto* v = new QVBoxLayout(this);
     v->setContentsMargins(20, 20, 20, 20);
     v->setSpacing(12);
-    v->addWidget(uikit::pageTitle("Emplacements"));
-    v->addWidget(uikit::hint("Hiérarchie libre : Atelier › Armoire A › Tiroir A12 › Boîte ESD… "
-                             "« Ajouter un enfant » crée un sous-emplacement sous la sélection."));
+    v->addWidget(uikit::pageTitle(chui::tr("Emplacements")));
+    v->addWidget(uikit::hint(chui::tr("Hiérarchie libre : Atelier › Armoire A › Tiroir A12 › Boîte ESD… « Ajouter un enfant » crée un sous-emplacement sous la sélection.")));
 
     auto* bar = new QHBoxLayout;
-    auto* addRoot  = uikit::button("Ajouter (racine)", icons::Glyph::Add);
-    auto* addChild = uikit::button("Ajouter un enfant", icons::Glyph::Add, "ghost");
-    auto* ren = uikit::button("Renommer", icons::Glyph::Edit, "ghost");
-    auto* del = uikit::button("Supprimer", icons::Glyph::Delete, "danger");
+    auto* addRoot  = uikit::button(chui::tr("Ajouter (racine)"), icons::Glyph::Add);
+    auto* addChild = uikit::button(chui::tr("Ajouter un enfant"), icons::Glyph::Add, "ghost");
+    auto* ren = uikit::button(chui::tr("Renommer"), icons::Glyph::Edit, "ghost");
+    auto* del = uikit::button(chui::tr("Supprimer"), icons::Glyph::Delete, "danger");
     bar->addWidget(addRoot); bar->addWidget(addChild); bar->addWidget(ren); bar->addWidget(del); bar->addStretch(1);
     v->addLayout(bar);
 
     tree_ = new QTreeWidget;
-    tree_->setHeaderLabels({"Emplacement", "id"});
+    tree_->setHeaderLabels({chui::tr("Emplacement"), "id"});
     tree_->setColumnHidden(1, true);
     tree_->header()->setStretchLastSection(true);
     v->addWidget(tree_, 1);
@@ -93,11 +93,11 @@ void LocationsPage::addLocation(bool asChild) {
     QString name;
     while (true) {
         bool ok = false;
-        name = QInputDialog::getText(this, "Nouvel emplacement", "Nom :", QLineEdit::Normal, name, &ok).trimmed();
+        name = QInputDialog::getText(this, chui::tr("Nouvel emplacement"), chui::tr("Nom :"), QLineEdit::Normal, name, &ok).trimmed();
         if (!ok || name.isEmpty()) return;
         if (!existsAtRoot(name)) break;
-        QMessageBox::warning(this, "Nom déjà utilisé",
-            "L'emplacement racine « " + name + " » existe déjà.\nChoisissez un autre nom ou corrigez la saisie.");
+        QMessageBox::warning(this, chui::tr("Nom déjà utilisé"),
+            chui::tr("L'emplacement racine « ") + name + chui::tr(" » existe déjà.\nChoisissez un autre nom ou corrigez la saisie."));
     }
 
     Location l;
@@ -130,11 +130,11 @@ void LocationsPage::renameLocation() {
     QString name = oldName;
     while (true) {
         bool ok = false;
-        name = QInputDialog::getText(this, "Renommer", "Nom :", QLineEdit::Normal, name, &ok).trimmed();
+        name = QInputDialog::getText(this, chui::tr("Renommer"), chui::tr("Nom :"), QLineEdit::Normal, name, &ok).trimmed();
         if (!ok || name.isEmpty() || name == oldName) return;
         if (!existsOtherRoot(name)) break;
-        QMessageBox::warning(this, "Nom déjà utilisé",
-            "L'emplacement racine « " + name + " » existe déjà.\nChoisissez un autre nom ou corrigez la saisie.");
+        QMessageBox::warning(this, chui::tr("Nom déjà utilisé"),
+            chui::tr("L'emplacement racine « ") + name + chui::tr(" » existe déjà.\nChoisissez un autre nom ou corrigez la saisie."));
     }
 
     Location l;
@@ -149,9 +149,9 @@ void LocationsPage::deleteLocation() {
     auto* it = tree_->currentItem();
     if (!it) return;
     const QString msg = it->childCount() > 0
-        ? "« " + it->text(0) + " » contient des sous-emplacements qui deviendront orphelins. Supprimer quand même ?"
-        : "Supprimer l'emplacement « " + it->text(0) + " » ?";
-    if (QMessageBox::question(this, "Supprimer", msg) != QMessageBox::Yes) return;
+        ? chui::tr("« ") + it->text(0) + chui::tr(" » contient des sous-emplacements qui deviendront orphelins. Supprimer quand même ?")
+        : chui::tr("Supprimer l'emplacement « ") + it->text(0) + chui::tr(" » ?");
+    if (QMessageBox::question(this, chui::tr("Supprimer"), msg) != QMessageBox::Yes) return;
     ctx_.inventory.removeLocation(it->text(1).toStdString());
     refresh();
 }

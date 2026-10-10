@@ -26,15 +26,16 @@
 
 #include "AppContext.h"
 #include "ui/UiKit.h"
+#include "ui/Language.h"
 #include "platform/Clock.h"
 
 using namespace domain;
 
 namespace {
 struct Opt { const char* code; const char* label; };
-const Opt kKinds[]  = {{"component","Composant"},{"module","Module"},{"tool","Outil"},{"consumable","Consommable"}};
-const Opt kStatus[] = {{"to_test","À tester"},{"validating","En validation"},{"validated","Validé"},
-                       {"defective","Défectueux"},{"archived","Archivé"}};
+    const Opt kKinds[]  = {{"component","Composant"},{"module","Module"},{"tool","Outil"},{"consumable","Consommable"}};
+    const Opt kStatus[] = {{"to_test","À tester"},{"validating","En validation"},{"validated","Validé"},
+                           {"defective","Défectueux"},{"archived","Archivé"}};
 
 // Chemin lisible « A › B › C » d'un emplacement, via l'index parentId.
 QString locationPath(Id id, const std::map<Id, Location>& byId) {
@@ -55,7 +56,7 @@ ComponentDialog::ComponentDialog(chdesktop::AppContext& ctx, Id componentId, QWi
     if (componentId != kNoId) {
         if (auto c = ctx_.components.findById(componentId)) current_ = *c;
     }
-    setWindowTitle(componentId == kNoId ? "Nouveau composant" : "Modifier le composant");
+    setWindowTitle(componentId == kNoId ? chui::tr("Nouveau composant") : chui::tr("Modifier le composant"));
     resize(640, 620);
     buildUi();
     loadToForm();
@@ -69,28 +70,28 @@ void ComponentDialog::buildUi() {
 
     // --- Général ---
     auto* gen = new QWidget; auto* gf = new QFormLayout(gen);
-    kind_ = new QComboBox; for (auto& k : kKinds) kind_->addItem(k.label, k.code);
+    kind_ = new QComboBox; for (auto& k : kKinds) kind_->addItem(chui::tr(k.label), k.code);
     name_ = new QLineEdit; reference_ = new QLineEdit; manufacturer_ = new QLineEdit;
     category_ = new QComboBox; category_->setEditable(true);
     subcategory_ = new QLineEdit;
     type_ = new QComboBox; type_->setEditable(true);   // référentiel Types de composants
-    status_ = new QComboBox; for (auto& s : kStatus) status_->addItem(s.label, s.code);
+    status_ = new QComboBox; for (auto& s : kStatus) status_->addItem(chui::tr(s.label), s.code);
     state_ = new QLineEdit; origin_ = new QLineEdit;
     location_ = new QComboBox;
     description_ = new QPlainTextEdit; description_->setFixedHeight(60);
-    gf->addRow("Type d'objet", kind_);
-    gf->addRow("Nom *", name_);
-    gf->addRow("Référence", reference_);
-    gf->addRow("Fabricant", manufacturer_);
-    gf->addRow("Catégorie", category_);
-    gf->addRow("Sous-catégorie", subcategory_);
-    gf->addRow("Type", type_);
-    gf->addRow("Statut", status_);
-    gf->addRow("État", state_);
-    gf->addRow("Provenance", origin_);
-    gf->addRow("Emplacement", location_);
-    gf->addRow("Description", description_);
-    tabs->addTab(gen, "Général");
+    gf->addRow(chui::tr("Type d'objet"), kind_);
+    gf->addRow(chui::tr("Nom *"), name_);
+    gf->addRow(chui::tr("Référence"), reference_);
+    gf->addRow(chui::tr("Fabricant"), manufacturer_);
+    gf->addRow(chui::tr("Catégorie"), category_);
+    gf->addRow(chui::tr("Sous-catégorie"), subcategory_);
+    gf->addRow(chui::tr("Type"), type_);
+    gf->addRow(chui::tr("Statut"), status_);
+    gf->addRow(chui::tr("État"), state_);
+    gf->addRow(chui::tr("Provenance"), origin_);
+    gf->addRow(chui::tr("Emplacement"), location_);
+    gf->addRow(chui::tr("Description"), description_);
+    tabs->addTab(gen, chui::tr("Général"));
 
     // --- Caractéristiques ---
     auto* ch = new QWidget; auto* cf = new QFormLayout(ch);
@@ -98,70 +99,70 @@ void ComponentDialog::buildUi() {
     protocols_ = new QLineEdit; i2cAddress_ = new QLineEdit; frequency_ = new QLineEdit;
     pinCount_ = new QSpinBox; pinCount_->setRange(0, 100000);
     compatibility_ = new QLineEdit;
-    cf->addRow("Tension", voltage_);
-    cf->addRow("Courant", current_field_);
-    cf->addRow("Interface", interfaceType_);
-    cf->addRow("Protocoles", protocols_);
-    cf->addRow("Adresse I²C", i2cAddress_);
-    cf->addRow("Fréquence", frequency_);
-    cf->addRow("Nb de broches", pinCount_);
-    cf->addRow("Compatibilité", compatibility_);
-    tabs->addTab(ch, "Caractéristiques");
+    cf->addRow(chui::tr("Tension"), voltage_);
+    cf->addRow(chui::tr("Courant"), current_field_);
+    cf->addRow(chui::tr("Interface"), interfaceType_);
+    cf->addRow(chui::tr("Protocoles"), protocols_);
+    cf->addRow(chui::tr("Adresse I²C"), i2cAddress_);
+    cf->addRow(chui::tr("Fréquence"), frequency_);
+    cf->addRow(chui::tr("Nb de broches"), pinCount_);
+    cf->addRow(chui::tr("Compatibilité"), compatibility_);
+    tabs->addTab(ch, chui::tr("Caractéristiques"));
 
     // --- Achat & stock ---
     auto* buy = new QWidget; auto* bf = new QFormLayout(buy);
-    price_ = new QDoubleSpinBox; price_->setRange(0, 1000000); price_->setDecimals(2); price_->setSuffix(" €");
+    price_ = new QDoubleSpinBox; price_->setRange(0, 1000000); price_->setDecimals(2); price_->setSuffix(" " + chui::currencySymbol(chui::currency()));
     supplier_ = new QLineEdit;
-    purchaseDate_ = new QLineEdit; purchaseDate_->setPlaceholderText("AAAA-MM-JJ");
-    receptionDate_ = new QLineEdit; receptionDate_->setPlaceholderText("AAAA-MM-JJ");
+    purchaseDate_ = new QLineEdit; purchaseDate_->setPlaceholderText(chui::tr("YYYY-MM-DD"));
+    receptionDate_ = new QLineEdit; receptionDate_->setPlaceholderText(chui::tr("YYYY-MM-DD"));
     warranty_ = new QLineEdit;
     quantity_ = new QSpinBox; quantity_->setRange(0, 1000000);
     minStock_ = new QSpinBox; minStock_->setRange(0, 1000000);
     idealStock_ = new QSpinBox; idealStock_->setRange(0, 1000000);
-    bf->addRow("Prix unitaire", price_);
-    bf->addRow("Fournisseur", supplier_);
-    bf->addRow("Date d'achat", purchaseDate_);
-    bf->addRow("Date de réception", receptionDate_);
-    bf->addRow("Garantie", warranty_);
-    bf->addRow("Quantité", quantity_);
-    bf->addRow("Stock minimum", minStock_);
-    bf->addRow("Stock idéal", idealStock_);
+    bf->addRow(chui::tr("Prix unitaire"), price_);
+    bf->addRow(chui::tr("Fournisseur"), supplier_);
+    bf->addRow(chui::tr("Date d'achat"), purchaseDate_);
+    bf->addRow(chui::tr("Date de réception"), receptionDate_);
+    bf->addRow(chui::tr("Garantie"), warranty_);
+    bf->addRow(chui::tr("Quantité"), quantity_);
+    bf->addRow(chui::tr("Stock minimum"), minStock_);
+    bf->addRow(chui::tr("Stock idéal"), idealStock_);
 
     stockLabel_ = new QLabel;
-    auto* mv = uikit::button("Mouvement de stock…", icons::Glyph::StockIn, "ghost");
+    auto* mv = uikit::button(chui::tr("Mouvement de stock…"), icons::Glyph::StockIn, "ghost");
     connect(mv, &QPushButton::clicked, this, &ComponentDialog::doStockMovement);
     auto* stockRow = new QHBoxLayout; stockRow->addWidget(stockLabel_, 1); stockRow->addWidget(mv);
     bf->addRow(stockRow);
     history_ = new QTableWidget(0, 4);
-    history_->setHorizontalHeaderLabels({"Date", "Type", "Qté", "Note"});
+    history_->setHorizontalHeaderLabels({chui::tr("Date"), chui::tr("Type"), chui::tr("Qté"), chui::tr("Note")});
     history_->horizontalHeader()->setStretchLastSection(true);
     history_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     history_->verticalHeader()->setVisible(false);
     history_->setFixedHeight(140);
     bf->addRow(history_);
-    tabs->addTab(buy, "Achat & stock");
+    tabs->addTab(buy, chui::tr("Achat & stock"));
 
     // --- Documents ---
     auto* doc = new QWidget; auto* dv = new QVBoxLayout(doc);
-    childHint_ = uikit::hint("Enregistrez d'abord la fiche pour lui rattacher des documents.");
+    childHint_ = uikit::hint(chui::tr("Enregistrez d'abord la fiche pour lui rattacher des documents."));
     dv->addWidget(childHint_);
     auto* docBar = new QHBoxLayout;
-    auto* dAdd = uikit::button("Ajouter un lien", icons::Glyph::Add);
-    auto* dImport = uikit::button("Importer un fichier", icons::Glyph::Add, "ghost");
-    auto* dEdit = uikit::button("Modifier", icons::Glyph::Edit, "ghost");
-    auto* dOpen = uikit::button("Ouvrir", icons::Glyph::Link, "ghost");
-    auto* dDel = uikit::button("Supprimer", icons::Glyph::Delete, "danger");
+    auto* dAdd = uikit::button(chui::tr("Ajouter un lien"), icons::Glyph::Add);
+    auto* dImport = uikit::button(chui::tr("Importer un fichier"), icons::Glyph::Add, "ghost");
+    auto* dEdit = uikit::button(chui::tr("Modifier"), icons::Glyph::Edit, "ghost");
+    auto* dOpen = uikit::button(chui::tr("Ouvrir"), icons::Glyph::Link, "ghost");
+    auto* dDel = uikit::button(chui::tr("Supprimer"), icons::Glyph::Delete, "danger");
     docBar->addWidget(dAdd); docBar->addWidget(dImport); docBar->addWidget(dEdit);
     docBar->addWidget(dOpen); docBar->addWidget(dDel); docBar->addStretch(1);
     dv->addLayout(docBar);
     documents_ = new QTableWidget(0, 3);
-    documents_->setHorizontalHeaderLabels({"Titre", "Catégorie", "Lien / fichier"});
+    documents_->setHorizontalHeaderLabels({chui::tr("Titre"), chui::tr("Catégorie"), chui::tr("Lien / fichier")});
     documents_->horizontalHeader()->setStretchLastSection(true);
     documents_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     documents_->setSelectionBehavior(QAbstractItemView::SelectRows);
     documents_->verticalHeader()->setVisible(false);
     dv->addWidget(documents_, 1);
-    tabs->addTab(doc, "Documents");
+    tabs->addTab(doc, chui::tr("Documents"));
     connect(dAdd, &QPushButton::clicked, this, [this] { addOrEditDocument(kNoId); });
     connect(dImport, &QPushButton::clicked, this, &ComponentDialog::importDocumentFile);
     connect(dEdit, &QPushButton::clicked, this, [this] {
@@ -175,12 +176,12 @@ void ComponentDialog::buildUi() {
     auto* note = new QWidget; auto* nv = new QVBoxLayout(note);
     notes_ = new QPlainTextEdit;
     nv->addWidget(notes_);
-    tabs->addTab(note, "Notes");
+    tabs->addTab(note, chui::tr("Notes"));
 
     // --- Boutons ---
     auto* bb = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel);
-    bb->button(QDialogButtonBox::Save)->setText("Enregistrer");
-    bb->button(QDialogButtonBox::Cancel)->setText("Annuler");
+    bb->button(QDialogButtonBox::Save)->setText(chui::tr("Enregistrer"));
+    bb->button(QDialogButtonBox::Cancel)->setText(chui::tr("Annuler"));
     root->addWidget(bb);
     connect(bb, &QDialogButtonBox::accepted, this, [this] { if (saveFromForm()) accept(); });
     connect(bb, &QDialogButtonBox::rejected, this, &QDialog::reject);
@@ -199,7 +200,7 @@ void ComponentDialog::loadToForm() {
     // Emplacements, présentés par chemin hiérarchique.
     std::map<Id, Location> byId;
     for (const auto& l : ctx_.inventory.listLocations()) byId[l.id] = l;
-    location_->addItem("(aucun)", QString());   // QString vide = kNoId
+    location_->addItem(chui::tr("(aucun)"), QString());   // QString vide = kNoId
     for (const auto& kv : byId)
         location_->addItem(locationPath(kv.first, byId), QString::fromStdString(kv.first));
 
@@ -244,7 +245,7 @@ void ComponentDialog::loadToForm() {
 
 bool ComponentDialog::saveFromForm() {
     if (name_->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Champ requis", "Le nom est obligatoire.");
+        QMessageBox::warning(this, chui::tr("Champ requis"), chui::tr("Le nom est obligatoire."));
         return false;
     }
     Component& c = current_;
@@ -289,8 +290,8 @@ bool ComponentDialog::saveFromForm() {
             if (r.value == c.type) { known = true; break; }
         if (!known) {
             const QString t = QString::fromStdString(c.type);
-            if (QMessageBox::question(this, "Nouveau type",
-                    "Le type « " + t + " » n'existe pas dans le référentiel. L'ajouter ?")
+            if (QMessageBox::question(this, chui::tr("Nouveau type"),
+                    chui::tr("Le type « ") + t + chui::tr(" » n'existe pas dans le référentiel. L'ajouter ?"))
                 == QMessageBox::Yes) {
                 domain::RefItem r;
                 r.list = "component_types";
@@ -312,8 +313,8 @@ void ComponentDialog::refreshChildTabs() {
     history_->setEnabled(exists);
 
     // Stock courant.
-    stockLabel_->setText(exists ? QString("Stock actuel : %1").arg(current_.quantity)
-                                : QString("Stock : enregistrez d'abord la fiche"));
+    stockLabel_->setText(exists ? QString(chui::tr("Stock actuel : %1")).arg(current_.quantity)
+                                : chui::tr("Stock : enregistrez d'abord la fiche"));
 
     documents_->setRowCount(0);
     if (exists) {
@@ -331,7 +332,7 @@ void ComponentDialog::refreshChildTabs() {
             QString shown = d.isFile() ? QString::fromStdString(d.fileName)
                                        : QString::fromStdString(d.url);
             if (d.isFile() && !ctx_.attachments.has(d.blobHash))
-                shown += "  (contenu non encore synchronisé)";
+                shown += chui::tr("  (contenu non encore synchronisé)");
             documents_->setItem(r, 2, new QTableWidgetItem(shown));
         }
     }
@@ -360,13 +361,13 @@ void ComponentDialog::addOrEditDocument(Id docId) {
             if (e.id == docId) { d = e; break; }
 
     bool ok = false;
-    QString title = QInputDialog::getText(this, "Document", "Titre :", QLineEdit::Normal,
+    QString title = QInputDialog::getText(this, chui::tr("Document"), chui::tr("Titre :"), QLineEdit::Normal,
                                           QString::fromStdString(d.title), &ok);
     if (!ok || title.trimmed().isEmpty()) return;
-    QString category = QInputDialog::getText(this, "Document", "Catégorie (datasheet, manuel, pinout, lien…) :",
+    QString category = QInputDialog::getText(this, chui::tr("Document"), chui::tr("Catégorie (datasheet, manuel, pinout, lien…) :"),
                                              QLineEdit::Normal, QString::fromStdString(d.category), &ok);
     if (!ok) return;
-    QString url = QInputDialog::getText(this, "Document", "Lien (URL http… ou chemin de fichier) :",
+    QString url = QInputDialog::getText(this, chui::tr("Document"), chui::tr("Lien (URL http… ou chemin de fichier) :"),
                                         QLineEdit::Normal, QString::fromStdString(d.url), &ok);
     if (!ok) return;
     d.title = title.trimmed().toStdString();
@@ -378,14 +379,14 @@ void ComponentDialog::addOrEditDocument(Id docId) {
 
 void ComponentDialog::importDocumentFile() {
     if (current_.id == kNoId) return;
-    const QString path = QFileDialog::getOpenFileName(this, "Importer un fichier", QString());
+    const QString path = QFileDialog::getOpenFileName(this, chui::tr("Importer un fichier"), QString());
     if (path.isEmpty()) return;
 
     // Copie le fichier dans le magasin, sous le hash de son contenu. Le contenu
     // devient indépendant du fichier d'origine (déplaçable, supprimable).
     const auto res = ctx_.attachments.importFile(path.toStdString());
     if (!res.ok) {
-        QMessageBox::warning(this, "Import", "Impossible de lire le fichier sélectionné.");
+        QMessageBox::warning(this, chui::tr("Import"), chui::tr("Impossible de lire le fichier sélectionné."));
         return;
     }
 
@@ -415,9 +416,8 @@ void ComponentDialog::openDocument() {
     if (doc.isFile()) {
         std::string bytes;
         if (!ctx_.attachments.get(doc.blobHash, bytes)) {
-            QMessageBox::information(this, "Pièce jointe",
-                "Le contenu de ce fichier n'est pas encore présent sur ce poste. "
-                "Il sera récupéré à la prochaine synchronisation avec morfSync.");
+            QMessageBox::information(this, chui::tr("Pièce jointe"),
+                chui::tr("Le contenu de ce fichier n'est pas encore présent sur ce poste. Il sera récupéré à la prochaine synchronisation avec morfSync."));
             return;
         }
         // Le magasin nomme le fichier par son hash (sans extension) : on
@@ -444,29 +444,29 @@ void ComponentDialog::deleteDocument() {
     int r = documents_->currentRow();
     if (r < 0) return;
     const Id id = documents_->item(r, 0)->data(Qt::UserRole).toString().toStdString();
-    if (QMessageBox::question(this, "Supprimer", "Supprimer ce document ?") != QMessageBox::Yes) return;
+    if (QMessageBox::question(this, chui::tr("Supprimer"), chui::tr("Supprimer ce document ?")) != QMessageBox::Yes) return;
     ctx_.documents_service.remove(id);
     refreshChildTabs();
 }
 
 void ComponentDialog::doStockMovement() {
     if (current_.id == kNoId) {
-        QMessageBox::information(this, "Stock", "Enregistrez d'abord la fiche.");
+        QMessageBox::information(this, chui::tr("Stock"), chui::tr("Enregistrez d'abord la fiche."));
         return;
     }
     QDialog dlg(this);
-    dlg.setWindowTitle("Mouvement de stock");
+    dlg.setWindowTitle(chui::tr("Mouvement de stock"));
     auto* f = new QFormLayout(&dlg);
     auto* type = new QComboBox;
-    type->addItem("Entrée (+)", "in");
-    type->addItem("Sortie (−)", "out");
-    type->addItem("Correction (=)", "correction");
-    type->addItem("Inventaire (=)", "inventory");
+    type->addItem(chui::tr("Entrée (+)"), "in");
+    type->addItem(chui::tr("Sortie (−)"), "out");
+    type->addItem(chui::tr("Correction (=)"), "correction");
+    type->addItem(chui::tr("Inventaire (=)"), "inventory");
     auto* qty = new QSpinBox; qty->setRange(0, 1000000);
     auto* note = new QLineEdit;
-    f->addRow("Type", type);
-    f->addRow("Quantité", qty);
-    f->addRow("Note", note);
+    f->addRow(chui::tr("Type"), type);
+    f->addRow(chui::tr("Quantité"), qty);
+    f->addRow(chui::tr("Note"), note);
     auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     f->addRow(bb);
     QObject::connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);

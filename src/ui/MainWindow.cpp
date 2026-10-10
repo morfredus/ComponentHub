@@ -37,6 +37,7 @@
 #include "ui/ReferentialsPage.h"
 #include "ui/ImportExportPage.h"
 #include "ui/SettingsPage.h"
+#include "ui/Language.h"
 
 #ifndef CH_APP_VERSION
 #define CH_APP_VERSION "0.0.0-dev"   // repli : la vraie valeur vient de CMake
@@ -79,7 +80,7 @@ MainWindow::MainWindow(chdesktop::AppContext& ctx, QWidget* parent)
     connect(&Theme::instance(), &Theme::changed, this, &MainWindow::retintNav);
 
     nav_->setCurrentRow(0);
-    statusBar()->showMessage("Données : " + QString::fromStdString(ctx_.dir()));
+    statusBar()->showMessage(chui::tr("Données : ") + QString::fromStdString(ctx_.dir()));
 
     // Vérification silencieuse des mises à jour, peu après l'affichage de l'UI.
     QTimer::singleShot(2000, this, [this]{ checkForUpdates(false); });
@@ -95,7 +96,7 @@ void MainWindow::maybeSyncOnStartup() {
     // Retour visuel AVANT l'appel bloquant : sans ça, la sonde (jusqu'à 1,5 s)
     // donnerait l'impression que l'appli est figée au lancement. processEvents()
     // force l'affichage du message avant de bloquer.
-    statusBar()->showMessage("Recherche du hub de synchronisation…");
+    statusBar()->showMessage(chui::tr("Recherche du hub de synchronisation…"));
     QApplication::processEvents();
 
     chsync::SyncService svc(ctx_.syncables(), ctx_.dir() + "/sync_state.json", &ctx_.attachments);
@@ -103,11 +104,11 @@ void MainWindow::maybeSyncOnStartup() {
     // Sonde courte : si le hub ne répond pas vite, on reste sur la base locale
     // (souveraine) sans bloquer le démarrage ni afficher d'erreur bloquante.
     if (!svc.testConnection(chui::readSyncConfig(), info, 1500)) {
-        statusBar()->showMessage("Hub de synchronisation indisponible - travail en local.", 5000);
+        statusBar()->showMessage(chui::tr("Hub de synchronisation indisponible - travail en local."), 5000);
         return;
     }
 
-    statusBar()->showMessage("Synchronisation en cours…");
+    statusBar()->showMessage(chui::tr("Synchronisation en cours…"));
     QApplication::processEvents();
     QApplication::setOverrideCursor(Qt::WaitCursor);
     const chsync::SyncOutcome o = svc.sync(chui::readSyncConfig());
@@ -115,10 +116,10 @@ void MainWindow::maybeSyncOnStartup() {
     if (o.ok) {
         chui::recordLastSync(o.applied, o.accepted);
         statusBar()->showMessage(
-            QString("Synchronisé au démarrage : %1 reçu(s), %2 envoyé(s).").arg(o.applied).arg(o.accepted), 6000);
+            QString(chui::tr("Synchronisé au démarrage : %1 reçu(s), %2 envoyé(s).")).arg(o.applied).arg(o.accepted), 6000);
         nav_->setCurrentRow(nav_->currentRow());  // ré-affiche la page pour refléter les données reçues
     } else {
-        statusBar()->showMessage("Synchro au démarrage impossible : " + QString::fromStdString(o.error), 5000);
+        statusBar()->showMessage(chui::tr("Synchro au démarrage impossible : ") + chui::syncError(QString::fromStdString(o.error)), 5000);
     }
 }
 
@@ -129,25 +130,24 @@ void MainWindow::runSync(bool showUpToDate) {
     QApplication::restoreOverrideCursor();
     if (o.ok) {
         chui::recordLastSync(o.applied, o.accepted);
-        QString msg = QString("Synchronisé : %1 reçu(s), %2 envoyé(s), %3 conflit(s).")
+        QString msg = QString(chui::tr("Synchronisé : %1 reçu(s), %2 envoyé(s), %3 conflit(s)."))
                           .arg(o.applied).arg(o.accepted).arg(o.conflicts);
         // Ne mentionner les pièces jointes que s'il y en a eu : le cas courant
         // (rien à transférer) ne doit pas alourdir le message.
         if (o.blobsUploaded || o.blobsDownloaded)
-            msg += QString(" Pièces jointes : %1 envoyée(s), %2 reçue(s).")
+            msg += QString(chui::tr(" Pièces jointes : %1 envoyée(s), %2 reçue(s)."))
                        .arg(o.blobsUploaded).arg(o.blobsDownloaded);
         statusBar()->showMessage(msg, 6000);
     } else if (showUpToDate)
-        statusBar()->showMessage("Synchro impossible : " + QString::fromStdString(o.error), 6000);
+        statusBar()->showMessage(chui::tr("Synchro impossible : ") + chui::syncError(QString::fromStdString(o.error)), 6000);
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
     // Proposition de synchro en quittant (désactivable dans Réglages).
     if (chui::syncAskOnQuit() && chui::syncConfigured()) {
         const auto btn = QMessageBox::question(
-            this, "Synchroniser avant de quitter",
-            "Synchroniser vos données avec morfSync avant de fermer ?\n"
-            "(Désactivable dans Réglages → Synchronisation.)",
+            this, chui::tr("Synchroniser avant de quitter"),
+            chui::tr("Synchroniser vos données avec morfSync avant de fermer ?\n(Désactivable dans Réglages → Synchronisation.)"),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
         if (btn == QMessageBox::Yes) runSync(false);
     }
@@ -173,20 +173,20 @@ void MainWindow::buildSidebar() {
 
     auto* brand = new QLabel("ComponentHub");
     brand->setObjectName("brand");
-    auto* sub = new QLabel("Mémoire technique d'atelier");
+    auto* sub = new QLabel(chui::tr("Mémoire technique d'atelier"));
     sub->setObjectName("brandSub");
     sub->setWordWrap(true);
     v->addWidget(brand);
     v->addWidget(sub);
 
     entries_ = {
-        {"Inventaire",    int(icons::Glyph::Inventory)},
-        {"Catégories",    int(icons::Glyph::Categories)},
-        {"Emplacements",  int(icons::Glyph::Locations)},
-        {"Projets",       int(icons::Glyph::Projects)},
-        {"Référentiels",  int(icons::Glyph::Referentials)},
-        {"Import/Export", int(icons::Glyph::ImportExport)},
-        {"Réglages",      int(icons::Glyph::Settings)},
+        {chui::tr("Inventaire"), int(icons::Glyph::Inventory)},
+        {chui::tr("Catégories"), int(icons::Glyph::Categories)},
+        {chui::tr("Emplacements"), int(icons::Glyph::Locations)},
+        {chui::tr("Projets"), int(icons::Glyph::Projects)},
+        {chui::tr("Référentiels"), int(icons::Glyph::Referentials)},
+        {chui::tr("Import/Export"), int(icons::Glyph::ImportExport)},
+        {chui::tr("Réglages"), int(icons::Glyph::Settings)},
     };
 
     nav_ = new QListWidget;
@@ -214,19 +214,19 @@ void MainWindow::buildMenuBar() {
     auto* bar = menuBar();
 
     // --- Fichier ---
-    auto* fileMenu = bar->addMenu("&Fichier");
-    auto* openData = fileMenu->addAction("Ouvrir le dossier de &données");
+    auto* fileMenu = bar->addMenu(chui::tr("&Fichier"));
+    auto* openData = fileMenu->addAction(chui::tr("Ouvrir le dossier de &données"));
     connect(openData, &QAction::triggered, this, [this] {
         QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdString(ctx_.dir())));
     });
     fileMenu->addSeparator();
-    auto* quit = fileMenu->addAction("&Quitter");
+    auto* quit = fileMenu->addAction(chui::tr("&Quitter"));
     quit->setShortcut(QKeySequence::Quit);         // Ctrl+Q (Cmd+Q sur macOS)
     quit->setMenuRole(QAction::QuitRole);
     connect(quit, &QAction::triggered, qApp, &QApplication::quit);
 
     // --- Aller à : saute vers chaque page (miroir de la barre latérale) ---
-    auto* goMenu = bar->addMenu("&Aller à");
+    auto* goMenu = bar->addMenu(chui::tr("&Aller à"));
     for (int i = 0; i < entries_.size(); ++i) {
         auto* act = goMenu->addAction(entries_[i].label);
         if (i < 9) act->setShortcut(QKeySequence(Qt::CTRL | (Qt::Key_1 + i)));
@@ -234,8 +234,8 @@ void MainWindow::buildMenuBar() {
     }
 
     // --- Affichage : thème (synchronisé avec les Réglages et l'OS) ---
-    auto* viewMenu = bar->addMenu("Afficha&ge");
-    auto* themeMenu = viewMenu->addMenu("&Thème");
+    auto* viewMenu = bar->addMenu(chui::tr("Afficha&ge"));
+    auto* themeMenu = viewMenu->addMenu(chui::tr("&Thème"));
     themeActions_ = new QActionGroup(this);
     themeActions_->setExclusive(true);
     struct { const char* label; Theme::Mode mode; } themes[] = {
@@ -244,7 +244,7 @@ void MainWindow::buildMenuBar() {
         {"S&ombre",            Theme::Mode::Dark},
     };
     for (const auto& t : themes) {
-        auto* act = themeMenu->addAction(t.label);
+        auto* act = themeMenu->addAction(chui::tr(t.label));
         act->setCheckable(true);
         act->setData(int(t.mode));
         themeActions_->addAction(act);
@@ -255,19 +255,19 @@ void MainWindow::buildMenuBar() {
     connect(&Theme::instance(), &Theme::changed, this, &MainWindow::syncThemeMenu);
 
     // --- Aide ---
-    auto* helpMenu = bar->addMenu("Aid&e");
-    auto* help = helpMenu->addAction("&Aide");
+    auto* helpMenu = bar->addMenu(chui::tr("Aid&e"));
+    auto* help = helpMenu->addAction(chui::tr("&Aide"));
     help->setShortcut(QKeySequence::HelpContents);  // F1
     connect(help, &QAction::triggered, this, &MainWindow::showHelpDialog);
 
-    auto* updates = helpMenu->addAction("Rechercher les mises à &jour…");
+    auto* updates = helpMenu->addAction(chui::tr("Rechercher les mises à &jour…"));
     connect(updates, &QAction::triggered, this, [this]{ checkForUpdates(true); });
 
     helpMenu->addSeparator();
-    auto* about = helpMenu->addAction("À &propos de ComponentHub");
+    auto* about = helpMenu->addAction(chui::tr("À &propos de ComponentHub"));
     about->setMenuRole(QAction::AboutRole);
     connect(about, &QAction::triggered, this, &MainWindow::showAboutDialog);
-    auto* aboutQt = helpMenu->addAction("À propos de &Qt");
+    auto* aboutQt = helpMenu->addAction(chui::tr("À propos de &Qt"));
     aboutQt->setMenuRole(QAction::AboutQtRole);
     connect(aboutQt, &QAction::triggered, qApp, &QApplication::aboutQt);
 }
@@ -280,7 +280,7 @@ void MainWindow::syncThemeMenu() {
 }
 
 void MainWindow::showAboutDialog() {
-    const QString text = QStringLiteral(
+    const QString text = chui::tr(
         "<h3 style='margin-bottom:2px'>ComponentHub <span style='font-weight:normal'>%1</span></h3>"
         "<p style='margin-top:0'>Mémoire technique d'atelier - inventaire, stock,"
         " emplacements, projets et documentation.</p>"
@@ -291,7 +291,7 @@ void MainWindow::showAboutDialog() {
         .arg(QString::fromLatin1(CH_APP_VERSION), QString::fromLatin1(QT_VERSION_STR));
 
     QMessageBox box(this);
-    box.setWindowTitle("À propos de ComponentHub");
+    box.setWindowTitle(chui::tr("À propos de ComponentHub"));
     box.setTextFormat(Qt::RichText);
     box.setText(text);
     box.setIconPixmap(icons::pixmap(icons::Glyph::Chip,
@@ -301,7 +301,7 @@ void MainWindow::showAboutDialog() {
 }
 
 void MainWindow::showHelpDialog() {
-    const QString html = QStringLiteral(
+    const QString html = chui::tr(
         "<h2>Bien démarrer avec ComponentHub</h2>"
         "<p>ComponentHub est la <b>mémoire technique de votre atelier</b> : chaque"
         " composant, module, outil ou consommable y a une fiche avec son stock, son"
@@ -339,7 +339,7 @@ void MainWindow::showHelpDialog() {
         " à ranger en lieu sûr et à restaurer quand vous voulez.</p>");
 
     QDialog dlg(this);
-    dlg.setWindowTitle("Aide - ComponentHub");
+    dlg.setWindowTitle(chui::tr("Aide - ComponentHub"));
     dlg.resize(580, 560);
     auto* v = new QVBoxLayout(&dlg);
     auto* browser = new QTextBrowser(&dlg);
@@ -347,7 +347,7 @@ void MainWindow::showHelpDialog() {
     browser->setHtml(html);
     v->addWidget(browser, 1);
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dlg);
-    if (auto* close = buttons->button(QDialogButtonBox::Close)) close->setText("Fermer");
+    if (auto* close = buttons->button(QDialogButtonBox::Close)) close->setText(chui::tr("Fermer"));
     connect(buttons, &QDialogButtonBox::rejected, &dlg, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
     v->addWidget(buttons);
