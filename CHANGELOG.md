@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.9.12] - 2026-10-12
+
+### Fixed
+
+- Inventory list opened sorted Z-A then digits: Qt starts with a descending sort indicator. The list
+  now opens on the Name column in ascending order (digits, then A-Z).
+- Text columns of the inventory are sorted case-insensitively (the raw Qt comparison put every
+  uppercase letter before any lowercase one).
+
 ## [1.9.11] - 2026-10-11
 
 ### Fixed

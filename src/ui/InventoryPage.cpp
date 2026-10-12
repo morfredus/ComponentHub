@@ -46,6 +46,16 @@ public:
 private:
     double key_;
 };
+
+// Cellule texte triée sans tenir compte de la casse : « abc » se classe avec
+// « ABC » (le tri brut de Qt place toutes les majuscules avant les minuscules).
+class TextItem : public QTableWidgetItem {
+public:
+    using QTableWidgetItem::QTableWidgetItem;
+    bool operator<(const QTableWidgetItem& other) const override {
+        return text().compare(other.text(), Qt::CaseInsensitive) < 0;
+    }
+};
 } // namespace
 
 InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
@@ -87,6 +97,9 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
     table_->horizontalHeader()->setStretchLastSection(true);
     table_->setColumnWidth(0, 220);
     // Tri par colonne au clic sur l'en-tête (Qté et Prix triés numériquement).
+    // Ordre par défaut : colonne Nom, croissant (chiffres puis A-Z). Sans cela,
+    // Qt démarre en décroissant (Z-A puis chiffres).
+    table_->horizontalHeader()->setSortIndicator(0, Qt::AscendingOrder);
     table_->setSortingEnabled(true);
     table_->horizontalHeader()->setSortIndicatorShown(true);
     table_->horizontalHeader()->setSectionsClickable(true);
@@ -142,21 +155,21 @@ void InventoryPage::refresh() {
     for (const auto& c : items) {
         int r = table_->rowCount();
         table_->insertRow(r);
-        auto* name = new QTableWidgetItem(QString::fromStdString(c.name));
+        auto* name = new TextItem(QString::fromStdString(c.name));
         name->setData(Qt::UserRole, QString::fromStdString(c.id));
         table_->setItem(r, 0, name);
-        table_->setItem(r, 1, new QTableWidgetItem(QString::fromStdString(c.reference)));
+        table_->setItem(r, 1, new TextItem(QString::fromStdString(c.reference)));
         // Colonne « Type » = le champ Type (référentiel : Résistance, Capteur…),
         // pas le genre kind (celui-ci reste accessible via le filtre déroulant).
-        table_->setItem(r, 2, new QTableWidgetItem(QString::fromStdString(c.type)));
-        table_->setItem(r, 3, new QTableWidgetItem(QString::fromStdString(c.category)));
-        table_->setItem(r, 4, new QTableWidgetItem(path(c.locationId)));
+        table_->setItem(r, 2, new TextItem(QString::fromStdString(c.type)));
+        table_->setItem(r, 3, new TextItem(QString::fromStdString(c.category)));
+        table_->setItem(r, 4, new TextItem(path(c.locationId)));
         auto* qty = new NumericItem(QString::number(c.quantity), c.quantity);
         if (c.minStock > 0 && c.quantity <= c.minStock)
             qty->setForeground(QColor(Theme::instance().color("danger")));
         table_->setItem(r, 5, qty);
         table_->setItem(r, 6, new NumericItem(QString::number(c.price, 'f', 2) + " €", c.price));
-        table_->setItem(r, 7, new QTableWidgetItem(statusLabel(c.status)));
+        table_->setItem(r, 7, new TextItem(statusLabel(c.status)));
     }
     table_->setSortingEnabled(true);
 }
