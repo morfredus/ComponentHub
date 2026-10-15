@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.9.13] - 2026-10-15
+
+### Changed
+
+- Resync the vendored morfBeacon (0.8.0): `/status` can now carry the generic `activity/1`
+  object (no behaviour change for this project).
+
 ## [1.9.12] - 2026-10-12
 
 ### Fixed

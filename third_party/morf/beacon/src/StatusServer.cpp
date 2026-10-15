@@ -155,6 +155,11 @@ QByteArray StatusServer::buildStatusJson() const {
         const QJsonObject hw = m_provider->hardware();
         if (!hw.isEmpty())
             o["hardware"] = hw;
+        // Activite en cours (additif, contrat `activity/1`) : absente si rien n'est
+        // en cours ou si le service n'en declare pas.
+        const QJsonObject act = m_provider->activity();
+        if (!act.isEmpty())
+            o["activity"] = act;
     }
 
     // Detail annonce (interface web + liste d'API) : publie ICI et pas dans le

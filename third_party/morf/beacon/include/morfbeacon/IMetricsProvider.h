@@ -47,6 +47,14 @@ public:
     // et "present" n'empêchent pas un "ok" ; seul "degraded" justifie un
     // "warning".
     virtual QJsonObject hardware() const { return {}; }
+
+    // Activite EN COURS du service (contrat generique `activity/1`, voir
+    // morfSystem/docs/CONTRAT-ACTIVITE.md), exposee UNIQUEMENT via /status. Additif :
+    // un service sans travail long renvoie {} (defaut) et la cle `activity` n'apparait
+    // pas. Sinon : { "type": "synchronisation", "state": "running", "started_at": epoch,
+    // "current"/"total"/"progress_percent"/"detail" optionnels }. morfMonitor l'affiche
+    // en temps reel ; il observe, il n'agit jamais dessus.
+    virtual QJsonObject activity() const { return {}; }
 };
 
 // -----------------------------------------------------------------------------
@@ -57,9 +65,12 @@ class FunctionMetricsProvider : public IMetricsProvider {
 public:
     using MetricsFn = std::function<QJsonObject()>;
     using StateFn   = std::function<QString()>;
+    using ActivityFn = std::function<QJsonObject()>;
 
-    explicit FunctionMetricsProvider(MetricsFn metrics, StateFn state = {})
-        : m_metrics(std::move(metrics)), m_state(std::move(state)) {}
+    explicit FunctionMetricsProvider(MetricsFn metrics, StateFn state = {},
+                                     ActivityFn activity = {})
+        : m_metrics(std::move(metrics)), m_state(std::move(state)),
+          m_activity(std::move(activity)) {}
 
     QJsonObject metrics() const override {
         return m_metrics ? m_metrics() : QJsonObject{};
@@ -67,10 +78,14 @@ public:
     QString state() const override {
         return m_state ? m_state() : QStringLiteral("ok");
     }
+    QJsonObject activity() const override {
+        return m_activity ? m_activity() : QJsonObject{};
+    }
 
 private:
     MetricsFn m_metrics;
     StateFn   m_state;
+    ActivityFn m_activity;
 };
 
 } // namespace morfbeacon
