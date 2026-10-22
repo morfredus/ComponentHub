@@ -8,20 +8,20 @@
 
 #include "AppContext.h"
 #include "ui/UiKit.h"
+#include "ui/Language.h"
 
 CategoriesPage::CategoriesPage(chdesktop::AppContext& ctx, QWidget* parent)
     : QWidget(parent), ctx_(ctx) {
     auto* v = new QVBoxLayout(this);
     v->setContentsMargins(20, 20, 20, 20);
     v->setSpacing(12);
-    v->addWidget(uikit::pageTitle("Catégories"));
-    v->addWidget(uikit::hint("Les catégories alimentent le filtre de l'inventaire. "
-                             "Elles sont aussi créées automatiquement en saisissant une fiche."));
+    v->addWidget(uikit::pageTitle(chui::tr("Catégories")));
+    v->addWidget(uikit::hint(chui::tr("Les catégories alimentent le filtre de l'inventaire. Elles sont aussi créées automatiquement en saisissant une fiche.")));
 
     auto* bar = new QHBoxLayout;
-    auto* add = uikit::button("Ajouter", icons::Glyph::Add);
-    auto* ren = uikit::button("Renommer", icons::Glyph::Edit, "ghost");
-    auto* del = uikit::button("Supprimer", icons::Glyph::Delete, "danger");
+    auto* add = uikit::button(chui::tr("Ajouter"), icons::Glyph::Add);
+    auto* ren = uikit::button(chui::tr("Renommer"), icons::Glyph::Edit, "ghost");
+    auto* del = uikit::button(chui::tr("Supprimer"), icons::Glyph::Delete, "danger");
     bar->addWidget(add); bar->addWidget(ren); bar->addWidget(del); bar->addStretch(1);
     v->addLayout(bar);
 
@@ -57,11 +57,11 @@ void CategoriesPage::addCategory() {
     QString name;
     while (true) {
         bool ok = false;
-        name = QInputDialog::getText(this, "Nouvelle catégorie", "Nom :", QLineEdit::Normal, name, &ok).trimmed();
+        name = QInputDialog::getText(this, chui::tr("Nouvelle catégorie"), chui::tr("Nom :"), QLineEdit::Normal, name, &ok).trimmed();
         if (!ok || name.isEmpty()) return;
         if (!exists(name)) break;
-        QMessageBox::warning(this, "Nom déjà utilisé",
-            "La catégorie « " + name + " » existe déjà.\nChoisissez un autre nom ou corrigez la saisie.");
+        QMessageBox::warning(this, chui::tr("Nom déjà utilisé"),
+            chui::tr("La catégorie « ") + name + chui::tr(" » existe déjà.\nChoisissez un autre nom ou corrigez la saisie."));
     }
 
     domain::Category c;
@@ -87,11 +87,11 @@ void CategoriesPage::renameCategory() {
     QString name = oldText;
     while (true) {
         bool ok = false;
-        name = QInputDialog::getText(this, "Renommer la catégorie", "Nom :", QLineEdit::Normal, name, &ok).trimmed();
+        name = QInputDialog::getText(this, chui::tr("Renommer la catégorie"), chui::tr("Nom :"), QLineEdit::Normal, name, &ok).trimmed();
         if (!ok || name.isEmpty() || name == oldText) return;
         if (!existsOther(name)) break;
-        QMessageBox::warning(this, "Nom déjà utilisé",
-            "La catégorie « " + name + " » existe déjà.\nChoisissez un autre nom ou corrigez la saisie.");
+        QMessageBox::warning(this, chui::tr("Nom déjà utilisé"),
+            chui::tr("La catégorie « ") + name + chui::tr(" » existe déjà.\nChoisissez un autre nom ou corrigez la saisie."));
     }
 
     const std::string oldName = oldText.toStdString();
@@ -111,14 +111,14 @@ void CategoriesPage::renameCategory() {
 
     refresh();
     if (!changed.empty())
-        QMessageBox::information(this, "Renommé",
-            QString("%1 composant(s) mis à jour.").arg((int)changed.size()));
+        QMessageBox::information(this, chui::tr("Renommé"),
+            QString(chui::tr("%1 composant(s) mis à jour.")).arg((int)changed.size()));
 }
 
 void CategoriesPage::deleteCategory() {
     auto* it = list_->currentItem();
     if (!it) return;
-    if (QMessageBox::question(this, "Supprimer", "Supprimer la catégorie « " + it->text() + " » ?")
+    if (QMessageBox::question(this, chui::tr("Supprimer"), chui::tr("Supprimer la catégorie « ") + it->text() + chui::tr(" » ?"))
         != QMessageBox::Yes) return;
     ctx_.inventory.removeCategory(it->data(Qt::UserRole).toString().toStdString());
     refresh();

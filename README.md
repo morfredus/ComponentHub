@@ -2,7 +2,7 @@
 
 *Read in another language: **English** (this document) · [Français](README.fr.md).*
 
-[![Version](https://img.shields.io/badge/version-1.9.13-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.10.0-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -101,7 +101,8 @@ without opening the sheet.
 ## Building (desktop)
 
 Dependencies: CMake ≥ 3.21, a C++17 compiler, Ninja, **Qt 6 (Widgets)**,
-**SQLite 3** and **nlohmann-json** (used by the synchronization protocol).
+**Qt Linguist tools** (`lrelease`), **SQLite 3** and **nlohmann-json** (used by
+the synchronization protocol).
 Detailed, beginner-friendly walkthrough:
 [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) *(FR)*; multi-platform
 reference: [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md) *(FR)*.
@@ -183,6 +184,12 @@ ComponentHub/
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 | [docs/en/README.md](docs/en/README.md) | English documentation index |
 
+
+## Credits
+
+Desktop internationalization (French and English) and the EUR / USD / GBP currency selector
+were contributed by [Nacho Garcia (@nachogarglez)](https://github.com/nachogarglez)
+([pull request #11](https://github.com/morfredus/ComponentHub/pull/11)). Thank you.
 
 ## License
 

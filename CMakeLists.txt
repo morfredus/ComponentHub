@@ -79,6 +79,7 @@ endif()
 add_executable(ComponentHub WIN32
     src/main.cpp
     src/ui/Theme.cpp
+    src/ui/Language.cpp
     src/ui/Icons.cpp
     src/ui/MainWindow.cpp
     src/ui/InventoryPage.cpp
@@ -93,6 +94,29 @@ add_executable(ComponentHub WIN32
 )
 target_link_libraries(ComponentHub PRIVATE componenthub_core Qt6::Widgets morfBeacon::morfBeacon morfUpdate::morfUpdate morfUpdate::Widgets)
 target_compile_definitions(ComponentHub PRIVATE CH_APP_VERSION="${CH_VERSION}")
+find_program(CH_LRELEASE_EXECUTABLE NAMES lrelease lrelease-qt6
+    HINTS "${Qt6_DIR}/../../../bin" "$ENV{QT_ROOT}/bin" "/usr/lib/qt6/bin")
+if(NOT CH_LRELEASE_EXECUTABLE)
+    message(FATAL_ERROR "Qt lrelease not found. Install Qt Linguist tools (qt6-l10n-tools on Debian/Ubuntu, qt6-tools on Arch, or mingw-w64-x86_64-qt6-tools on MSYS2).")
+endif()
+set(CH_TRANSLATION_QM_FILES)
+foreach(CH_TS_FILE IN ITEMS componenthub_fr componenthub_en)
+    set(CH_TS_PATH "${CMAKE_SOURCE_DIR}/translations/${CH_TS_FILE}.ts")
+    set(CH_QM_PATH "${CMAKE_CURRENT_BINARY_DIR}/${CH_TS_FILE}.qm")
+    add_custom_command(
+        OUTPUT "${CH_QM_PATH}"
+        COMMAND "${CH_LRELEASE_EXECUTABLE}" "${CH_TS_PATH}" -qm "${CH_QM_PATH}"
+        DEPENDS "${CH_TS_PATH}"
+        COMMENT "Compiling translation ${CH_TS_FILE}"
+        VERBATIM)
+    set_source_files_properties("${CH_QM_PATH}"
+        PROPERTIES QT_RESOURCE_ALIAS "${CH_TS_FILE}.qm")
+    list(APPEND CH_TRANSLATION_QM_FILES "${CH_QM_PATH}")
+endforeach()
+qt_add_resources(ComponentHub CH_TRANSLATIONS_RESOURCES
+    PREFIX "/i18n"
+    FILES ${CH_TRANSLATION_QM_FILES})
+target_sources(ComponentHub PRIVATE ${CH_TRANSLATION_QM_FILES})
 if(MSVC)
     target_compile_options(ComponentHub PRIVATE /utf-8)
 endif()

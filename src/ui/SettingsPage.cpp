@@ -7,6 +7,7 @@
 #include <QButtonGroup>
 #include <QLabel>
 #include <QLineEdit>
+#include <QComboBox>
 #include <QDesktopServices>
 #include <QUrl>
 #include <QSettings>
@@ -18,6 +19,7 @@
 #include "ui/UiKit.h"
 #include "ui/Theme.h"
 #include "ui/SyncPrefs.h"
+#include "ui/Language.h"
 #include "sync/SyncService.h"
 
 SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
@@ -25,14 +27,50 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     auto* v = new QVBoxLayout(this);
     v->setContentsMargins(20, 20, 20, 20);
     v->setSpacing(14);
-    v->addWidget(uikit::pageTitle("Réglages"));
+    v->addWidget(uikit::pageTitle(chui::tr("Réglages")));
+
+    auto* language = new QGroupBox(chui::tr("Langue"));
+    auto* languageLayout = new QHBoxLayout(language);
+    languageLayout->addWidget(new QLabel(chui::tr("Interface:")));
+    auto* languageBox = new QComboBox;
+    languageBox->addItem("Français", "fr");
+    languageBox->addItem("English", "en");
+    languageBox->setCurrentIndex(chui::language() == chui::Language::English ? 1 : 0);
+    languageLayout->addWidget(languageBox);
+    languageLayout->addStretch(1);
+    v->addWidget(language);
+    connect(languageBox, &QComboBox::currentIndexChanged, this, [languageBox](int) {
+        chui::setLanguage(languageBox->currentData().toString() == "en"
+                              ? chui::Language::English : chui::Language::French);
+        QMessageBox::information(nullptr, "Language / Langue",
+            chui::tr("Redémarrez ComponentHub pour appliquer la langue."));
+    });
+
+    auto* currency = new QGroupBox(chui::tr("Currency"));
+    auto* currencyLayout = new QHBoxLayout(currency);
+    currencyLayout->addWidget(new QLabel(chui::tr("Currency:")));
+    auto* currencyBox = new QComboBox;
+    currencyBox->addItem(chui::tr("Euro (€)"), "EUR");
+    currencyBox->addItem(chui::tr("US dollar ($)"), "USD");
+    currencyBox->addItem(chui::tr("Pound sterling (£)"), "GBP");
+    const int currencyIndex = currencyBox->findData(chui::currencyCode(chui::currency()));
+    currencyBox->setCurrentIndex(currencyIndex < 0 ? 0 : currencyIndex);
+    currencyLayout->addWidget(currencyBox);
+    currencyLayout->addStretch(1);
+    v->addWidget(currency);
+    connect(currencyBox, &QComboBox::currentIndexChanged, this, [currencyBox] {
+        const QString code = currencyBox->currentData().toString();
+        chui::setCurrency(code == "GBP" ? chui::Currency::Pound
+                         : code == "USD" ? chui::Currency::Dollar
+                                         : chui::Currency::Euro);
+    });
 
     // --- Apparence ---
-    auto* appearance = new QGroupBox("Apparence");
+    auto* appearance = new QGroupBox(chui::tr("Apparence"));
     auto* av = new QVBoxLayout(appearance);
-    auto* sys   = new QRadioButton("Suivre le système");
-    auto* light = new QRadioButton("Clair");
-    auto* dark  = new QRadioButton("Sombre");
+    auto* sys   = new QRadioButton(chui::tr("Suivre le système"));
+    auto* light = new QRadioButton(chui::tr("Clair"));
+    auto* dark  = new QRadioButton(chui::tr("Sombre"));
     av->addWidget(sys); av->addWidget(light); av->addWidget(dark);
 
     auto* group = new QButtonGroup(this);
@@ -49,13 +87,13 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     v->addWidget(appearance);
 
     // --- Données ---
-    auto* data = new QGroupBox("Données");
+    auto* data = new QGroupBox(chui::tr("Données"));
     auto* dv = new QVBoxLayout(data);
-    dv->addWidget(uikit::hint("Dossier où sont stockées les tables JSON de l'inventaire."));
+    dv->addWidget(uikit::hint(chui::tr("Dossier où sont stockées les tables JSON de l'inventaire.")));
     auto* row = new QHBoxLayout;
     auto* path = new QLineEdit(QString::fromStdString(ctx_.dir()));
     path->setReadOnly(true);
-    auto* open = uikit::button("Ouvrir le dossier", icons::Glyph::Projects, "ghost");
+    auto* open = uikit::button(chui::tr("Ouvrir le dossier"), icons::Glyph::Projects, "ghost");
     row->addWidget(path, 1); row->addWidget(open);
     dv->addLayout(row);
     connect(open, &QPushButton::clicked, this, [this] {
@@ -64,38 +102,38 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     v->addWidget(data);
 
     // --- Synchronisation (morfSync) ---
-    auto* sync = new QGroupBox("Synchronisation (morfSync)");
+    auto* sync = new QGroupBox(chui::tr("Synchronisation (morfSync)"));
     auto* sv = new QVBoxLayout(sync);
-    sv->addWidget(uikit::hint("Adresse du hub de synchronisation sur le réseau local. "
-                              "L'inventaire fonctionne sans lui ; il sert à retrouver les mêmes "
-                              "données sur vos autres postes."));
+    sv->addWidget(uikit::hint(chui::tr("Synchronization hub address on the local network. "
+                                      "The inventory works without it; it helps keep the same "
+                                      "data on your other computers.")));
 
     QSettings st("morfredus", "ComponentHub");
 
     // Choix explicite : n'utiliser ComponentHub qu'en local, sans aucune synchro.
-    auto* localOnly = new QCheckBox("Utiliser ComponentHub uniquement en local (désactiver toute synchronisation)");
+    auto* localOnly = new QCheckBox(chui::tr("Utiliser ComponentHub uniquement en local (désactiver toute synchronisation)"));
     localOnly->setChecked(st.value("sync/localOnly", false).toBool());
     sv->addWidget(localOnly);
 
     auto* urlRow = new QHBoxLayout;
-    urlRow->addWidget(new QLabel("Adresse du hub :"));
+        urlRow->addWidget(new QLabel(chui::tr("Adresse du hub :")));
     auto* urlEdit = new QLineEdit(st.value("sync/serverUrl", "http://morfsync.local:8080").toString());
     urlEdit->setPlaceholderText("http://morfsync.local:8080");
     urlRow->addWidget(urlEdit, 1);
     sv->addLayout(urlRow);
 
     auto* tokRow = new QHBoxLayout;
-    tokRow->addWidget(new QLabel("Jeton (facultatif) :"));
+    tokRow->addWidget(new QLabel(chui::tr("Jeton (facultatif) :")));
     auto* tokEdit = new QLineEdit(st.value("sync/token", "").toString());
     tokEdit->setEchoMode(QLineEdit::Password);
-    tokEdit->setPlaceholderText("laisser vide si le hub n'exige pas de jeton");
+    tokEdit->setPlaceholderText(chui::tr("Leave empty if the hub does not require a token."));
     tokRow->addWidget(tokEdit, 1);
     sv->addLayout(tokRow);
 
     // Options automatiques.
-    auto* autoStart = new QCheckBox("Synchroniser au démarrage (si le hub est disponible)");
+    auto* autoStart = new QCheckBox(chui::tr("Synchroniser au démarrage (si le hub est disponible)"));
     autoStart->setChecked(st.value("sync/autoStart", true).toBool());
-    auto* askQuit = new QCheckBox("Proposer une synchronisation en quittant l'application");
+    auto* askQuit = new QCheckBox(chui::tr("Proposer une synchronisation en quittant l'application"));
     askQuit->setChecked(st.value("sync/askOnQuit", true).toBool());
     sv->addWidget(autoStart);
     sv->addWidget(askQuit);
@@ -120,8 +158,8 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     status->setWordWrap(true);
 
     auto* btnRow = new QHBoxLayout;
-    auto* testBtn = uikit::button("Tester la connexion", icons::Glyph::Projects, "ghost");
-    auto* syncBtn = uikit::button("Synchroniser maintenant", icons::Glyph::Link);
+    auto* testBtn = uikit::button(chui::tr("Tester la connexion"), icons::Glyph::Projects, "ghost");
+    auto* syncBtn = uikit::button(chui::tr("Synchroniser maintenant"), icons::Glyph::Link);
     btnRow->addWidget(testBtn); btnRow->addWidget(syncBtn); btnRow->addStretch(1);
     sv->addLayout(btnRow);
     sv->addWidget(status);
@@ -138,7 +176,7 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
                            static_cast<QWidget*>(autoStart), static_cast<QWidget*>(askQuit),
                            static_cast<QWidget*>(testBtn), static_cast<QWidget*>(syncBtn)})
             w->setEnabled(!local);
-        status->setText(local ? "Mode local : la synchronisation est désactivée." : QString());
+        status->setText(local ? chui::tr("Mode local : la synchronisation est désactivée.") : QString());
     };
     applyLocalOnly(localOnly->isChecked());
     connect(localOnly, &QCheckBox::toggled, this, [applyLocalOnly](bool on) {
@@ -156,7 +194,8 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
         QApplication::setOverrideCursor(Qt::WaitCursor);
         const bool ok = svc.testConnection(chui::readSyncConfig(), info);
         QApplication::restoreOverrideCursor();
-        status->setText((ok ? "✅ Connecté - " : "❌ Échec - ") + QString::fromStdString(info));
+        status->setText((ok ? chui::tr("✅ Connecté - ") : chui::tr("❌ Échec - "))
+                        + chui::syncError(QString::fromStdString(info)));
     });
 
     connect(syncBtn, &QPushButton::clicked, this, [this, persist, status, lastSync, statePath] {
@@ -166,7 +205,7 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
         const chsync::SyncOutcome o = svc.sync(chui::readSyncConfig());
         QApplication::restoreOverrideCursor();
         if (!o.ok) {
-            status->setText("❌ Échec - " + QString::fromStdString(o.error));
+            status->setText(chui::tr("❌ Échec - ") + chui::syncError(QString::fromStdString(o.error)));
             return;
         }
         status->setText(QString("✅ Synchronisé - %1 envoyé(s), %2 reçu(s), %3 conflit(s).")
@@ -176,8 +215,8 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     });
 
     // --- À propos ---
-    auto* about = new QLabel(QString("ComponentHub Desktop - version %1\n"
-                                     "Mémoire technique d'atelier. © morfredus.")
+    auto* about = new QLabel(QString(chui::tr("ComponentHub Desktop - version %1\n"
+                                               "Mémoire technique d'atelier. © morfredus."))
                                  .arg(CH_APP_VERSION));
     about->setProperty("hint", true);
     v->addWidget(about);

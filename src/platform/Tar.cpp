@@ -130,7 +130,7 @@ int extract(const std::string& tarPath, const std::string& dir, std::vector<std:
                           name.find('/') == std::string::npos && name.find('\\') == std::string::npos;
         if (!safe) {
             in.seekg((std::streamoff)(size + pad), std::ios::cur);
-            errors.push_back("entrée ignorée : " + name);
+            errors.push_back("tar.unsafe_entry|" + name);
             continue;
         }
 
@@ -148,7 +148,7 @@ int extract(const std::string& tarPath, const std::string& dir, std::vector<std:
         }
         if (pad) in.seekg((std::streamoff)pad, std::ios::cur);
         if (ok && out) restored++;
-        else errors.push_back("échec d'écriture : " + name);
+        else errors.push_back("tar.write_failed|" + name);
     }
     return restored;
 }

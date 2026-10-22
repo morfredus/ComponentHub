@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.10.0] - 2026-10-22
+
+### Added
+
+- **Desktop internationalization.** Added Qt Linguist catalogs for French and
+  English, a persistent language selector, regional language detection, and
+  English translations across the desktop interface.
+- **Currency selector.** Added EUR, USD and GBP selection with locale-based
+  defaults and localized price display.
+- Credit in the About dialog and in both READMEs.
+
+### Credits
+
+- The desktop internationalization and the currency selector are the work of
+  [@nachogarglez](https://github.com/nachogarglez) (Nacho Garcia), proposed in
+  [pull request #11](https://github.com/morfredus/ComponentHub/pull/11) and integrated here
+  on top of 1.9.13. Thank you.
+
 ## [1.9.13] - 2026-10-15
 
 ### Changed

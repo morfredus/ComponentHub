@@ -141,8 +141,17 @@ Windows, often faster). Per-OS branches quietly break that promise.
   Comments explain *why*, not *what*.
 - **UTF-8 everywhere.** Source files are UTF-8; accented characters and `€` must
   render correctly. On MSVC builds the `/utf-8` flag is already set.
-- **Comments and user-facing strings** in the app are currently in **French**
-  (the app's audience). Keep new UI strings in French for consistency.
+- **Comments and source UI strings** are currently written in **French** (the
+  app's reference language). Every user-facing string must go through the Qt
+  translation helper (`chui::tr(...)`), even when the French source text is
+  the default. Keep the French source text in the code, then add its English
+  translation to `translations/componenthub_en.ts` and keep the French catalog
+  in sync in `translations/componenthub_fr.ts`.
+- **Translation catalogs:** do not edit generated `.qm` files. They are built
+  from the `.ts` catalogs by `lrelease` during the CMake build. When adding or
+  changing UI strings, update the catalogs deliberately and verify both
+  languages before opening a PR. Do not run `lupdate` and overwrite reviewed
+  translations without checking its result.
 - **No hard-coded version.** The version comes from the `VERSION` file via CMake
   (`CH_APP_VERSION`). Never type a version number into the code.
 - **Theme-aware UI.** Colors come from the theme tokens (`*.theme` + `app.qss`),

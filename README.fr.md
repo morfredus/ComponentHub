@@ -2,7 +2,7 @@
 
 *Lire dans une autre langue : [English](README.md) · **Français** (ce document).*
 
-[![Version](https://img.shields.io/badge/version-1.9.13-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.10.0-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -80,6 +80,7 @@ ouvrir la fiche.
 ## Compilation (bureau)
 
 Dépendances : CMake ≥ 3.21, un compilateur C++17, Ninja, **Qt 6 (Widgets)**,
+les outils **Qt Linguist** (`lrelease`),
 **SQLite 3** et **nlohmann-json** (utilisé par le protocole de synchronisation).
 Guide détaillé et pas à pas (débutant compris) :
 [docs/fr/GETTING_STARTED.md](docs/fr/GETTING_STARTED.md) ; référence
@@ -159,6 +160,13 @@ ComponentHub/
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Comment contribuer, règles de portabilité |
 | [CHANGELOG.md](CHANGELOG.md) | Historique des versions |
 
+
+## Remerciements
+
+L'internationalisation de l'interface (français et anglais) et le choix de la devise
+(EUR / USD / GBP) sont une contribution de
+[Nacho Garcia (@nachogarglez)](https://github.com/nachogarglez)
+([pull request #11](https://github.com/morfredus/ComponentHub/pull/11)). Merci.
 
 ## Licence
 

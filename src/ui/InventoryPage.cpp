@@ -22,16 +22,17 @@
 #include "AppContext.h"
 #include "ui/UiKit.h"
 #include "ui/ComponentDialog.h"
+#include "ui/Language.h"
 
 using namespace domain;
 
 namespace {
 QString statusLabel(const std::string& s) {
-    if (s == "validated")  return "Validé";
-    if (s == "validating") return "En validation";
-    if (s == "defective")  return "Défectueux";
-    if (s == "archived")   return "Archivé";
-    return "À tester";
+    if (s == "validated")  return chui::tr("Validé");
+    if (s == "validating") return chui::tr("En validation");
+    if (s == "defective")  return chui::tr("Défectueux");
+    if (s == "archived")   return chui::tr("Archivé");
+    return chui::tr("À tester");
 }
 
 // Cellule triée numériquement (et non alphabétiquement) : « 10 » doit venir
@@ -65,31 +66,31 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
     v->setSpacing(12);
 
     auto* header = new QHBoxLayout;
-    header->addWidget(uikit::pageTitle("Inventaire"));
+    header->addWidget(uikit::pageTitle(chui::tr("Inventaire")));
     header->addStretch(1);
-    auto* add = uikit::button("Ajouter", icons::Glyph::Add);
+    auto* add = uikit::button(chui::tr("Ajouter"), icons::Glyph::Add);
     connect(add, &QPushButton::clicked, this, &InventoryPage::addComponent);
     header->addWidget(add);
     v->addLayout(header);
 
     auto* bar = new QHBoxLayout;
     search_ = new QLineEdit; search_->setObjectName("search");
-    search_->setPlaceholderText("Rechercher (nom, référence, fabricant, notes…)");
+    search_->setPlaceholderText(chui::tr("Rechercher (nom, référence, fabricant, notes…)"));
     search_->setClearButtonEnabled(true);
     kind_ = new QComboBox;
-    kind_->addItem("Tous les objets", -1);
-    kind_->addItem("Composants",   int(ComponentKind::Component));
-    kind_->addItem("Modules",      int(ComponentKind::Module));
-    kind_->addItem("Outils",       int(ComponentKind::Tool));
-    kind_->addItem("Consommables", int(ComponentKind::Consumable));
-    lowStock_ = new QCheckBox("Stock faible");
+    kind_->addItem(chui::tr("Tous les objets"), -1);
+    kind_->addItem(chui::tr("Composants"), int(ComponentKind::Component));
+    kind_->addItem(chui::tr("Modules"), int(ComponentKind::Module));
+    kind_->addItem(chui::tr("Outils"), int(ComponentKind::Tool));
+    kind_->addItem(chui::tr("Consommables"), int(ComponentKind::Consumable));
+    lowStock_ = new QCheckBox(chui::tr("Stock faible"));
     bar->addWidget(search_, 1);
     bar->addWidget(kind_);
     bar->addWidget(lowStock_);
     v->addLayout(bar);
 
     table_ = new QTableWidget(0, 8);
-    table_->setHorizontalHeaderLabels({"Nom", "Référence", "Type", "Catégorie", "Emplacement", "Qté", "Prix", "Statut"});
+    table_->setHorizontalHeaderLabels({chui::tr("Nom"), chui::tr("Référence"), chui::tr("Type"), chui::tr("Catégorie"), chui::tr("Emplacement"), chui::tr("Qté"), chui::tr("Prix"), chui::tr("Statut")});
     table_->setSelectionBehavior(QAbstractItemView::SelectRows);
     table_->setSelectionMode(QAbstractItemView::SingleSelection);
     table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -115,8 +116,8 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
 
     // Raccourcis d'action via double-clic ; boutons contextuels en bas.
     auto* actions = new QHBoxLayout;
-    auto* edit = uikit::button("Modifier", icons::Glyph::Edit, "ghost");
-    auto* del = uikit::button("Supprimer", icons::Glyph::Delete, "danger");
+    auto* edit = uikit::button(chui::tr("Modifier"), icons::Glyph::Edit, "ghost");
+    auto* del = uikit::button(chui::tr("Supprimer"), icons::Glyph::Delete, "danger");
     connect(edit, &QPushButton::clicked, this, &InventoryPage::editCurrent);
     connect(del, &QPushButton::clicked, this, &InventoryPage::deleteCurrent);
     actions->addStretch(1); actions->addWidget(edit); actions->addWidget(del);
@@ -168,7 +169,7 @@ void InventoryPage::refresh() {
         if (c.minStock > 0 && c.quantity <= c.minStock)
             qty->setForeground(QColor(Theme::instance().color("danger")));
         table_->setItem(r, 5, qty);
-        table_->setItem(r, 6, new NumericItem(QString::number(c.price, 'f', 2) + " €", c.price));
+        table_->setItem(r, 6, new NumericItem(QString::number(c.price, 'f', 2) + " " + chui::currencySymbol(chui::currency()), c.price));
         table_->setItem(r, 7, new TextItem(statusLabel(c.status)));
     }
     table_->setSortingEnabled(true);
@@ -193,7 +194,7 @@ void InventoryPage::deleteCurrent() {
     if (r < 0) return;
     const QString name = table_->item(r, 0)->text();
     const Id id = table_->item(r, 0)->data(Qt::UserRole).toString().toStdString();
-    if (QMessageBox::question(this, "Supprimer", "Supprimer « " + name + " » ?") != QMessageBox::Yes) return;
+    if (QMessageBox::question(this, chui::tr("Supprimer"), chui::tr("Supprimer « ") + name + chui::tr(" » ?")) != QMessageBox::Yes) return;
     ctx_.inventory.removeComponent(id);
     refresh();
 }
