@@ -1,35 +1,36 @@
 #include "ui/LabelDialog.h"
 
 #include <QCheckBox>
-#include <QDialogButtonBox>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QPdfWriter>
-#include <QPrinter>
-#include <QPrintDialog>
-#include <QPageSize>
-#include <QMarginsF>
-#include <QSettings>
-#include <QFormLayout>
-#include <QSpinBox>
-#include <QDoubleSpinBox>
-#include <QInputDialog>
+#include <QComboBox>
 #include <QDateTime>
+#include <QDialogButtonBox>
+#include <QDoubleSpinBox>
 #include <QFileDialog>
-#include <QMessageBox>
-#include <QPdfWriter>
-#include <QPainter>
-#include <QVBoxLayout>
+#include <QFontMetrics>
+#include <QFormLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QGroupBox>
+#include <QLineEdit>
+#include <QMarginsF>
+#include <QMessageBox>
+#include <QPageSize>
+#include <QPainter>
+#include <QPdfWriter>
+#include <QPen>
+#include <QPrintDialog>
+#include <QPrinter>
 #include <QPushButton>
-#include <QVector>
-#include <QStringList>
-#include <QComboBox>
+#include <QSettings>
 #include <QSignalBlocker>
+#include <QSpinBox>
+#include <QStringList>
+#include <QVBoxLayout>
+#include <QVector>
 #include <algorithm>
+#include <cmath>
 #include <memory>
+#include <optional>
 
 #include "ui/Language.h"
 
@@ -48,6 +49,7 @@ struct LabelFormat {
     double marginTopMm = 13.3;
     double pitchXmm = 32.6;
     double pitchYmm = 16.9;
+    bool builtin = false;
 };
 
 QVector<LabelFormat> customFormats() {
@@ -69,7 +71,10 @@ QVector<LabelFormat> customFormats() {
         f.marginTopMm = settings.value("marginTopMm", 13.3).toDouble();
         f.pitchXmm = settings.value("pitchXmm", f.labelWidthMm).toDouble();
         f.pitchYmm = settings.value("pitchYmm", f.labelHeightMm).toDouble();
-        if (!f.id.isEmpty() && !f.name.isEmpty()) formats.append(f);
+        // Une entree corrompue (dimension nulle, grille vide) ferait diviser par zero au rendu.
+        const bool sane = f.columns > 0 && f.rows > 0 && f.pageWidthMm > 0 && f.pageHeightMm > 0
+                       && f.labelWidthMm > 0 && f.labelHeightMm > 0;
+        if (!f.id.isEmpty() && !f.name.isEmpty() && sane) formats.append(f);
     }
     settings.endArray();
     return formats;
@@ -77,6 +82,9 @@ QVector<LabelFormat> customFormats() {
 
 void saveCustomFormats(const QVector<LabelFormat>& formats) {
     QSettings settings("morfredus", "ComponentHub");
+    // beginWriteArray n'efface pas les anciennes entrees : sans remove(), supprimer un format
+    // laisserait l'ancien dernier element dans les QSettings.
+    settings.remove("labels/formats");
     settings.beginWriteArray("labels/formats");
     for (int i = 0; i < formats.size(); ++i) {
         settings.setArrayIndex(i);
@@ -89,6 +97,30 @@ void saveCustomFormats(const QVector<LabelFormat>& formats) {
         settings.setValue("pitchXmm", f.pitchXmm); settings.setValue("pitchYmm", f.pitchYmm);
     }
     settings.endArray();
+}
+
+// Formats livres avec le logiciel, puis formats personnalises (QSettings). Un identifiant
+// inconnu (format supprime entre-temps) renvoie std::nullopt : l'appelant previent l'utilisateur
+// au lieu d'imprimer avec des valeurs par defaut.
+std::optional<LabelFormat> findFormat(const QString& id) {
+    LabelFormat f;
+    f.builtin = true;
+    f.id = id;
+    if (id == "avery8728") {
+        f.name = "Avery No. 8728";  // les valeurs par defaut de LabelFormat sont celles de l'Avery 8728
+        return f;
+    }
+    if (id == "avery8790") {
+        f.name = "Avery No. 8790";
+        f.columns = 10; f.rows = 27;
+        f.labelWidthMm = 17.8; f.labelHeightMm = 10;
+        f.marginLeftMm = 4; f.marginTopMm = 14.01;
+        f.pitchXmm = 20.5; f.pitchYmm = 10;
+        return f;
+    }
+    for (const auto& candidate : customFormats())
+        if (candidate.id == id) return candidate;
+    return std::nullopt;
 }
 
 bool editFormat(QWidget* parent, LabelFormat& f) {
@@ -125,6 +157,11 @@ struct LabelField {
     int size;
 };
 
+struct Line {
+    QString text;
+    int size;
+};
+
 QStringList componentSpecifications(const domain::Component& component) {
     QStringList specifications;
     if (!component.voltage.empty()) specifications << QString::fromStdString(component.voltage);
@@ -133,31 +170,84 @@ QStringList componentSpecifications(const domain::Component& component) {
     if (!component.protocols.empty()) specifications << QString::fromStdString(component.protocols);
     if (!component.i2cAddress.empty()) specifications << QString::fromStdString(component.i2cAddress);
     if (!component.frequency.empty()) specifications << QString::fromStdString(component.frequency);
-    if (component.pinCount > 0) specifications << QStringLiteral("%1 pins").arg(component.pinCount);
+    if (component.pinCount > 0) specifications << chui::tr("%1 pins").arg(component.pinCount);
     if (!component.compatibility.empty()) specifications << QString::fromStdString(component.compatibility);
     return specifications;
 }
 
-int fittingPointSize(const QString& text, int requested, const QFont& base, int width) {
+// Source unique des lignes d'une etiquette : l'apercu et l'impression l'appellent tous les
+// deux, pour que l'ecran montre exactement ce qui sort sur le papier.
+QVector<Line> buildLines(const domain::Component& c, const QVector<LabelField>& fields) {
+    QVector<Line> lines;
+    auto enabled = [&fields](int i) { return i < fields.size() && fields.at(i).enabled; };
+    auto add = [&](int i, const QString& prefix, const std::string& value) {
+        if (enabled(i) && !value.empty())
+            lines.append({prefix + QString::fromStdString(value), fields.at(i).size});
+    };
+    if (enabled(0)) lines.append({QString::fromStdString(c.name), fields.at(0).size});
+    add(1, chui::tr("Référence") + ": ", c.reference);
+    add(2, chui::tr("Catégorie") + ": ", c.category);
+    add(3, chui::tr("Sous-catégorie") + ": ", c.subcategory);
+    add(4, chui::tr("Type") + ": ", c.type);
+    if (enabled(5)) {
+        const QStringList specifications = componentSpecifications(c);
+        if (!specifications.isEmpty()) lines.append({specifications.join(" "), fields.at(5).size});
+    }
+    return lines;
+}
+
+int fittingPixelSize(const QString& text, int requested, const QFont& base, int width,
+                     const QPaintDevice* device) {
     int size = requested;
-    while (size > 6) {
+    while (size > 4) {
         QFont font = base;
-        font.setPointSize(size);
-        if (QFontMetrics(font).horizontalAdvance(text) <= width) break;
+        font.setPixelSize(size);
+        if (QFontMetrics(font, device).horizontalAdvance(text) <= width) break;
         --size;
     }
     return size;
 }
 
-int fittingPixelSize(const QString& text, int requested, const QFont& base, int width) {
-    int size = requested;
-    while (size > 8) {
-        QFont font = base;
-        font.setPixelSize(size);
-        if (QFontMetrics(font).horizontalAdvance(text) <= width) break;
-        --size;
+// Dessine les lignes centrees verticalement dans `label`, jamais en dehors : si le bloc est
+// trop haut (petite etiquette, beaucoup de champs), toutes les polices sont reduites d'un cran
+// jusqu'a ce qu'il tienne, et le dessin est rogne au rectangle de l'etiquette par securite.
+// Les tailles sont proportionnelles a la largeur de l'etiquette, ce qui donne le meme rendu
+// a l'ecran (apercu) et sur papier (300 dpi).
+void drawLabelText(QPainter& painter, const QRectF& label, const QVector<Line>& lines) {
+    if (lines.isEmpty()) return;
+    const int padX = static_cast<int>(label.width() * 0.05);
+    const int textWidth = std::max(1, static_cast<int>(label.width()) - 2 * padX);
+    const int spacing = std::max(1, static_cast<int>(label.height() * 0.04));
+
+    QVector<QFont> fonts;
+    QVector<int> heights;
+    int totalHeight = 0;
+    for (double scale = 1.0;; scale *= 0.9) {
+        fonts.clear();
+        heights.clear();
+        totalHeight = spacing * (static_cast<int>(lines.size()) - 1);
+        for (const auto& line : lines) {
+            QFont font = painter.font();
+            const int requested = std::max(4, static_cast<int>(
+                std::lround(line.size * 96.0 / 72.0 * label.width() / 400.0 * scale)));
+            font.setPixelSize(fittingPixelSize(line.text, requested, font, textWidth, painter.device()));
+            fonts.append(font);
+            heights.append(QFontMetrics(font, painter.device()).height());
+            totalHeight += heights.last();
+        }
+        if (totalHeight <= label.height() * 0.95 || scale < 0.2) break;
     }
-    return size;
+
+    painter.save();
+    painter.setClipRect(label);
+    int y = static_cast<int>(label.top() + (label.height() - totalHeight) / 2.0);
+    for (int i = 0; i < lines.size(); ++i) {
+        painter.setFont(fonts.at(i));
+        painter.drawText(QRectF(label.left() + padX, y, textWidth, heights.at(i)),
+                         Qt::AlignLeft | Qt::AlignVCenter, lines.at(i).text);
+        y += heights.at(i) + spacing;
+    }
+    painter.restore();
 }
 
 void renderLabels(QPagedPaintDevice& device, QPainter& painter,
@@ -182,58 +272,16 @@ void renderLabels(QPagedPaintDevice& device, QPainter& painter,
             painter.setPen(QPen(Qt::red, 1));
             painter.drawRect(label);
         }
-
-        struct Line { QString text; int size; };
-        QVector<Line> lines;
-        const auto& c = components.at(index);
-        for (int i = 0; i < fields.size(); ++i) if (fields.at(i).enabled) {
-            const int fontSize = fields.at(i).size;
-            if (i == 0) lines.append({QString::fromStdString(c.name), fontSize});
-            else if (i == 1 && !c.reference.empty()) lines.append({"Ref: " + QString::fromStdString(c.reference), fontSize});
-            else if (i == 2 && !c.category.empty()) lines.append({"Category: " + QString::fromStdString(c.category), fontSize});
-            else if (i == 3 && !c.subcategory.empty()) lines.append({"Subcategory: " + QString::fromStdString(c.subcategory), fontSize});
-            else if (i == 4 && !c.type.empty()) lines.append({"Type: " + QString::fromStdString(c.type), fontSize});
-            else if (i == 5) {
-                const QStringList specifications = componentSpecifications(c);
-                if (!specifications.isEmpty()) lines.append({specifications.join(" "), fontSize});
-            }
-        }
-
         painter.setPen(Qt::black);
-        const int lineSpacing = 7;
-        QVector<int> lineHeights;
-        int totalHeight = lineSpacing * std::max(0, static_cast<int>(lines.size()) - 1);
-        for (const auto& line : lines) {
-            QFont font = painter.font();
-            const int requestedPixels = std::max(8, static_cast<int>(
-                std::lround(line.size * 96.0 / 72.0 * labelW / 400.0)));
-            font.setPixelSize(fittingPixelSize(line.text, requestedPixels, font,
-                                               static_cast<int>(label.width() - labelW * 0.10)));
-            const int height = QFontMetrics(font).height();
-            lineHeights.append(height);
-            totalHeight += height;
-        }
-        int y = static_cast<int>(label.top() + (labelH - totalHeight) / 2.0);
-        for (int lineIndex = 0; lineIndex < lines.size(); ++lineIndex) {
-            const auto& line = lines.at(lineIndex);
-            QFont font = painter.font();
-            const int requestedPixels = std::max(8, static_cast<int>(
-                std::lround(line.size * 96.0 / 72.0 * labelW / 400.0)));
-            font.setPixelSize(fittingPixelSize(line.text, requestedPixels, font,
-                                               static_cast<int>(label.width() - labelW * 0.10)));
-            painter.setFont(font);
-            painter.drawText(label.left() + labelW * 0.05, y,
-                             label.width() - labelW * 0.10, lineHeights.at(lineIndex),
-                             Qt::AlignLeft | Qt::AlignVCenter, line.text);
-            y += lineHeights.at(lineIndex) + lineSpacing;
-        }
+        drawLabelText(painter, label, buildLines(components.at(index), fields));
     }
 }
 
 class LabelPreview : public QWidget {
 public:
-    explicit LabelPreview(const domain::Component& component, QWidget* parent = nullptr)
-        : QWidget(parent), component_(&component) {
+    // `component` peut etre nul (aucune etiquette a montrer) : l'apercu reste alors vide.
+    explicit LabelPreview(const domain::Component* component, QWidget* parent = nullptr)
+        : QWidget(parent), component_(component) {
         setMinimumSize(430, 250);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         setAttribute(Qt::WA_OpaquePaintEvent);
@@ -275,45 +323,9 @@ protected:
         painter.setPen(QPen(QColor("#88909a"), 2));
         painter.drawRoundedRect(label, 8, 8);
 
-        struct Line { QString text; int size; };
-        QVector<Line> lines;
-        if (fields_.value(0).enabled) lines.append({QString::fromStdString(component_->name), fields_.value(0).size});
-        if (fields_.value(1).enabled && !component_->reference.empty())
-            lines.append({QStringLiteral("Ref: ") + QString::fromStdString(component_->reference), fields_.value(1).size});
-        if (fields_.value(2).enabled && !component_->category.empty())
-            lines.append({QStringLiteral("Category: ") + QString::fromStdString(component_->category), fields_.value(2).size});
-        if (fields_.value(3).enabled && !component_->subcategory.empty())
-            lines.append({QStringLiteral("Subcategory: ") + QString::fromStdString(component_->subcategory), fields_.value(3).size});
-        if (fields_.value(4).enabled && !component_->type.empty())
-            lines.append({QStringLiteral("Type: ") + QString::fromStdString(component_->type), fields_.value(4).size});
-        if (fields_.value(5).enabled) {
-            const QStringList specifications = componentSpecifications(*component_);
-            if (!specifications.isEmpty()) lines.append({specifications.join("  "), fields_.value(5).size});
-        }
-
+        if (!component_) return;
         painter.setPen(QColor("#18202a"));
-        const int lineSpacing = 7;
-        QVector<int> lineHeights;
-        int totalHeight = lineSpacing * std::max(0, static_cast<int>(lines.size()) - 1);
-        for (const auto& line : lines) {
-            QFont font = painter.font();
-            font.setPointSize(fittingPointSize(line.text, line.size, font,
-                                               static_cast<int>(label.width() - 44)));
-            const int height = QFontMetrics(font).height();
-            lineHeights.append(height);
-            totalHeight += height;
-        }
-        int y = static_cast<int>(label.center().y() - totalHeight / 2.0);
-        for (int i = 0; i < lines.size(); ++i) {
-            const auto& line = lines.at(i);
-            QFont font = painter.font();
-            font.setPointSize(fittingPointSize(line.text, line.size, font,
-                                               static_cast<int>(label.width() - 44)));
-            painter.setFont(font);
-            painter.drawText(label.left() + 22, y, label.width() - 44, lineHeights.at(i),
-                             Qt::AlignLeft | Qt::AlignVCenter, line.text);
-            y += lineHeights.at(i) + lineSpacing;
-        }
+        drawLabelText(painter, label, buildLines(*component_, fields_));
     }
 
 private:
@@ -322,10 +334,12 @@ private:
     double labelAspect_ = 30.5 / 16.9;
 };
 
+int pointSizeFor(int comboIndex) { return comboIndex == 0 ? 24 : comboIndex == 1 ? 16 : 12; }
+
 } // namespace
 
 LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidget* parent)
-    : QDialog(parent) {
+    : QDialog(parent), components_(components) {
     setWindowTitle(chui::tr("Labels"));
     resize(760, 430);
 
@@ -337,7 +351,7 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         chui::tr("Nom"), chui::tr("Référence"), chui::tr("Catégorie"),
         chui::tr("Sous-catégorie"), chui::tr("Type"), chui::tr("Caractéristiques")
     };
-    QVector<bool> selected{true, true, false, false, false, true};
+    const QVector<bool> defaults{true, true, false, false, false, true};
     QVector<QCheckBox*> checks;
     QVector<QComboBox*> sizes;
     const QStringList sizeLabels = {chui::tr("Large"), chui::tr("Medium"), chui::tr("Small")};
@@ -346,7 +360,7 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         auto* rowLayout = new QHBoxLayout(row);
         rowLayout->setContentsMargins(0, 0, 0, 0);
         auto* check = new QCheckBox(labels.at(i));
-        check->setChecked(selected.at(i));
+        check->setChecked(defaults.at(i));
         checks.append(check);
         auto* size = new QComboBox;
         size->addItems(sizeLabels);
@@ -360,16 +374,15 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
 
     auto* previewBox = new QGroupBox(chui::tr("Preview"));
     auto* previewLayout = new QVBoxLayout(previewBox);
-    if (components.empty()) return;
-    auto* preview = new LabelPreview(components.front());
+    // components_ est un membre : les pointeurs donnes a l'apercu restent valides tant que le
+    // dialogue existe, et il n'est jamais modifie apres la construction.
+    auto* preview = new LabelPreview(components_.empty() ? nullptr : &components_.front());
     preview->setLabelSize(30.5, 16.9);
     previewLayout->addWidget(preview);
     auto* previous = new QPushButton("<", previewBox);
     auto* next = new QPushButton(">", previewBox);
-    auto* previewPosition = new QLabel(QStringLiteral("1/%1").arg(components.size()), previewBox);
+    auto* previewPosition = new QLabel(previewBox);
     previewPosition->setAlignment(Qt::AlignCenter);
-    previous->setEnabled(false);
-    next->setEnabled(components.size() > 1);
     auto* previewNavigation = new QHBoxLayout;
     previewNavigation->addStretch(1);
     previewNavigation->addWidget(previous);
@@ -378,23 +391,24 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
     previewNavigation->addStretch(1);
     previewLayout->addLayout(previewNavigation);
     auto previewIndex = std::make_shared<int>(0);
-    auto updatePreviewPosition = [previewPosition, previewIndex, &components] {
-        previewPosition->setText(QStringLiteral("%1/%2").arg(*previewIndex + 1).arg(components.size()));
+    const int total = static_cast<int>(components_.size());
+    auto showPreview = [this, preview, previous, next, previewPosition, previewIndex, total] {
+        if (total > 0) preview->setComponent(components_.at(static_cast<size_t>(*previewIndex)));
+        previous->setEnabled(*previewIndex > 0);
+        next->setEnabled(*previewIndex + 1 < total);
+        previewPosition->setText(QStringLiteral("%1/%2").arg(total > 0 ? *previewIndex + 1 : 0).arg(total));
     };
-    connect(previous, &QPushButton::clicked, this, [&, preview, previous, next, previewIndex, updatePreviewPosition] {
+    connect(previous, &QPushButton::clicked, this, [previewIndex, showPreview] {
         if (*previewIndex <= 0) return;
-        preview->setComponent(components.at(--*previewIndex));
-        previous->setEnabled(*previewIndex > 0);
-        next->setEnabled(*previewIndex + 1 < static_cast<int>(components.size()));
-        updatePreviewPosition();
+        --*previewIndex;
+        showPreview();
     });
-    connect(next, &QPushButton::clicked, this, [&, preview, previous, next, previewIndex, updatePreviewPosition] {
-        if (*previewIndex + 1 >= static_cast<int>(components.size())) return;
-        preview->setComponent(components.at(++*previewIndex));
-        previous->setEnabled(*previewIndex > 0);
-        next->setEnabled(*previewIndex + 1 < static_cast<int>(components.size()));
-        updatePreviewPosition();
+    connect(next, &QPushButton::clicked, this, [previewIndex, total, showPreview] {
+        if (*previewIndex + 1 >= total) return;
+        ++*previewIndex;
+        showPreview();
     });
+    showPreview();
     content->addWidget(options);
     content->addWidget(previewBox, 1);
     root->addLayout(content, 1);
@@ -426,12 +440,13 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
     paperLayout->addLayout(optionsRow);
     root->addWidget(paper);
 
-    auto updatePreview = [checks, sizes, preview] {
+    auto selectedFields = [checks, sizes] {
         QVector<LabelField> fields;
         for (int i = 0; i < sizes.size(); ++i)
-            fields.append({checks.at(i)->isChecked(), sizes.at(i)->currentIndex() == 0 ? 24 : sizes.at(i)->currentIndex() == 1 ? 16 : 12});
-        preview->setFields(fields);
+            fields.append({checks.at(i)->isChecked(), pointSizeFor(sizes.at(i)->currentIndex())});
+        return fields;
     };
+    auto updatePreview = [preview, selectedFields] { preview->setFields(selectedFields()); };
     auto saveFields = [checks, sizes, paperBox] {
         const QString id = paperBox->currentData().toString();
         if (id.isEmpty()) return;
@@ -443,48 +458,36 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         }
         settings.endGroup();
     };
-    auto loadFields = [checks, sizes, paperBox, updatePreview] {
+    auto loadFields = [checks, sizes, paperBox, defaults, updatePreview] {
         const QString id = paperBox->currentData().toString();
         QSettings settings("morfredus", "ComponentHub");
         settings.beginGroup("labels/fields/" + id);
-        const QVector<bool> defaults{true, true, false, false, false, true};
         for (int i = 0; i < checks.size(); ++i) {
             const QSignalBlocker checkBlocker(checks.at(i));
             const QSignalBlocker sizeBlocker(sizes.at(i));
             checks.at(i)->setChecked(settings.value(QStringLiteral("enabled%1").arg(i), defaults.at(i)).toBool());
-            sizes.at(i)->setCurrentIndex(settings.value(QStringLiteral("size%1").arg(i), i == 0 ? 0 : 1).toInt());
+            // Un index enregistre hors plage (fichier edite a la main) retomberait sur -1 : on borne.
+            const int saved = settings.value(QStringLiteral("size%1").arg(i), i == 0 ? 0 : 1).toInt();
+            sizes.at(i)->setCurrentIndex(std::clamp(saved, 0, sizes.at(i)->count() - 1));
         }
         settings.endGroup();
         updatePreview();
     };
 
-    connect(paperBox, &QComboBox::currentIndexChanged, this, [paperBox, preview, startRow, startColumn, editFormatButton, deleteFormat, loadFields] {
-        const bool custom = paperBox->currentData().toString() != "avery8728"
-                         && paperBox->currentData().toString() != "avery8790";
+    connect(paperBox, &QComboBox::currentIndexChanged, this,
+            [paperBox, preview, startRow, startColumn, editFormatButton, deleteFormat, loadFields] {
+        const QString id = paperBox->currentData().toString();
+        const auto format = findFormat(id);
+        const bool custom = format && !format->builtin;
         editFormatButton->setEnabled(custom);
         deleteFormat->setEnabled(custom);
-        QSettings settings("morfredus", "ComponentHub");
-        settings.setValue("labels/lastFormat", paperBox->currentData().toString());
-        if (paperBox->currentData().toString() == "avery8728") {
-            preview->setLabelSize(30.5, 16.9);
-            startRow->setMaximum(16); startColumn->setMaximum(6);
-            loadFields();
-            return;
+        QSettings("morfredus", "ComponentHub").setValue("labels/lastFormat", id);
+        if (format) {
+            preview->setLabelSize(format->labelWidthMm, format->labelHeightMm);
+            startRow->setMaximum(format->rows);
+            startColumn->setMaximum(format->columns);
         }
-        if (paperBox->currentData().toString() == "avery8790") {
-            preview->setLabelSize(17.8, 10);
-            startRow->setMaximum(27); startColumn->setMaximum(10);
-            loadFields();
-            return;
-        }
-        for (const auto& format : customFormats()) {
-            if (format.id == paperBox->currentData().toString()) {
-                preview->setLabelSize(format.labelWidthMm, format.labelHeightMm);
-                startRow->setMaximum(format.rows); startColumn->setMaximum(format.columns);
-                loadFields();
-                return;
-            }
-        }
+        loadFields();
     });
 
     connect(newFormat, &QPushButton::clicked, this, [paperBox, this] {
@@ -501,18 +504,24 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
                 saveCustomFormats(formats);
                 const int index = paperBox->currentIndex();
                 paperBox->setItemText(index, format.name);
-                paperBox->setCurrentIndex(index);
+                // Meme index : currentIndexChanged ne part pas tout seul, or l'apercu et les
+                // bornes de depart dependent des nouvelles dimensions.
+                emit paperBox->currentIndexChanged(index);
                 return;
             }
         }
     });
     connect(deleteFormat, &QPushButton::clicked, this, [paperBox, this] {
-        if (paperBox->currentData().toString() == "avery8728") return;
+        const QString id = paperBox->currentData().toString();
+        const auto format = findFormat(id);
+        if (!format || format->builtin) return;
+        if (QMessageBox::question(this, chui::tr("Delete format"), format->name + " ?") != QMessageBox::Yes) return;
         auto formats = customFormats();
-        formats.erase(std::remove_if(formats.begin(), formats.end(), [paperBox](const LabelFormat& f) {
-            return f.id == paperBox->currentData().toString();
-        }), formats.end());
-        saveCustomFormats(formats); paperBox->removeItem(paperBox->currentIndex());
+        formats.erase(std::remove_if(formats.begin(), formats.end(),
+                                     [&id](const LabelFormat& f) { return f.id == id; }),
+                      formats.end());
+        saveCustomFormats(formats);
+        paperBox->removeItem(paperBox->currentIndex());
     });
 
     for (auto* check : checks)
@@ -526,88 +535,75 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
             saveFields();
         });
 
-    QSettings settings("morfredus", "ComponentHub");
-    const int savedFormat = paperBox->findData(settings.value("labels/lastFormat", "avery8728").toString());
-    paperBox->setCurrentIndex(savedFormat >= 0 ? savedFormat : 0);
-    loadFields();
+    const int savedFormat = paperBox->findData(
+        QSettings("morfredus", "ComponentHub").value("labels/lastFormat", "avery8728").toString());
+    const int initialFormat = savedFormat >= 0 ? savedFormat : 0;
+    if (paperBox->currentIndex() == initialFormat) {
+        // Deja sur cet index : le signal ne partira pas, on applique l'etat a la main.
+        emit paperBox->currentIndexChanged(initialFormat);
+    } else {
+        paperBox->setCurrentIndex(initialFormat);
+    }
 
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
     auto* print = new QPushButton(chui::tr("Print"), this);
     auto* pdf = new QPushButton(chui::tr("Generate PDF"), this);
+    print->setEnabled(!components_.empty());
+    pdf->setEnabled(!components_.empty());
     buttons->addButton(print, QDialogButtonBox::ActionRole);
     buttons->addButton(pdf, QDialogButtonBox::ActionRole);
     if (auto* close = buttons->button(QDialogButtonBox::Close))
         close->setText(chui::tr("Close"));
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
-    auto selectedFields = [checks, sizes] {
-        QVector<LabelField> fields;
-        for (int i = 0; i < sizes.size(); ++i)
-            fields.append({checks.at(i)->isChecked(), sizes.at(i)->currentIndex() == 0 ? 24 : sizes.at(i)->currentIndex() == 1 ? 16 : 12});
-        return fields;
-    };
-    auto selectedFormat = [paperBox] {
-        LabelFormat format;
-        if (paperBox->currentData().toString() == "avery8728") {
-            format.name = "Avery No. 8728";
-            format.pageWidthMm = 210; format.pageHeightMm = 297;
-            format.columns = 6; format.rows = 16;
-            format.labelWidthMm = 30.5; format.labelHeightMm = 16.9;
-            format.marginLeftMm = 7; format.marginTopMm = 13.3;
-            format.pitchXmm = 32.6; format.pitchYmm = 16.9;
-        } else if (paperBox->currentData().toString() == "avery8790") {
-            format.name = "Avery No. 8790";
-            format.pageWidthMm = 210; format.pageHeightMm = 297;
-            format.columns = 10; format.rows = 27;
-            format.labelWidthMm = 17.8; format.labelHeightMm = 10;
-            format.marginLeftMm = 4; format.marginTopMm = 14.01;
-            format.pitchXmm = 20.5; format.pitchYmm = 10;
-        } else {
-            for (const auto& candidate : customFormats())
-                if (candidate.id == paperBox->currentData().toString()) format = candidate;
+
+    // Format choisi + premier emplacement, ou std::nullopt (avec message) si le format n'existe plus.
+    struct Job { LabelFormat format; int firstSlot; };
+    auto currentJob = [paperBox, startRow, startColumn, this]() -> std::optional<Job> {
+        const auto format = findFormat(paperBox->currentData().toString());
+        if (!format) {
+            QMessageBox::warning(this, chui::tr("Labels"), chui::tr("This label format no longer exists."));
+            return std::nullopt;
         }
-        return format;
+        const int firstSlot = (startRow->value() - 1) * format->columns + (startColumn->value() - 1);
+        if (firstSlot >= format->columns * format->rows) return std::nullopt;
+        return Job{*format, firstSlot};
     };
-    auto startSlot = [startRow, startColumn, paperBox] {
-        int columns = 6;
-        if (paperBox->currentData().toString() == "avery8790") columns = 10;
-        else if (paperBox->currentData().toString() != "avery8728") {
-            for (const auto& format : customFormats())
-                if (format.id == paperBox->currentData().toString()) columns = format.columns;
-        }
-        return (startRow->value() - 1) * columns + (startColumn->value() - 1);
-    };
-    connect(print, &QPushButton::clicked, this, [components, paperBox, startRow, startColumn, border,
-                                                  selectedFields, selectedFormat, startSlot, this] {
+    connect(print, &QPushButton::clicked, this, [border, selectedFields, currentJob, this] {
+        const auto job = currentJob();
+        if (!job) return;
         QPrinter printer(QPrinter::HighResolution);
-        const LabelFormat format = selectedFormat();
-        printer.setPageSize(QPageSize(QSizeF(format.pageWidthMm, format.pageHeightMm), QPageSize::Millimeter));
+        printer.setPageSize(QPageSize(QSizeF(job->format.pageWidthMm, job->format.pageHeightMm), QPageSize::Millimeter));
         printer.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Millimeter);
         QPrintDialog dialog(&printer, this);
         dialog.setWindowTitle(chui::tr("Print labels"));
         if (dialog.exec() != QDialog::Accepted) return;
-        const int firstSlot = startSlot();
-        if (firstSlot >= format.columns * format.rows) return;
         QPainter painter(&printer);
-        renderLabels(printer, painter, components, format, selectedFields(), firstSlot, border->isChecked());
+        if (!painter.isActive()) {
+            QMessageBox::warning(this, chui::tr("Print labels"), chui::tr("Unable to start printing."));
+            return;
+        }
+        renderLabels(printer, painter, components_, job->format, selectedFields(), job->firstSlot, border->isChecked());
         painter.end();
     });
-    connect(pdf, &QPushButton::clicked, this, [components, paperBox, startRow, startColumn, border,
-                                                selectedFields, selectedFormat, startSlot, this] {
+    connect(pdf, &QPushButton::clicked, this, [border, selectedFields, currentJob, this] {
+        const auto job = currentJob();
+        if (!job) return;
         const QString path = QFileDialog::getSaveFileName(this, chui::tr("Generate PDF"),
                                                           "componenthub-labels.pdf", "PDF (*.pdf)");
         if (path.isEmpty()) return;
-        const LabelFormat format = selectedFormat();
-        const int firstSlot = startSlot();
-        const int labelsPerPage = format.columns * format.rows;
-        if (firstSlot >= labelsPerPage) return;
         QPdfWriter writer(path);
-        writer.setPageSize(QPageSize(QSizeF(format.pageWidthMm, format.pageHeightMm), QPageSize::Millimeter));
+        writer.setPageSize(QPageSize(QSizeF(job->format.pageWidthMm, job->format.pageHeightMm), QPageSize::Millimeter));
         // The label coordinates are measured from the physical page edge. Do
         // not let QPdfWriter add its default printable margins.
         writer.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Millimeter);
         writer.setResolution(300);
         QPainter painter(&writer);
-        renderLabels(writer, painter, components, format, selectedFields(), firstSlot, border->isChecked());
+        // Chemin non inscriptible : le painter reste inactif, on le dit au lieu d'annoncer un succes.
+        if (!painter.isActive()) {
+            QMessageBox::warning(this, chui::tr("Generate PDF"), chui::tr("Unable to write the PDF file."));
+            return;
+        }
+        renderLabels(writer, painter, components_, job->format, selectedFields(), job->firstSlot, border->isChecked());
         painter.end();
         QMessageBox::information(this, chui::tr("Generate PDF"), chui::tr("PDF created successfully."));
     });

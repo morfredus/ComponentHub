@@ -1504,5 +1504,11 @@ Workshop technical memory. © morfredus.</translation>
     <message><source>Invalid PUSH response.</source><translation>Invalid PUSH response.</translation></message>
     <message><source>PULL failed (HTTP %1).</source><translation>PULL failed (HTTP %1).</translation></message>
     <message><source>Invalid PULL response.</source><translation>Invalid PULL response.</translation></message>
+    <message><source>Labels</source><translation>Labels</translation></message>
+    <message><source>Close</source><translation>Close</translation></message>
+    <message><source>%1 pins</source><translation>%1 pins</translation></message>
+    <message><source>This label format no longer exists.</source><translation>This label format no longer exists.</translation></message>
+    <message><source>Unable to start printing.</source><translation>Unable to start printing.</translation></message>
+    <message><source>Unable to write the PDF file.</source><translation>Unable to write the PDF file.</translation></message>
 </context>
 </TS>

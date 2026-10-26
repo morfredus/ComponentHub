@@ -1442,5 +1442,11 @@ Choisissez un autre nom ou corrigez la saisie.</source>
     <message><source>Invalid PUSH response.</source><translation>Réponse PUSH illisible.</translation></message>
     <message><source>PULL failed (HTTP %1).</source><translation>PULL échoué (HTTP %1).</translation></message>
     <message><source>Invalid PULL response.</source><translation>Réponse PULL illisible.</translation></message>
+    <message><source>Labels</source><translation>Étiquettes</translation></message>
+    <message><source>Close</source><translation>Fermer</translation></message>
+    <message><source>%1 pins</source><translation>%1 broches</translation></message>
+    <message><source>This label format no longer exists.</source><translation>Ce format d&apos;étiquette n&apos;existe plus.</translation></message>
+    <message><source>Unable to start printing.</source><translation>Impossible de lancer l&apos;impression.</translation></message>
+    <message><source>Unable to write the PDF file.</source><translation>Impossible d&apos;écrire le fichier PDF.</translation></message>
 </context>
 </TS>
