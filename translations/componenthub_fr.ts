@@ -1401,6 +1401,38 @@ Choisissez un autre nom ou corrigez la saisie.</source>
     <message><source>Invalid HTTP response.</source><translation>Réponse HTTP illisible.</translation></message>
     <message><source>Skipped unsafe archive entry: </source><translation>Entrée d&apos;archive non sûre ignorée : </translation></message>
     <message><source>Could not restore file: </source><translation>Impossible de restaurer le fichier : </translation></message>
+    <message><source>Étiquettes</source><translation>Étiquettes</translation></message>
+    <message><source>Label fields</source><translation>Champs de l&apos;étiquette</translation></message>
+    <message><source>Preview</source><translation>Aperçu</translation></message>
+    <message><source>Large</source><translation>Grande</translation></message>
+    <message><source>Medium</source><translation>Moyenne</translation></message>
+    <message><source>Small</source><translation>Petite</translation></message>
+    <message><source>Paper configuration</source><translation>Configuration du papier</translation></message>
+    <message><source>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</source><translation>Avery No. 8728 - 30,5 x 16,9 mm - 6 x 16 étiquettes</translation></message>
+    <message><source>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</source><translation>Avery No. 8790 - 17,8 x 10 mm - 10 x 27 étiquettes</translation></message>
+    <message><source>Generate PDF</source><translation>Générer le PDF</translation></message>
+    <message><source>Print</source><translation>Imprimer</translation></message>
+    <message><source>Print labels</source><translation>Imprimer les étiquettes</translation></message>
+    <message><source>PDF created successfully.</source><translation>PDF créé avec succès.</translation></message>
+    <message><source>New custom label format</source><translation>Nouveau format d&apos;étiquette</translation></message>
+    <message><source>New custom format</source><translation>Nouveau format personnalisé</translation></message>
+    <message><source>Name</source><translation>Nom</translation></message>
+    <message><source>Delete format</source><translation>Supprimer le format</translation></message>
+    <message><source>Edit format</source><translation>Modifier le format</translation></message>
+    <message><source>Page width</source><translation>Largeur de page</translation></message>
+    <message><source>Page height</source><translation>Hauteur de page</translation></message>
+    <message><source>Columns</source><translation>Colonnes</translation></message>
+    <message><source>Rows</source><translation>Lignes</translation></message>
+    <message><source>Label width</source><translation>Largeur d&apos;étiquette</translation></message>
+    <message><source>Label height</source><translation>Hauteur d&apos;étiquette</translation></message>
+    <message><source>Left margin</source><translation>Marge gauche</translation></message>
+    <message><source>Top margin</source><translation>Marge supérieure</translation></message>
+    <message><source>Horizontal pitch</source><translation>Pas horizontal</translation></message>
+    <message><source>Vertical pitch</source><translation>Pas vertical</translation></message>
+    <message><source>Start row</source><translation>Ligne de départ</translation></message>
+    <message><source>Start column</source><translation>Colonne de départ</translation></message>
+    <message><source>Show calibration borders</source><translation>Afficher les bordures de calibration</translation></message>
+    <message><source>Supprimer %1 composants sélectionnés ?</source><translation>Supprimer %1 composants sélectionnés ?</translation></message>
     <message><source>HTTP status: </source><translation>Statut HTTP : </translation></message>
     <message><source>Unexpected response.</source><translation>Réponse inattendue.</translation></message>
     <message><source>Hub unreachable (HTTP %1).</source><translation>Hub injoignable (HTTP %1).</translation></message>
