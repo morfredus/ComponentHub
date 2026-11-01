@@ -33,17 +33,15 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     auto* languageLayout = new QHBoxLayout(language);
     languageLayout->addWidget(new QLabel(chui::tr("Interface:")));
     auto* languageBox = new QComboBox;
-    languageBox->addItem("Français", "fr");
-    languageBox->addItem("English", "en");
-    languageBox->setCurrentIndex(chui::language() == chui::Language::English ? 1 : 0);
+    for (auto l : {chui::Language::French, chui::Language::English, chui::Language::Spanish})
+        languageBox->addItem(chui::languageName(l), chui::languageCode(l));
+    languageBox->setCurrentIndex(languageBox->findData(chui::languageCode(chui::language())));
     languageLayout->addWidget(languageBox);
     languageLayout->addStretch(1);
     v->addWidget(language);
-    connect(languageBox, &QComboBox::currentIndexChanged, this, [languageBox](int) {
-        chui::setLanguage(languageBox->currentData().toString() == "en"
-                              ? chui::Language::English : chui::Language::French);
-        QMessageBox::information(nullptr, "Language / Langue",
-            chui::tr("Redémarrez ComponentHub pour appliquer la langue."));
+    connect(languageBox, &QComboBox::currentIndexChanged, this, [this, languageBox](int) {
+        chui::setLanguage(chui::languageFromCode(languageBox->currentData().toString()));
+        emit localeChanged();
     });
 
     auto* currency = new QGroupBox(chui::tr("Currency"));
@@ -58,11 +56,12 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     currencyLayout->addWidget(currencyBox);
     currencyLayout->addStretch(1);
     v->addWidget(currency);
-    connect(currencyBox, &QComboBox::currentIndexChanged, this, [currencyBox] {
+    connect(currencyBox, &QComboBox::currentIndexChanged, this, [this, currencyBox] {
         const QString code = currencyBox->currentData().toString();
         chui::setCurrency(code == "GBP" ? chui::Currency::Pound
                          : code == "USD" ? chui::Currency::Dollar
                                          : chui::Currency::Euro);
+        emit localeChanged();
     });
 
     // --- Apparence ---

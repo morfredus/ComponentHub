@@ -101,7 +101,7 @@ if(NOT CH_LRELEASE_EXECUTABLE)
     message(FATAL_ERROR "Qt lrelease not found. Install Qt Linguist tools (qt6-l10n-tools on Debian/Ubuntu, qt6-tools on Arch, or mingw-w64-x86_64-qt6-tools on MSYS2).")
 endif()
 set(CH_TRANSLATION_QM_FILES)
-foreach(CH_TS_FILE IN ITEMS componenthub_fr componenthub_en)
+foreach(CH_TS_FILE IN ITEMS componenthub_fr componenthub_en componenthub_es)
     set(CH_TS_PATH "${CMAKE_SOURCE_DIR}/translations/${CH_TS_FILE}.ts")
     set(CH_QM_PATH "${CMAKE_CURRENT_BINARY_DIR}/${CH_TS_FILE}.qm")
     add_custom_command(

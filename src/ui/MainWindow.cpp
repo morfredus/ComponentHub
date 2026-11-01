@@ -43,7 +43,7 @@
 #define CH_APP_VERSION "0.0.0-dev"   // repli : la vraie valeur vient de CMake
 #endif
 
-MainWindow::MainWindow(chdesktop::AppContext& ctx, QWidget* parent)
+MainWindow::MainWindow(chdesktop::AppContext& ctx, bool startup, QWidget* parent)
     : QMainWindow(parent), ctx_(ctx) {
     setWindowTitle(QStringLiteral("ComponentHub %1").arg(QString::fromLatin1(CH_APP_VERSION)));
     resize(1180, 760);
@@ -64,7 +64,11 @@ MainWindow::MainWindow(chdesktop::AppContext& ctx, QWidget* parent)
     stack_->addWidget(new ProjectsPage(ctx_));
     stack_->addWidget(new ReferentialsPage(ctx_));
     stack_->addWidget(new ImportExportPage(ctx_));
-    stack_->addWidget(new SettingsPage(ctx_));
+    auto* settings = new SettingsPage(ctx_);
+    stack_->addWidget(settings);
+    // Le signal part d'un widget de l'ancienne fenêtre : main() la détruit en différé.
+    connect(settings, &SettingsPage::localeChanged, this,
+            [this] { emit rebuildRequested(nav_->currentRow()); }, Qt::QueuedConnection);
 
     auto* sidebarHost = qobject_cast<QWidget*>(nav_->parentWidget());
     root->addWidget(sidebarHost);
@@ -82,10 +86,15 @@ MainWindow::MainWindow(chdesktop::AppContext& ctx, QWidget* parent)
     nav_->setCurrentRow(0);
     statusBar()->showMessage(chui::tr("Données : ") + QString::fromStdString(ctx_.dir()));
 
+    if (!startup) return;
     // Vérification silencieuse des mises à jour, peu après l'affichage de l'UI.
     QTimer::singleShot(2000, this, [this]{ checkForUpdates(false); });
     // Synchro au démarrage (si activée et hub joignable), juste après l'affichage.
     QTimer::singleShot(600, this, [this]{ maybeSyncOnStartup(); });
+}
+
+void MainWindow::goToPage(int row) {
+    nav_->setCurrentRow(row);
 }
 
 void MainWindow::maybeSyncOnStartup() {

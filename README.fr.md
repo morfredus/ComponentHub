@@ -2,7 +2,7 @@
 
 *Lire dans une autre langue : [English](README.md) · **Français** (ce document).*
 
-[![Version](https://img.shields.io/badge/version-1.10.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.11.0-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -163,7 +163,7 @@ ComponentHub/
 
 ## Remerciements
 
-L'internationalisation de l'interface (français et anglais) et le choix de la devise
+L'internationalisation de l'interface (français, anglais et espagnol) et le choix de la devise
 (EUR / USD / GBP) sont une contribution de
 [Nacho Garcia (@nachogarglez)](https://github.com/nachogarglez)
 ([pull request #11](https://github.com/morfredus/ComponentHub/pull/11)). Merci.

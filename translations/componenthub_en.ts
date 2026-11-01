@@ -82,7 +82,8 @@
         <location filename="../src/ui/LocationsPage.cpp" line="137" />
         <source> » existe déjà.
 Choisissez un autre nom ou corrigez la saisie.</source>
-        <translation>La catégorie « </translation>
+        <translation>" already exists.
+Choose another name or correct the entry.</translation>
     </message>
     <message>
         <location filename="../src/ui/CategoriesPage.cpp" line="90" />
@@ -617,7 +618,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ImportExportPage.cpp" line="104" />
         <source>Export terminé :
 </source>
-        <translation />
+        <translation>Export complete:
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="108" />
@@ -650,7 +652,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ImportExportPage.cpp" line="131" />
         <source>Sauvegarde complète créée (données + configuration) :
 </source>
-        <translation />
+        <translation>Full backup created (data + configuration):
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="133" />
@@ -682,7 +685,9 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <source>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront ÉCRASÉES par la sauvegarde.
 
 Cette action est irréversible. Continuer ?</source>
-        <translation />
+        <translation>All current data (components, categories, locations, stock movements, documents, projects) will be OVERWRITTEN by the backup.
+
+This action cannot be undone. Continue?</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="152" />
@@ -693,14 +698,17 @@ Cette action est irréversible. Continuer ?</source>
         <location filename="../src/ui/ImportExportPage.cpp" line="153" />
         <source>
 Configuration restaurée.</source>
-        <translation />
+        <translation>
+Configuration restored.</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="155" />
         <source>
 
 Redémarrez l'application pour recharger les données et la configuration.</source>
-        <translation />
+        <translation>
+
+Restart the application to reload the data and configuration.</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="156" />
@@ -724,7 +732,8 @@ Redémarrez l'application pour recharger les données et la configuration.</sour
         <location filename="../src/ui/ImportExportPage.cpp" line="164" />
         <source>Configuration sauvegardée :
 </source>
-        <translation />
+        <translation>Configuration saved:
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="166" />
@@ -746,7 +755,8 @@ Redémarrez l'application pour recharger les données et la configuration.</sour
         <location filename="../src/ui/ImportExportPage.cpp" line="178" />
         <source>Configuration restaurée.
 Redémarrez l'application pour l'appliquer entièrement.</source>
-        <translation />
+        <translation>Configuration restored.
+Restart the application to apply it fully.</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="180" />
@@ -938,7 +948,8 @@ Redémarrez l'application pour l'appliquer entièrement.</source>
         <location filename="../src/ui/MainWindow.cpp" line="150" />
         <source>Synchroniser vos données avec morfSync avant de fermer ?
 (Désactivable dans Réglages → Synchronisation.)</source>
-        <translation>Synchronize before quitting</translation>
+        <translation>Synchronize your data with morfSync before closing?
+(Can be disabled in Settings → Synchronization.)</translation>
     </message>
     <message>
         <location filename="../src/ui/MainWindow.cpp" line="176" />
@@ -1231,7 +1242,8 @@ Redémarrez l'application pour l'appliquer entièrement.</source>
         <location filename="../src/ui/ReferentialsPage.cpp" line="250" />
         <source> » existe déjà dans ce référentiel.
 Choisissez un autre nom ou corrigez la saisie.</source>
-        <translation />
+        <translation>" already exists in this reference list.
+Choose another name or correct the entry.</translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="294" />
@@ -1272,7 +1284,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ReferentialsPage.cpp" line="325" />
         <source>
 %1 composant(s) réaffecté(s).</source>
-        <translation />
+        <translation>
+%1 component(s) reassigned.</translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="330" />
@@ -1288,7 +1301,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ReferentialsPage.cpp" line="339" />
         <source>Référentiel exporté :
 </source>
-        <translation />
+        <translation>Reference list exported:
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="344" />

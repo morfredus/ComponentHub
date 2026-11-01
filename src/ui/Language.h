@@ -4,11 +4,13 @@
 
 namespace chui {
 
-enum class Language { French, English };
+enum class Language { French, English, Spanish };
 enum class Currency { Euro, Dollar, Pound };
 
 Language language();
 void setLanguage(Language language);
+QString languageCode(Language language);
+Language languageFromCode(const QString& code);
 QString languageName(Language language);
 Currency currency();
 void setCurrency(Currency currency);

@@ -14,7 +14,14 @@ namespace chdesktop { class AppContext; }
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit MainWindow(chdesktop::AppContext& ctx, QWidget* parent = nullptr);
+    // startup=false : fenêtre reconstruite après un changement de langue/devise,
+    // sans relancer la vérification des mises à jour ni la synchro de démarrage.
+    explicit MainWindow(chdesktop::AppContext& ctx, bool startup = true, QWidget* parent = nullptr);
+    void goToPage(int row);
+
+signals:
+    // Demande à main() de reconstruire la fenêtre (nouvelle langue ou devise).
+    void rebuildRequested(int currentPage);
 
 protected:
     void closeEvent(QCloseEvent* event) override;  // propose la synchro en quittant

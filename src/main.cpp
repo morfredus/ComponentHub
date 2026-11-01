@@ -5,6 +5,8 @@
 #include <QMessageBox>
 #include <QTranslator>
 
+#include <functional>
+
 #include "AppContext.h"
 #include "ui/MainWindow.h"
 #include "ui/Theme.h"
@@ -24,10 +26,14 @@ int main(int argc, char* argv[]) {
     app.setOrganizationName("morfredus");
     app.setApplicationDisplayName("ComponentHub");
 
+    // Le traducteur reste installé : on recharge simplement son catalogue quand la
+    // langue change (voir showWindow), ce qui évite tout redémarrage.
     QTranslator translator;
-    const QString locale = chui::language() == chui::Language::English ? "en" : "fr";
-    if (translator.load(QStringLiteral(":/i18n/componenthub_%1.qm").arg(locale)))
-        app.installTranslator(&translator);
+    const auto loadTranslation = [&translator] {
+        translator.load(QStringLiteral(":/i18n/componenthub_%1.qm").arg(chui::languageCode(chui::language())));
+    };
+    loadTranslation();
+    app.installTranslator(&translator);
 
     // Dossier de données par utilisateur.
     QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -55,9 +61,27 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     auto& ctx = *context;
-    MainWindow window(ctx);
-    window.setWindowIcon(icons::icon(icons::Glyph::Chip, QColor(Theme::instance().color("accent")), 32));
-    window.show();
+    // Les textes sont traduits à la construction des widgets : pour appliquer une
+    // nouvelle langue ou devise sans redémarrer, on reconstruit la fenêtre à la
+    // même place, sur la même page, puis on détruit l'ancienne.
+    std::unique_ptr<MainWindow> window;
+    std::function<void(int, bool, const QRect&)> showWindow = [&](int page, bool startup, const QRect& geometry) {
+        auto fresh = std::make_unique<MainWindow>(ctx, startup);
+        fresh->setWindowIcon(icons::icon(icons::Glyph::Chip, QColor(Theme::instance().color("accent")), 32));
+        fresh->goToPage(page);
+        if (geometry.isValid()) fresh->setGeometry(geometry);
+        QObject::connect(fresh.get(), &MainWindow::rebuildRequested, [&](int p) {
+            const QRect geometry = window->geometry();
+            loadTranslation();
+            std::unique_ptr<MainWindow> old = std::move(window);
+            showWindow(p, false, geometry);
+            old->hide();
+            old.release()->deleteLater();
+        });
+        window = std::move(fresh);
+        window->show();
+    };
+    showWindow(0, true, QRect());
 
     // --- Supervision LAN : annonce de présence + métriques (morfBeacon) -----
     // Heartbeat UDP « je suis actif » broadcast, plus un endpoint HTTP /status

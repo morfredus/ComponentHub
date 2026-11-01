@@ -51,6 +51,13 @@ const char* kDefaultTypesEn[] = {
     nullptr,
 };
 
+const char* kDefaultTypesEs[] = {
+    "Resistencia","Condensador","Diodo","LED","Transistor","MOSFET","Regulador",
+    "Circuito integrado","Microcontrolador","Sensor","Pantalla","Conector","Relé",
+    "Módulo","Fuente de alimentación","Cristal","Inductor","Fusible","Pulsador","Potenciómetro",
+    nullptr,
+};
+
 std::string* fieldOf(Component& c, int bind) {
     switch (bind) {
         case Type:         return &c.type;
@@ -157,8 +164,10 @@ void ReferentialsPage::seedIfEmpty(const QString& key, int bind) {
         }
     }
     if (key == "component_types") {
-        const auto* defaults = chui::language() == chui::Language::English
-            ? kDefaultTypesEn : kDefaultTypesFr;
+        const auto lang = chui::language();
+        const auto* defaults = lang == chui::Language::English ? kDefaultTypesEn
+                             : lang == chui::Language::Spanish ? kDefaultTypesEs
+                                                               : kDefaultTypesFr;
         for (const char* const* v = defaults; *v; ++v) values.insert(*v);
     }
     if (values.empty()) return;

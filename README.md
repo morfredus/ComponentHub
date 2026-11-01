@@ -2,7 +2,7 @@
 
 *Read in another language: **English** (this document) · [Français](README.fr.md).*
 
-[![Version](https://img.shields.io/badge/version-1.10.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.11.0-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -187,7 +187,7 @@ ComponentHub/
 
 ## Credits
 
-Desktop internationalization (French and English) and the EUR / USD / GBP currency selector
+Desktop internationalization (French, English and Spanish) and the EUR / USD / GBP currency selector
 were contributed by [Nacho Garcia (@nachogarglez)](https://github.com/nachogarglez)
 ([pull request #11](https://github.com/morfredus/ComponentHub/pull/11)). Thank you.
 
