@@ -22,6 +22,7 @@
 #include "AppContext.h"
 #include "ui/UiKit.h"
 #include "ui/ComponentDialog.h"
+#include "ui/LabelDialog.h"
 #include "ui/Language.h"
 
 using namespace domain;
@@ -92,7 +93,7 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
     table_ = new QTableWidget(0, 8);
     table_->setHorizontalHeaderLabels({chui::tr("Nom"), chui::tr("Référence"), chui::tr("Type"), chui::tr("Catégorie"), chui::tr("Emplacement"), chui::tr("Qté"), chui::tr("Prix"), chui::tr("Statut")});
     table_->setSelectionBehavior(QAbstractItemView::SelectRows);
-    table_->setSelectionMode(QAbstractItemView::SingleSelection);
+    table_->setSelectionMode(QAbstractItemView::ExtendedSelection);
     table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table_->verticalHeader()->setVisible(false);
     table_->horizontalHeader()->setStretchLastSection(true);
@@ -116,11 +117,35 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
 
     // Raccourcis d'action via double-clic ; boutons contextuels en bas.
     auto* actions = new QHBoxLayout;
+    auto* labels = uikit::button(chui::tr("Étiquettes"), icons::Glyph::Categories, "ghost");
     auto* edit = uikit::button(chui::tr("Modifier"), icons::Glyph::Edit, "ghost");
     auto* del = uikit::button(chui::tr("Supprimer"), icons::Glyph::Delete, "danger");
+    connect(table_->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, [labels, edit, this] {
+                const int selected = table_->selectionModel()->selectedRows().size();
+                labels->setEnabled(selected > 0);
+                edit->setEnabled(selected <= 1);
+            });
+    connect(labels, &QPushButton::clicked, this, [this] {
+        const auto rows = table_->selectionModel()->selectedRows();
+        if (rows.isEmpty()) return;
+        std::vector<domain::Component> components;
+        for (const auto& row : rows) {
+            const auto* item = table_->item(row.row(), 0);
+            if (!item) continue;
+            if (const auto component = ctx_.components.findById(
+                    item->data(Qt::UserRole).toString().toStdString()))
+                components.push_back(*component);
+        }
+        if (!components.empty()) {
+            LabelDialog dialog(components, this);
+            dialog.exec();
+        }
+    });
     connect(edit, &QPushButton::clicked, this, &InventoryPage::editCurrent);
     connect(del, &QPushButton::clicked, this, &InventoryPage::deleteCurrent);
-    actions->addStretch(1); actions->addWidget(edit); actions->addWidget(del);
+    labels->setEnabled(false);
+    actions->addStretch(1); actions->addWidget(labels); actions->addWidget(edit); actions->addWidget(del);
     v->addLayout(actions);
 }
 
@@ -190,12 +215,24 @@ void InventoryPage::editComponentRow(int row) {
 void InventoryPage::editCurrent() { editComponentRow(table_->currentRow()); }
 
 void InventoryPage::deleteCurrent() {
-    int r = table_->currentRow();
-    if (r < 0) return;
-    const QString name = table_->item(r, 0)->text();
-    const Id id = table_->item(r, 0)->data(Qt::UserRole).toString().toStdString();
-    if (QMessageBox::question(this, chui::tr("Supprimer"), chui::tr("Supprimer « ") + name + chui::tr(" » ?")) != QMessageBox::Yes) return;
-    ctx_.inventory.removeComponent(id);
+    const auto rows = table_->selectionModel()->selectedRows();
+    if (rows.isEmpty()) return;
+
+    std::vector<Id> ids;
+    QStringList names;
+    for (const auto& index : rows) {
+        auto* item = table_->item(index.row(), 0);
+        if (!item) continue;
+        ids.push_back(item->data(Qt::UserRole).toString().toStdString());
+        names << item->text();
+    }
+    if (ids.empty()) return;
+
+    const QString prompt = ids.size() == 1
+        ? chui::tr("Supprimer « ") + names.first() + chui::tr(" » ?")
+        : QString(chui::tr("Supprimer %1 composants sélectionnés ?")).arg(ids.size());
+    if (QMessageBox::question(this, chui::tr("Supprimer"), prompt) != QMessageBox::Yes) return;
+    for (const auto& id : ids) ctx_.inventory.removeComponent(id);
     refresh();
 }
 

@@ -7,26 +7,45 @@
 
 namespace chui {
 
+Language languageFromCode(const QString& code) {
+    if (code == "fr") return Language::French;
+    if (code == "es") return Language::Spanish;
+    return Language::English;
+}
+
+QString languageCode(Language value) {
+    switch (value) {
+    case Language::French: return QStringLiteral("fr");
+    case Language::Spanish: return QStringLiteral("es");
+    default: return QStringLiteral("en");
+    }
+}
+
 Language language() {
     QSettings settings("morfredus", "ComponentHub");
     if (settings.contains("language"))
-        return settings.value("language").toString() == "fr"
-                   ? Language::French : Language::English;
+        return languageFromCode(settings.value("language").toString());
 
-    // French is selected for every regional French locale, such as fr_FR
-    // and fr_CA. All other system locales default to English.
-    return QLocale::system().language() == QLocale::French
-               ? Language::French : Language::English;
+    // French and Spanish are selected for every regional variant of the
+    // system locale (fr_FR, fr_CA, es_ES, es_MX...). All other system
+    // locales default to English.
+    switch (QLocale::system().language()) {
+    case QLocale::French: return Language::French;
+    case QLocale::Spanish: return Language::Spanish;
+    default: return Language::English;
+    }
 }
 
 void setLanguage(Language value) {
-    QSettings("morfredus", "ComponentHub")
-        .setValue("language", value == Language::English ? "en" : "fr");
+    QSettings("morfredus", "ComponentHub").setValue("language", languageCode(value));
 }
 
 QString languageName(Language value) {
-    return value == Language::English ? QStringLiteral("English")
-                                      : QStringLiteral("Français");
+    switch (value) {
+    case Language::French: return QStringLiteral("Français");
+    case Language::Spanish: return QStringLiteral("Español");
+    default: return QStringLiteral("English");
+    }
 }
 
 Currency currency() {

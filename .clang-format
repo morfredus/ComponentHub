@@ -1,0 +1,34 @@
+# Code style of the project (see CONTRIBUTING.md). Format only the lines you touch
+# (`git clang-format`), never whole existing files: the code base keeps compact one-line `if`.
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++17
+IndentWidth: 4
+ColumnLimit: 120
+AccessModifierOffset: -4
+PointerAlignment: Left
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: All
+AllowShortCaseLabelsOnASingleLine: false
+AlignEscapedNewlines: Left
+AlignAfterOpenBracket: Align
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBraces: Attach
+IndentCaseLabels: true
+NamespaceIndentation: None
+FixNamespaceComments: true
+ReflowComments: false
+SpacesBeforeTrailingComments: 2
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^"'
+    Priority: 1
+  - Regex: '^<Q'
+    Priority: 2
+  - Regex: '^<'
+    Priority: 3
+SpaceBeforeCpp11BracedList: false

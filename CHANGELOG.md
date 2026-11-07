@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.13.0] - 2026-11-07
+
+### Added
+
+- **Label printing.** New labels dialog (Avery 8728/8790 and custom formats) with a live
+  preview, printing and PDF export. The inventory table supports extended selection, used for
+  labels and for bulk delete. Text is clipped to each label and fonts shrink to fit; the
+  preview and the print share one line builder. The dialog works on its own copy of the
+  selected components, reports formats that no longer exist, and custom format storage is
+  fixed (stale entries, corrupted values, preview refresh after an edit).
+- **Spanish translation.** New `componenthub_es.ts` catalog (336 strings), "Español"
+  entry in the language selector, Spanish system locale detection and Spanish default
+  component types.
+- `.editorconfig` and `.clang-format`, with a pointer in CONTRIBUTING.md.
+
+### Changed
+
+- Language and currency changes now apply immediately: the main window is rebuilt in place
+  (same page, same geometry) instead of asking for a restart.
+
+### Fixed
+
+- French catalog: filled 53 entries left "unfinished" and added 12 missing ones, so the
+  French UI no longer depends on source-text fallback.
+- English catalog: translated 10 empty entries and repaired 2 misaligned ones (duplicate-name
+  message, quit-time synchronization prompt).
+
 ## [1.12.0] - 2026-11-07
 
 ### Added

@@ -82,7 +82,8 @@
         <location filename="../src/ui/LocationsPage.cpp" line="137" />
         <source> » existe déjà.
 Choisissez un autre nom ou corrigez la saisie.</source>
-        <translation>La catégorie « </translation>
+        <translation>" already exists.
+Choose another name or correct the entry.</translation>
     </message>
     <message>
         <location filename="../src/ui/CategoriesPage.cpp" line="90" />
@@ -617,7 +618,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ImportExportPage.cpp" line="104" />
         <source>Export terminé :
 </source>
-        <translation />
+        <translation>Export complete:
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="108" />
@@ -650,7 +652,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ImportExportPage.cpp" line="131" />
         <source>Sauvegarde complète créée (données + configuration) :
 </source>
-        <translation />
+        <translation>Full backup created (data + configuration):
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="133" />
@@ -682,7 +685,9 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <source>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront ÉCRASÉES par la sauvegarde.
 
 Cette action est irréversible. Continuer ?</source>
-        <translation />
+        <translation>All current data (components, categories, locations, stock movements, documents, projects) will be OVERWRITTEN by the backup.
+
+This action cannot be undone. Continue?</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="152" />
@@ -693,14 +698,17 @@ Cette action est irréversible. Continuer ?</source>
         <location filename="../src/ui/ImportExportPage.cpp" line="153" />
         <source>
 Configuration restaurée.</source>
-        <translation />
+        <translation>
+Configuration restored.</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="155" />
         <source>
 
 Redémarrez l'application pour recharger les données et la configuration.</source>
-        <translation />
+        <translation>
+
+Restart the application to reload the data and configuration.</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="156" />
@@ -724,7 +732,8 @@ Redémarrez l'application pour recharger les données et la configuration.</sour
         <location filename="../src/ui/ImportExportPage.cpp" line="164" />
         <source>Configuration sauvegardée :
 </source>
-        <translation />
+        <translation>Configuration saved:
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="166" />
@@ -746,7 +755,8 @@ Redémarrez l'application pour recharger les données et la configuration.</sour
         <location filename="../src/ui/ImportExportPage.cpp" line="178" />
         <source>Configuration restaurée.
 Redémarrez l'application pour l'appliquer entièrement.</source>
-        <translation />
+        <translation>Configuration restored.
+Restart the application to apply it fully.</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="180" />
@@ -938,7 +948,8 @@ Redémarrez l'application pour l'appliquer entièrement.</source>
         <location filename="../src/ui/MainWindow.cpp" line="150" />
         <source>Synchroniser vos données avec morfSync avant de fermer ?
 (Désactivable dans Réglages → Synchronisation.)</source>
-        <translation>Synchronize before quitting</translation>
+        <translation>Synchronize your data with morfSync before closing?
+(Can be disabled in Settings → Synchronization.)</translation>
     </message>
     <message>
         <location filename="../src/ui/MainWindow.cpp" line="176" />
@@ -1231,7 +1242,8 @@ Redémarrez l'application pour l'appliquer entièrement.</source>
         <location filename="../src/ui/ReferentialsPage.cpp" line="250" />
         <source> » existe déjà dans ce référentiel.
 Choisissez un autre nom ou corrigez la saisie.</source>
-        <translation />
+        <translation>" already exists in this reference list.
+Choose another name or correct the entry.</translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="294" />
@@ -1272,7 +1284,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ReferentialsPage.cpp" line="325" />
         <source>
 %1 composant(s) réaffecté(s).</source>
-        <translation />
+        <translation>
+%1 component(s) reassigned.</translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="330" />
@@ -1288,7 +1301,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ReferentialsPage.cpp" line="339" />
         <source>Référentiel exporté :
 </source>
-        <translation />
+        <translation>Reference list exported:
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="344" />
@@ -1463,6 +1477,38 @@ Workshop technical memory. © morfredus.</translation>
     <message><source>Invalid HTTP response.</source><translation>Invalid HTTP response.</translation></message>
     <message><source>Skipped unsafe archive entry: </source><translation>Skipped unsafe archive entry: </translation></message>
     <message><source>Could not restore file: </source><translation>Could not restore file: </translation></message>
+    <message><source>Étiquettes</source><translation>Labels</translation></message>
+    <message><source>Label fields</source><translation>Label fields</translation></message>
+    <message><source>Preview</source><translation>Preview</translation></message>
+    <message><source>Large</source><translation>Large</translation></message>
+    <message><source>Medium</source><translation>Medium</translation></message>
+    <message><source>Small</source><translation>Small</translation></message>
+    <message><source>Paper configuration</source><translation>Paper configuration</translation></message>
+    <message><source>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</source><translation>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</translation></message>
+    <message><source>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</source><translation>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</translation></message>
+    <message><source>Generate PDF</source><translation>Generate PDF</translation></message>
+    <message><source>Print</source><translation>Print</translation></message>
+    <message><source>Print labels</source><translation>Print labels</translation></message>
+    <message><source>PDF created successfully.</source><translation>PDF created successfully.</translation></message>
+    <message><source>New custom label format</source><translation>New custom label format</translation></message>
+    <message><source>New custom format</source><translation>New custom format</translation></message>
+    <message><source>Name</source><translation>Name</translation></message>
+    <message><source>Delete format</source><translation>Delete format</translation></message>
+    <message><source>Edit format</source><translation>Edit format</translation></message>
+    <message><source>Page width</source><translation>Page width</translation></message>
+    <message><source>Page height</source><translation>Page height</translation></message>
+    <message><source>Columns</source><translation>Columns</translation></message>
+    <message><source>Rows</source><translation>Rows</translation></message>
+    <message><source>Label width</source><translation>Label width</translation></message>
+    <message><source>Label height</source><translation>Label height</translation></message>
+    <message><source>Left margin</source><translation>Left margin</translation></message>
+    <message><source>Top margin</source><translation>Top margin</translation></message>
+    <message><source>Horizontal pitch</source><translation>Horizontal pitch</translation></message>
+    <message><source>Vertical pitch</source><translation>Vertical pitch</translation></message>
+    <message><source>Start row</source><translation>Start row</translation></message>
+    <message><source>Start column</source><translation>Start column</translation></message>
+    <message><source>Show calibration borders</source><translation>Show calibration borders</translation></message>
+    <message><source>Supprimer %1 composants sélectionnés ?</source><translation>Delete %1 selected components?</translation></message>
     <message><source>HTTP status: </source><translation>HTTP status: </translation></message>
     <message><source>Unexpected response.</source><translation>Unexpected response.</translation></message>
     <message><source>Hub unreachable (HTTP %1).</source><translation>Hub unreachable (HTTP %1).</translation></message>
@@ -1472,6 +1518,12 @@ Workshop technical memory. © morfredus.</translation>
     <message><source>Invalid PUSH response.</source><translation>Invalid PUSH response.</translation></message>
     <message><source>PULL failed (HTTP %1).</source><translation>PULL failed (HTTP %1).</translation></message>
     <message><source>Invalid PULL response.</source><translation>Invalid PULL response.</translation></message>
+    <message><source>Labels</source><translation>Labels</translation></message>
+    <message><source>Close</source><translation>Close</translation></message>
+    <message><source>%1 pins</source><translation>%1 pins</translation></message>
+    <message><source>This label format no longer exists.</source><translation>This label format no longer exists.</translation></message>
+    <message><source>Unable to start printing.</source><translation>Unable to start printing.</translation></message>
+    <message><source>Unable to write the PDF file.</source><translation>Unable to write the PDF file.</translation></message>
     <message><source>
 
 REDÉMARREZ l&apos;application pour terminer la restauration : les données ne seront remplacées qu&apos;à ce moment-là.</source><translation>
