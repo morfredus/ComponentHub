@@ -132,8 +132,13 @@ les bugs restent localisés, et chaque couche évolue sans casser les autres.
 
 Les données sont regroupées dans `componenthub.sqlite`, dans le dossier de
 données de l'utilisateur (voir [USER_MANUAL.md](USER_MANUAL.md) pour le chemin
-exact). Une **sauvegarde `.tar`** (menu Import/Export) emballe la base et la
-configuration dans un seul fichier, restaurable à tout moment. Les échanges
+exact). Une **sauvegarde `.tar`** (menu Import/Export) emballe un instantané
+cohérent de la base, les **pièces jointes** (dossier `attachments/`, récursif) et la
+configuration dans un seul fichier. La **restauration** se fait en deux temps :
+l'archive est extraite et validée dans `restore-pending/`, puis appliquée au prochain
+démarrage, avant l'ouverture de la base (anciennes données conservées en
+`componenthub.sqlite.bak` et `attachments.bak/`). Une archive sans pièces jointes
+(1.11 et antérieures) laisse les pièces jointes locales intactes. Les échanges
 manuels de données passent par les imports et exports CSV de l'application.
 
 ## Modules communs : supervision réseau et mises à jour

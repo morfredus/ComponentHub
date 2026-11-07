@@ -35,4 +35,9 @@ struct Version {
     QString toString() const;
 };
 
+// Vrai si `requested` n'est PAS strictement plus recente que `installed` (downgrade ou
+// reinstallation a l'identique). Si l'une des deux versions est illisible, renvoie faux :
+// l'appelant ne peut pas conclure et ne bloque pas a l'aveugle.
+bool isNotNewer(const QString& installed, const QString& requested);
+
 } // namespace morfupdate

@@ -8,6 +8,7 @@
  */
 
 #pragma once
+#include <atomic>
 #include <string>
 #include <map>
 
@@ -20,9 +21,15 @@ struct HttpResult {
     std::string error;        // message si !ok (réseau injoignable, URL invalide…)
 };
 
+// Associe au THREAD APPELANT un indicateur d'annulation (nullptr = aucun). Quand il passe à
+// vrai, les requêtes en cours de ce thread s'interrompent en quelques centaines de ms avec
+// l'erreur « http.cancelled ». L'indicateur doit survivre au thread ou être retiré avant.
+void setThreadCancelFlag(const std::atomic<bool>* flag);
+
 // GET/POST synchrones. `url` de la forme http://hôte:port/chemin (pas de https).
 // `headers` : en-têtes additionnels (ex. Authorization). `timeoutMs` : délai de
-// connexion/lecture (0 = défaut raisonnable).
+// connexion (0 = 5 s) et par lecture ; un délai TOTAL de 60 s et un plafond de
+// 128 Mio par réponse bornent en plus chaque requête.
 HttpResult httpGet(const std::string& url,
                    const std::map<std::string, std::string>& headers = {},
                    int timeoutMs = 0);
@@ -42,5 +49,11 @@ HttpResult httpPut(const std::string& url, const std::string& body,
 HttpResult httpHead(const std::string& url,
                     const std::map<std::string, std::string>& headers = {},
                     int timeoutMs = 0);
+
+// Fonctions pures exposées pour les tests (ctest) - non destinées aux appelants.
+// Décode un corps Transfer-Encoding: chunked. Retourne false si le flux est tronqué ou invalide.
+bool decodeChunked(const std::string& in, std::string& out);
+// Analyse une réponse HTTP brute (statut, corps, chunked) en complétant `r`.
+HttpResult parseResponse(const std::string& raw, HttpResult r = HttpResult());
 
 } // namespace chnet

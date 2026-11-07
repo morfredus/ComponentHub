@@ -23,7 +23,7 @@ résumé, une fois lancé il écoute sur `http://<ip-ou-nom>:8080`.
 **Réglages → Synchronisation** :
 
 1. **Adresse du hub** : `http://morfsync.local:8080` ou `http://<ip-du-pi>:8080`.
-2. **Jeton** (facultatif) : uniquement si le hub en exige un.
+2. **Jeton** (facultatif) : uniquement si le hub en exige un. Le client parle en HTTP clair (pas de TLS) : le jeton circule donc lisible sur le réseau. À réserver à un réseau local de confiance. Il est exclu des sauvegardes complètes et de l'export de configuration (sauf demande explicite).
 3. **Tester la connexion** pour vérifier, puis **Synchroniser maintenant**.
 
 ### Options
@@ -36,6 +36,16 @@ résumé, une fois lancé il écoute sur `http://<ip-ou-nom>:8080`.
 
 Sous les boutons, la **dernière synchronisation** est rappelée (date + nombre
 d'éléments reçus / envoyés).
+
+## Une synchro qui ne fige jamais la fenêtre
+
+La synchronisation (et le test de connexion) tourne dans un **thread de travail** :
+la fenêtre reste utilisable, la barre d'état affiche l'avancement (envoi, réception,
+pièces jointes). Une seule synchro à la fois ; les boutons sont grisés pendant
+l'exécution et **« Annuler la synchronisation »** l'arrête proprement (entre deux
+pages ou deux pièces jointes). Les modifications faites pendant la synchro ne sont
+jamais perdues : elles partent à la synchro suivante. Fermer l'application pendant une
+synchro l'annule, puis attend au plus quelques secondes.
 
 ## Ce qui est synchronisé
 

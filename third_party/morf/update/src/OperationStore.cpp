@@ -14,6 +14,7 @@
 #include <QSaveFile>
 #include <QUuid>
 
+#include <cstdio>
 #include <utility>
 
 namespace morfupdate {
@@ -68,8 +69,10 @@ bool OperationStore::load(QString* error) {
     for (const QJsonValue& value : root.value(QStringLiteral("operations")).toArray()) {
         UpdateOperation operation;
         if (!fromJson(value.toObject(), &operation)) {
-            if (error) *error = QStringLiteral("operation journal contains an invalid entry");
-            return false;
+            // Une entree illisible ne doit pas empecher tout le service de demarrer :
+            // l'ignorer (elle sera perdue a la prochaine ecriture) et le dire sur stderr.
+            std::fprintf(stderr, "morfUpdate: journal entry ignored (invalid)\n");
+            continue;
         }
         if (!isFinal(operation.state)) {
             if (operation.selfUpdate) {
@@ -119,7 +122,8 @@ std::optional<UpdateOperation> OperationStore::find(const QString& id) const {
 }
 
 UpdateOperation OperationStore::create(QString project, QString fromVersion, QString toVersion,
-                                       QString platform, bool selfUpdate, QString* error) {
+                                       QString platform, bool selfUpdate, QString* error,
+                                       bool allowDowngrade) {
     QMutexLocker locker(&m_mutex);
     if (active()) {
         if (error) *error = QStringLiteral("another update is active");
@@ -132,6 +136,7 @@ UpdateOperation OperationStore::create(QString project, QString fromVersion, QSt
     operation.toVersion = std::move(toVersion);
     operation.platform = std::move(platform);
     operation.selfUpdate = selfUpdate;
+    operation.allowDowngrade = allowDowngrade;
     operation.createdAt = QDateTime::currentDateTimeUtc();
     operation.updatedAt = operation.createdAt;
     m_operations.insert(operation.id, operation);

@@ -9,13 +9,22 @@
  *
  * Base locale souveraine : la synchro n'est jamais obligatoire ; en cas de hub
  * injoignable, l'application continue sur sa copie locale.
+ *
+ * THREADS : une instance (et ses dépôts / son magasin) appartient à UN seul thread, celui qui
+ * appelle sync(). L'application la fait tourner dans un thread de travail dédié avec sa propre
+ * connexion SQLite (voir SyncSession). Le service ne touche à aucun objet d'interface : il
+ * notifie via SyncObserver, appelé dans le thread de travail (à l'appelant de le ponter vers
+ * le thread GUI), et s'arrête proprement quand l'indicateur d'annulation passe à vrai.
  */
 
 #pragma once
 #include <string>
 #include <vector>
 #include <map>
+#include <atomic>
 #include <cstdint>
+#include <functional>
+#include "net/HttpClient.h"
 #include "sync_record.h"
 
 namespace domain { class AttachmentStore; }
@@ -34,10 +43,32 @@ struct SyncOutcome {
     int accepted = 0;         // changements locaux acceptés par le hub (PUSH)
     int conflicts = 0;        // versions refusées par le hub (plus anciennes)
     int applied = 0;          // changements distants appliqués localement (PULL)
+    int rejected = 0;         // enregistrements distants illisibles, ignorés (PULL)
     int blobsUploaded = 0;    // binaires de pièces jointes envoyés au hub
     int blobsDownloaded = 0;  // binaires de pièces jointes récupérés du hub
     std::int64_t lastSeq = 0; // curseur après synchro
+    bool cancelled = false;   // arrêtée sur demande (error = "sync.cancelled")
 };
+
+// Avancement, pour l'affichage. `done`/`total` valent 0 quand la phase n'a pas de dénominateur.
+struct SyncProgress {
+    enum class Phase { Connect, Push, Pull, Blobs };
+    Phase phase = Phase::Connect;
+    int done = 0;
+    int total = 0;
+};
+
+// Rappels appelés dans le thread qui exécute sync(). Tous facultatifs.
+struct SyncObserver {
+    std::function<void(const SyncProgress&)> onProgress;
+    // Enregistrement distant illisible, ignoré : identifiant (s'il existe) et motif.
+    std::function<void(const std::string& id, const std::string& reason)> onReject;
+};
+
+// Transport HTTP injectable (tests : faux serveur). Par défaut, le client réel chnet::http*.
+using HttpFn = std::function<chnet::HttpResult(
+    const std::string& method, const std::string& url, const std::string& body,
+    const std::map<std::string, std::string>& headers, int timeoutMs)>;
 
 class SyncService {
 public:
@@ -63,10 +94,27 @@ public:
     // à réserver à une confirmation explicite dans l'interface.
     SyncOutcome resetHubAndRepublish(const SyncConfig& cfg);
 
+    // Exécuteur SQL (BEGIN IMMEDIATE / COMMIT / ROLLBACK) pour appliquer chaque page du PULL dans
+    // une transaction. Facultatif : sans lui, chaque enregistrement est appliqué isolément.
+    // BEGIN IMMEDIATE prend le verrou d'écriture d'emblée : la vérification « révision distante
+    // plus récente ? » et l'écriture sont alors atomiques face aux écritures de l'utilisateur.
+    void setSqlExec(std::function<void(const char*)> fn) { sqlExec_ = std::move(fn); }
+
+    // Annulation coopérative : testée entre les pages, les blobs et pendant les requêtes HTTP
+    // (par le thread appelant). L'indicateur doit survivre au service. nullptr = jamais annulée.
+    void setCancelFlag(const std::atomic<bool>* flag) { cancel_ = flag; }
+    void setObserver(SyncObserver obs) { observer_ = std::move(obs); }
+    void setHttp(HttpFn fn) { http_ = std::move(fn); }
+
     const std::string& deviceId() const { return deviceId_; }
     std::int64_t lastSeq() const { return lastSeq_; }
 
 private:
+    bool isCancelled() const { return cancel_ && cancel_->load(std::memory_order_relaxed); }
+    void progress(SyncProgress::Phase phase, int done = 0, int total = 0) const;
+    chnet::HttpResult http(const std::string& method, const std::string& url, const std::string& body,
+                           const std::map<std::string, std::string>& headers, int timeoutMs = 0) const;
+    SyncOutcome syncGuarded(const SyncConfig& cfg, bool mayReset);
     void loadState();
     void saveState() const;
     SyncOutcome syncOnce(const SyncConfig& cfg, bool mayReset);
@@ -75,6 +123,10 @@ private:
     // manquent localement (intégrité vérifiée). Sans effet si aucun magasin.
     void transferBlobs(const SyncConfig& cfg, SyncOutcome& out);
 
+    std::function<void(const char*)> sqlExec_;
+    const std::atomic<bool>* cancel_ = nullptr;
+    SyncObserver observer_;
+    HttpFn http_;
     std::vector<domain::ISyncableRepository*> repos_;
     domain::AttachmentStore* attachments_ = nullptr;
     std::map<std::string, domain::ISyncableRepository*> byType_; // dispatch au PULL

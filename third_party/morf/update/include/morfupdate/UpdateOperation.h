@@ -51,6 +51,9 @@ struct UpdateOperation {
     bool    selfUpdate = false;  // morfUpdate est sa propre cible
     QString rollbackRef;         // reference du paquet stashe pour le rollback
     QString stagedRef;           // reference du nouveau paquet prepare
+    // Demande explicite d'autoriser un downgrade / une reinstallation (non persiste :
+    // l'operation est executee par le processus qui l'a creee).
+    bool    allowDowngrade = false;
 };
 
 // Verdict du successeur pour une operation self-update reprise apres la

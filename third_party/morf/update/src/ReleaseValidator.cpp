@@ -8,8 +8,8 @@
 
 namespace morfupdate {
 namespace {
-const QRegularExpression kSha256(QStringLiteral("^[0-9a-f]{64}$"));
-const QRegularExpression kCommit(QStringLiteral("^[0-9a-f]{40}$"));
+const QRegularExpression kSha256(QRegularExpression::anchoredPattern(QStringLiteral("[0-9a-f]{64}")));
+const QRegularExpression kCommit(QRegularExpression::anchoredPattern(QStringLiteral("[0-9a-f]{40}")));
 
 bool platformMatches(const QJsonObject& platform, const QString& expected) {
     const QString os = platform.value(QStringLiteral("os")).toString();
@@ -63,6 +63,17 @@ bool ReleaseValidator::selectAsset(const QJsonObject& manifest, const QString& p
     }
     *asset = selected;
     return true;
+}
+
+bool ReleaseValidator::listingHasSpecialEntry(const QString& verboseListing) {
+    // Listing `tar -tv` : le premier caractere de chaque ligne est le type d'entree
+    // (- fichier, d dossier, l lien symbolique, h lien dur, c/b peripherique...).
+    for (const QString& line : verboseListing.split(QLatin1Char('\n'), Qt::SkipEmptyParts)) {
+        const QChar type = line.at(0);
+        if (type != QLatin1Char('-') && type != QLatin1Char('d'))
+            return true;
+    }
+    return false;
 }
 
 bool ReleaseValidator::checksumMatches(const QString& path, const QString& expected,

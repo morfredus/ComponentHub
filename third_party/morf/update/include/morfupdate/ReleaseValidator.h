@@ -22,6 +22,10 @@ public:
                             const QString& version, const QString& platform,
                             const QString& taggedCommit, ValidatedAsset* asset,
                             QString* error);
+    // Vrai si un listing `tar -tv` contient autre chose que fichiers et dossiers
+    // (lien symbolique ou dur, peripherique) : un lien extrait puis suivi par la
+    // copie privilegiee permettrait de lire ou d'ecraser hors de l'arborescence.
+    static bool listingHasSpecialEntry(const QString& verboseListing);
     static bool checksumMatches(const QString& path, const QString& expected,
                                 QString* error);
 };

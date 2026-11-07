@@ -8,12 +8,15 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QFile>
+#include <map>
+#include <string>
 
 #include "AppContext.h"
 #include "ui/UiKit.h"
 #include "ui/Language.h"
 #include "ui/AppConfigIO.h"
 #include "platform/Tar.h"
+#include "platform/Backup.h"
 #include "csv.h"
 
 using domain::CsvFormat;
@@ -124,13 +127,23 @@ void ImportExportPage::importCsv(const std::function<ImportResult(const std::str
 void ImportExportPage::backup() {
     const QString path = QFileDialog::getSaveFileName(this, chui::tr("Sauvegarde complète"), "componenthub_backup.tar", "Archive TAR (*.tar)");
     if (path.isEmpty()) return;
-    // Dépose la configuration (QSettings) dans le dossier de données AVANT
-    // l'archivage, pour qu'elle soit incluse dans le .tar.
-    chui::exportConfig(chui::configPathInDir(QString::fromStdString(ctx_.dir())));
-    if (chdesktop::tar::pack(path.toStdString(), ctx_.dir()))
-        QMessageBox::information(this, chui::tr("Sauvegarde"), chui::tr("Sauvegarde complète créée (données + configuration) :\n") + path);
+    const QString dataDir = QString::fromStdString(ctx_.dir());
+    // Ancien fichier de config laissé par les versions précédentes (il contenait le jeton) :
+    // la configuration est désormais ajoutée directement à l'archive, jamais écrite en clair
+    // dans le dossier de données.
+    QFile::remove(chui::configPathInDir(dataDir));
+
+    // Instantané cohérent de la base (VACUUM INTO) + fichiers annexes + configuration SANS
+    // le jeton de synchro (à ressaisir après une restauration sur un autre poste).
+    std::string error;
+    const std::map<std::string, std::string> extra{
+        {"app_config.json", chui::configJson(false).toStdString()}};
+    if (chdesktop::backup::create(ctx_.database(), ctx_.dir(), path.toStdString(), extra, error))
+        QMessageBox::information(this, chui::tr("Sauvegarde"),
+            chui::tr("Sauvegarde complète créée (données, pièces jointes et configuration, sans le jeton de synchro) :\n") + path);
     else
-        QMessageBox::warning(this, chui::tr("Sauvegarde"), chui::tr("Échec de la création de l'archive."));
+        QMessageBox::warning(this, chui::tr("Sauvegarde"),
+            chui::tr("Échec de la création de l'archive.") + "\n" + chui::archiveError(QString::fromStdString(error)));
 }
 
 void ImportExportPage::restore() {
@@ -141,26 +154,42 @@ void ImportExportPage::restore() {
         return;
     }
     if (QMessageBox::question(this, chui::tr("Restaurer"),
-            chui::tr("Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront ÉCRASÉES par la sauvegarde.\n\nCette action est irréversible. Continuer ?")) != QMessageBox::Yes)
+            chui::tr("Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront REMPLACÉES par la sauvegarde au prochain démarrage.\n\nL'ancienne base (componenthub.sqlite.bak) et les anciennes pièces jointes (dossier attachments.bak) seront conservées à côté. Continuer ?")) != QMessageBox::Yes)
         return;
 
-    std::vector<std::string> errors;
-    const int n = chdesktop::tar::extract(path.toStdString(), ctx_.dir(), errors);
-    // Recharge la configuration si l'archive en contenait une.
-    const QString cfgFile = chui::configPathInDir(QString::fromStdString(ctx_.dir()));
+    // La base est ouverte : on ne l'écrase pas à chaud. L'archive est extraite à part et
+    // validée (integrity_check) ; le remplacement a lieu au prochain démarrage, avant
+    // l'ouverture de la base (voir applyPendingRestore dans main.cpp).
+    std::vector<std::string> warnings;
+    std::string error;
+    if (!chdesktop::backup::stageRestore(path.toStdString(), ctx_.dir(), warnings, error)) {
+        QMessageBox::warning(this, chui::tr("Restauration"),
+            chui::tr("Sauvegarde invalide, rien n'a été modifié :\n") + chui::archiveError(QString::fromStdString(error)));
+        return;
+    }
+    // Configuration contenue dans l'archive : appliquée tout de suite (sans jeton, donc le
+    // jeton actuel est conservé), puis retirée pour ne pas atterrir dans le dossier de données.
+    const QString cfgFile = QString::fromStdString(ctx_.dir()) + "/" + chdesktop::backup::kPendingDir + "/app_config.json";
     const bool cfgRestored = QFile::exists(cfgFile) && chui::importConfig(cfgFile);
-    QString msg = QString(chui::tr("%1 fichier(s) restauré(s)." )).arg(n);
+    QFile::remove(cfgFile);
+
+    QString msg = chui::tr("Sauvegarde vérifiée et mise en attente.");
     if (cfgRestored) msg += chui::tr("\nConfiguration restaurée.");
-    for (const auto& e : errors) msg += "\n• " + chui::archiveError(QString::fromStdString(e));
-    msg += chui::tr("\n\nRedémarrez l'application pour recharger les données et la configuration.");
-    QMessageBox::information(this, chui::tr("Restauration terminée"), msg);
+    for (const auto& e : warnings) msg += "\n• " + chui::archiveError(QString::fromStdString(e));
+    msg += chui::tr("\n\nREDÉMARREZ l'application pour terminer la restauration : les données ne seront remplacées qu'à ce moment-là.");
+    QMessageBox::information(this, chui::tr("Restauration prête"), msg);
 }
 
 void ImportExportPage::backupConfig() {
     const QString path = QFileDialog::getSaveFileName(
          this, chui::tr("Sauvegarder la configuration"), "componenthub_config.json", "Configuration JSON (*.json)");
     if (path.isEmpty()) return;
-    if (chui::exportConfig(path))
+    // Le jeton de synchro est un secret (et circule en HTTP clair vers le hub : LAN de
+    // confiance uniquement) : jamais exporté sans demande explicite.
+    const bool withToken = QMessageBox::question(this, chui::tr("Configuration"),
+        chui::tr("Inclure le jeton de synchronisation dans le fichier ?\n(Il sera lisible en clair.)"),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
+    if (chui::exportConfig(path, withToken))
         QMessageBox::information(this, chui::tr("Configuration"), chui::tr("Configuration sauvegardée :\n") + path);
     else
         QMessageBox::warning(this, chui::tr("Configuration"), chui::tr("Échec de l'écriture du fichier."));

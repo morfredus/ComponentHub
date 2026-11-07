@@ -79,6 +79,8 @@ QString networkError(const QString& error) {
     if (code == "http.send_failed") return tr("Failed to send the request.");
     if (code == "http.empty_response") return tr("Empty response (timeout?).");
     if (code == "http.invalid_response") return tr("Invalid HTTP response.");
+    if (code == "http.cancelled") return tr("Cancelled.");
+    if (code == "http.timeout") return tr("The hub took too long to answer.");
     return error;
 }
 
@@ -90,6 +92,26 @@ QString archiveError(const QString& error) {
         return tr("Skipped unsafe archive entry: ") + name;
     if (code == "tar.write_failed")
         return tr("Could not restore file: ") + name;
+    if (code == "tar.name_too_long")
+        return tr("File name too long for the archive: ") + name;
+    if (code == "tar.read_failed")
+        return tr("Could not read file: ") + name;
+    if (code == "tar.invalid_name")
+        return tr("File name not allowed in the archive: ") + name;
+    if (code == "tar.too_deep")
+        return tr("Folder tree too deep for the archive: ") + name;
+    if (code == "tar.too_large")
+        return tr("Data too large for a single archive: ") + name;
+    if (code == "tar.corrupt")
+        return tr("The archive is damaged or incomplete.");
+    if (code == "backup.attachment_invalid")
+        return tr("Skipped damaged attachment (it will be downloaded again from the hub): ") + name;
+    if (code == "backup.apply_failed")
+        return tr("Could not replace the data: ") + name;
+    if (code == "backup.not_a_backup" || code == "backup.no_database" || code == "backup.invalid_database")
+        return tr("The archive does not contain a valid ComponentHub database.");
+    if (code == "backup.snapshot_failed" || code == "backup.staging_failed" || code == "backup.copy_failed")
+        return tr("Backup preparation failed: ") + name;
     return error;
 }
 
@@ -106,6 +128,8 @@ QString syncError(const QString& error) {
     if (code == "sync.push_invalid_response") return tr("Invalid PUSH response.");
     if (code == "sync.pull_failed") return tr("PULL failed (HTTP %1).").arg(detail);
     if (code == "sync.pull_invalid_response") return tr("Invalid PULL response.");
+    if (code == "sync.cancelled") return tr("Synchronization cancelled.");
+    if (code == "sync.database_error") return tr("Local database error: ") + detail;
     return networkError(error);
 }
 

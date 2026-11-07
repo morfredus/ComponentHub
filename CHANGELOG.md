@@ -6,6 +6,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.12.0] - 2026-11-07
+
+### Added
+
+- **Attachments are part of the backup.** `tar::pack` is now recursive (directory entries, relative paths with `/`, name and depth validation, a 16 GiB total cap with a clear message, symlinks skipped, in-progress `.tmp.` files excluded) and the full backup includes the `attachments/` folder. Restoring extracts everything into `restore-pending/`, validates the database and every attachment (file name must be the SHA-256 of its content, otherwise it is skipped with a warning), and the next start swaps the database and `attachments/` together: the previous ones are kept as `componenthub.sqlite.bak` and `attachments.bak/`, nothing is deleted before success, a failed step is rolled back, and an interrupted swap resumes at the next start. Archives without `attachments/` (1.11.0 and older, raw copies) are still restorable and leave the local attachments untouched. Stale `.bak` files found inside an old archive never overwrite the local safety copies.
+- Cancel button for the synchronization in Settings, and progress in the status bar (sending, receiving, attachments n/m).
+- `ctest`: nested round trip with binary files, hostile archives (traversal, absolute path, reserved names, links), truncated and checksum-corrupted archives, legacy archive without attachments, interrupted restore; synchronization against a fake hub (`ch_tests_sync`).
+
+### Changed
+
+- **Synchronization runs in a dedicated worker thread** (also the connection test and the startup sync). The worker opens its own SQLite connection and its own repositories (`SyncSession`), never touches a UI object and only emits queued signals (progress, rejected records, result). One sync at a time, buttons disabled while running, cooperative cancellation checked between pages, attachments and inside HTTP requests; closing the window cancels and waits a bounded time, and a `QThread` is never destroyed while running. After a sync the visible page reloads from the database. The `processEvents()`/`repaint()` workarounds are gone. Wire protocol and database schema are unchanged.
+- `PRAGMA busy_timeout` (5 s) on every connection; PULL pages are applied in `BEGIN IMMEDIATE` transactions so the "is the remote revision newer?" check and the write cannot interleave with a user edit.
+- The PULL cursor is saved after every page (an interrupted sync resumes instead of replaying), and a hub that announces more pages without advancing the cursor is rejected instead of looping forever.
+- `sync_state.json` is written atomically.
+- Tar: header checksum verified, archives without the end-of-archive marker or cut inside a header are reported as damaged (`tar.corrupt`), sizes use 64-bit integers (the previous `unsigned long` was 32-bit on Windows).
+
+### Fixed
+
+- A local edit made while a sync was exporting could be lost: the push watermark was read after the export; it is now read before, so such a row is sent by the next push.
+- The HTTP client waits in short slices, so a cancellation takes effect within about 200 ms even on a silent hub.
+- Old `.bak` files are no longer packed into backups (they doubled the archive size).
+
+## [1.11.0] - 2026-11-07
+
+### Fixed
+
+- **Backup and restore of the SQLite database.** The database runs in WAL mode and stays open, so copying the raw file gave an inconsistent snapshot and restoring over it could silently corrupt it. Backups now archive a consistent snapshot (`VACUUM INTO`) and never the `-wal`/`-shm` files. A restore is validated first (`integrity_check`, `components` table) and staged; it is applied at the next start, before the database is opened, keeping the previous database as `componenthub.sqlite.bak`. Older archives made from a raw copy are still accepted.
+- SQLite statements are now released by an RAII guard (no leak when an error is thrown mid-loop) and NULL text columns read as empty strings instead of crashing.
+- **Sync.** A remote record with a badly typed field (for example `"notes": null`) no longer blocks the synchronization forever: each record is applied in its own `try/catch`, rejects are counted and logged, the whole PULL page is applied in one transaction and the cursor always advances.
+- HTTP client: `Transfer-Encoding: chunked` responses are decoded, responses are capped at 128 MiB, and a 60 s total request timeout plus a connection timeout bound every call (`Content-Length` responses behave as before).
+- The sync status messages no longer pump the Qt event loop (`repaint()` instead of `processEvents()`), so the user cannot re-enter the application during a sync.
+- Tar: entries containing `:` or Windows reserved names are refused on extract, truncated archives are detected (partial files removed), and `pack` fails on a name longer than 99 bytes instead of truncating it.
+
+### Security
+
+- The sync token is no longer written to full backups nor to the configuration export unless explicitly requested, and the intermediate `app_config.json` is no longer left in the data folder. The documentation states that the token travels over plain HTTP and is meant for a trusted LAN only.
+
+### Added
+
+- `ctest` suite (`ch_tests`): chunked decoding, tolerant JSON, Tar hardening, NULL columns, badly typed remote record, full backup/restore round trip.
+
+### Known limitation
+
+- Synchronization still runs on the GUI thread (it shares the SQLite connection with the UI); moving it to a worker needs a dedicated connection and is deferred. (Lifted in 1.12.0.)
+
+## [1.10.1] - 2026-11-07
+
+### Changed
+
+- Resync the vendored morfUpdate core to 0.9.0: loopback health URL parsed with `QUrl`, `Host` and `Origin` checks on the local API, downgrade refused unless explicitly allowed, subprocess timeouts and a minimal environment, archives with links refused. Update checks are unchanged.
+
 ## [1.10.0] - 2026-10-22
 
 ### Added

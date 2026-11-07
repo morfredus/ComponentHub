@@ -1,5 +1,7 @@
 #include "morfupdate/LocalApiServer.h"
 #include "morfupdate/OperationStore.h"
+#include "morfupdate/RequestGuard.h"
+#include "morfupdate/Version.h"
 #include "morfupdate/UpdateOperation.h"
 
 #include <QHostAddress>
@@ -74,6 +76,18 @@ void LocalApiServer::onSocketReadyRead(QTcpSocket* socket) {
 
 void LocalApiServer::handle(QTcpSocket* socket, QByteArray method, QByteArray path,
                             QByteArray headers, QByteArray body) {
+    // Anti DNS-rebinding : seul un Host de boucle locale est legitime (lectures comprises,
+    // le journal d'operations ne doit pas fuiter vers une page tierce).
+    if (!isLocalHost(headerValue(headers, "Host"))) {
+        reply(socket, 403, "Forbidden", {{"error", "host_not_allowed"}});
+        return;
+    }
+    // Anti-CSRF (specification commune du parc) : ecriture venue d'une autre origine.
+    // Aucun en-tete CORS n'est emis par ce serveur, et OPTIONS reste en 404.
+    if (isCrossOriginWrite(method, headerValue(headers, "Origin"), headerValue(headers, "Host"))) {
+        reply(socket, 403, "Forbidden", {{"error", "cross_origin_forbidden"}});
+        return;
+    }
     // Liveness and the capability scope carry no administrative information.
     // They remain intentionally readable so a local supervisor can tell an
     // unavailable agent from an agent that refuses an update request.
@@ -163,9 +177,19 @@ void LocalApiServer::handle(QTcpSocket* socket, QByteArray method, QByteArray pa
     // Pour une self-update, la version de depart = la version en cours d'execution
     // (macro de compilation). C'est l'ancre du verdict RolledBack cote successeur.
     const QString fromVersion = target.isSelf ? QStringLiteral(MORFUPDATE_VERSION) : QString();
+    // Refus d'un downgrade (ou d'une reinstallation a l'identique) sauf demande explicite
+    // `allow_downgrade: true` : sans cela, une requete forgee pouvait ramener un service
+    // a une version vulnerable. Pour les autres services, la version installee est lue
+    // par le moteur (UpdateEngine::run) ; ici seule celle de morfUpdate est connue.
+    const bool allowDowngrade = object.value("allow_downgrade").toBool(false);
+    if (target.isSelf && !allowDowngrade && isNotNewer(fromVersion, version)) {
+        reply(socket, 409, "Conflict", {{"error", "downgrade refused (set allow_downgrade to override)"}});
+        return;
+    }
     QString error;
     const UpdateOperation operation =
-        m_operations->create(project, fromVersion, version, platformName(), target.isSelf, &error);
+        m_operations->create(project, fromVersion, version, platformName(), target.isSelf, &error,
+                             allowDowngrade);
     if (operation.id.isEmpty()) { reply(socket, 500, "Internal Server Error", {{"error", error}}); return; }
     reply(socket, 202, "Accepted", {{"id", operation.id}, {"state", "queued"}});
     emit operationQueued(operation.id);
@@ -180,7 +204,9 @@ void LocalApiServer::reply(QTcpSocket* socket, int code, QByteArray reason, QJso
 }
 
 bool LocalApiServer::safeIdentifier(const QString& value) {
-    static const QRegularExpression allowed(QStringLiteral("^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"));
+    // anchoredPattern : `$` seul accepte une fin de ligne finale, qui finirait dans une URL GitHub.
+    static const QRegularExpression allowed(QRegularExpression::anchoredPattern(
+        QStringLiteral("[A-Za-z0-9][A-Za-z0-9._-]{0,127}")));
     return allowed.match(value).hasMatch();
 }
 

@@ -64,4 +64,10 @@ QString Version::toString() const {
     return s;
 }
 
+bool isNotNewer(const QString& installed, const QString& requested) {
+    const Version have = Version::parse(installed);
+    const Version want = Version::parse(requested);
+    return have.valid && want.valid && want.compare(have) <= 0;
+}
+
 } // namespace morfupdate
