@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "AppContext.h"
+#include "platform/Backup.h"
 #include "ui/MainWindow.h"
 #include "ui/Theme.h"
 #include "ui/Icons.h"
@@ -41,6 +42,17 @@ int main(int argc, char* argv[]) {
     QDir().mkpath(dir);
 
     Theme::instance().apply(Theme::savedMode());
+
+    // Restauration validée lors de la session précédente : à appliquer AVANT d'ouvrir la base
+    // (ancienne base conservée en .bak, -wal/-shm supprimés).
+    {
+        bool applied = false;
+        std::string restoreError;
+        if (!chdesktop::backup::applyPendingRestore(dir.toStdString(), applied, restoreError))
+            QMessageBox::warning(nullptr, chui::tr("ComponentHub - restauration"),
+                chui::tr("La restauration en attente n'a pas pu être appliquée ; les données actuelles sont conservées.\n\n")
+                    + chui::archiveError(QString::fromStdString(restoreError)));
+    }
 
     std::unique_ptr<chdesktop::AppContext> context;
     try {

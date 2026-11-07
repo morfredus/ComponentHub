@@ -165,8 +165,22 @@ public:
     
     // Initialise le schéma de la base vide.
     bool initialize();
+    // Prépare une connexion ANNEXE sur une base déjà initialisée par une autre connexion (thread
+    // de synchro) : délai d'attente des verrous, clés étrangères. Ne touche pas au schéma.
+    bool openExisting();
+    // Attente maximale d'un verrou tenu par une autre connexion.
+    static constexpr int kBusyTimeoutMs = 5000;
+
+    // Exécute une instruction sans résultat (BEGIN / COMMIT / ROLLBACK…) ; lève en cas d'erreur.
+    void execSql(const std::string& sql);
+
+    // Écrit un instantané COHÉRENT de la base dans `destPath` (VACUUM INTO). La base est en
+    // WAL et ouverte : copier le fichier brut donnerait un état incohérent (pages encore dans
+    // le -wal). Le fichier de destination ne doit pas exister. Lève std::runtime_error.
+    void snapshotTo(const std::string& destPath);
     
 private:
+    void configureConnection();
     bool createSchema();
     
     sqlite3* db_ = nullptr;

@@ -10,6 +10,7 @@ class QStackedWidget;
 class QActionGroup;
 
 namespace chdesktop { class AppContext; }
+namespace chui { class SyncRunner; struct SyncJobResult; }
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -29,7 +30,10 @@ protected:
 private:
     struct NavEntry { QString label; int glyph; };
     void maybeSyncOnStartup();                 // synchro au démarrage si hub joignable
-    void runSync(bool showUpToDate);           // exécute un cycle et informe via la barre d'état
+    void runSync(int reason);                  // lance un cycle dans le thread de travail (chui::SyncReason)
+    void onSyncProgress(int phase, int done, int total);
+    void onSyncFinished(const chui::SyncJobResult& result);
+    void refreshAfterSync();                   // recharge la page affichée depuis la base
     void buildSidebar();
     void buildMenuBar();
     void retintNav();
@@ -39,6 +43,9 @@ private:
     void checkForUpdates(bool manual);   // manual=true : entrée de menu ; false : au démarrage (silencieux)
 
     chdesktop::AppContext& ctx_;
+    chui::SyncRunner* runner_ = nullptr;   // synchro hors du thread GUI (enfant de la fenêtre)
+    bool quitAsked_ = false;               // la proposition « synchroniser avant de quitter » a eu lieu
+    bool quitAfterSync_ = false;           // fermer la fenêtre dès que la synchro de sortie est finie
     QListWidget*    nav_ = nullptr;
     QStackedWidget* stack_ = nullptr;
     QVector<NavEntry> entries_;

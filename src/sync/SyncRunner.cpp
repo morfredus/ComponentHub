@@ -1,0 +1,131 @@
+#include "sync/SyncRunner.h"
+
+#include <QThread>
+
+#include <exception>
+
+#include "sync/SyncSession.h"
+#include "ui/SyncPrefs.h"
+
+namespace chui {
+
+// ---------------------------------------------------------------- SyncWorker (thread de travail)
+
+SyncWorker::SyncWorker(std::string dataDir, chsync::SyncConfig cfg, SyncReason reason,
+                       std::shared_ptr<std::atomic<bool>> cancel)
+    : dir_(std::move(dataDir)), cfg_(std::move(cfg)), reason_(reason), cancel_(std::move(cancel)) {}
+
+void SyncWorker::run() {
+    SyncJobResult r;
+    r.reason = reason_;
+    try {
+        // Session propre à CE thread : connexion SQLite, dépôts et magasin de pièces jointes.
+        chsync::SyncSession session(dir_);
+        chsync::SyncService svc(session.syncables(), session.statePath(), &session.attachments());
+        svc.setSqlExec([&session](const char* sql) { session.database().execSql(sql); });
+        svc.setCancelFlag(cancel_.get());
+        chsync::SyncObserver obs;
+        obs.onProgress = [this](const chsync::SyncProgress& p) {
+            emit progress(static_cast<int>(p.phase), p.done, p.total);
+        };
+        obs.onReject = [this](const std::string& id, const std::string& why) {
+            emit rejected(QString::fromStdString(id), QString::fromStdString(why));
+        };
+        svc.setObserver(obs);
+
+        if (reason_ == SyncReason::Test) {
+            r.ok = svc.testConnection(cfg_, r.info);
+        } else {
+            // Au démarrage : sonde courte. Si le hub ne répond pas vite, l'application reste sur
+            // sa base locale (souveraine), sans bloquer ni afficher d'erreur.
+            bool reachable = true;
+            if (reason_ == SyncReason::Startup) {
+                std::string info;
+                reachable = svc.testConnection(cfg_, info, 1500);
+                r.hubUnavailable = !reachable && !cancel_->load();
+            }
+            if (reachable) {
+                r.outcome = svc.sync(cfg_);
+                r.ok = r.outcome.ok;
+            }
+        }
+        r.cancelled = cancel_->load() || r.outcome.cancelled;
+    } catch (const std::exception& e) {
+        // Ouverture de la base impossible, etc. : une erreur affichable, jamais un plantage.
+        r.ok = false;
+        r.outcome.error = std::string("sync.database_error|") + e.what();
+    }
+    emit finished(r);
+}
+
+// ---------------------------------------------------------------- SyncRunner (thread GUI)
+
+SyncRunner::SyncRunner(std::string dataDir, QObject* parent)
+    : QObject(parent), dir_(std::move(dataDir)) {
+    qRegisterMetaType<chui::SyncJobResult>("chui::SyncJobResult");
+}
+
+SyncRunner::~SyncRunner() { shutdown(5000); }
+
+bool SyncRunner::start(SyncReason reason, const chsync::SyncConfig& cfg) {
+    if (thread_) return false;   // une seule synchro à la fois
+
+    cancel_ = std::make_shared<std::atomic<bool>>(false);
+    thread_ = new QThread(this);
+    auto* worker = new SyncWorker(dir_, cfg, reason, cancel_);
+    worker->moveToThread(thread_);
+
+    // Tous les liens vers le GUI passent par des connexions en file (émetteur dans un autre thread).
+    connect(thread_, &QThread::started, worker, &SyncWorker::run);
+    connect(worker, &SyncWorker::progress, this, &SyncRunner::progress, Qt::QueuedConnection);
+    connect(worker, &SyncWorker::rejected, this, &SyncRunner::recordRejected, Qt::QueuedConnection);
+    connect(worker, &SyncWorker::finished, this, &SyncRunner::onWorkerFinished, Qt::QueuedConnection);
+    // quit() est thread-safe et DOIT partir directement du thread de travail : en file, il
+    // attendrait la boucle GUI, qui peut être bloquée dans shutdown()/wait().
+    connect(worker, &SyncWorker::finished, thread_, &QThread::quit, Qt::DirectConnection);
+    connect(thread_, &QThread::finished, worker, &QObject::deleteLater);
+    connect(thread_, &QThread::finished, this, &SyncRunner::onThreadFinished, Qt::QueuedConnection);
+
+    thread_->start();
+    emit busyChanged(true);
+    return true;
+}
+
+void SyncRunner::cancel() {
+    if (cancel_) cancel_->store(true);
+}
+
+bool SyncRunner::shutdown(int waitMs) {
+    if (!thread_) return true;
+    cancel();
+    QThread* t = thread_;
+    if (t->wait(waitMs)) return true;   // le nettoyage final passe par onThreadFinished / ~QObject
+    // La tâche ne s'arrête pas dans le délai (requête réseau bloquée...) : on l'abandonne à son
+    // sort. Le QThread ne doit pas mourir avec nous tant qu'il tourne : on le détache de
+    // l'arbre d'objets et il se supprime lui-même à la fin.
+    disconnect(t, nullptr, this, nullptr);
+    t->setParent(nullptr);
+    connect(t, &QThread::finished, t, &QObject::deleteLater);
+    thread_ = nullptr;
+    return false;
+}
+
+void SyncRunner::onWorkerFinished(const SyncJobResult& result) {
+    result_ = result;   // la libération du thread (onThreadFinished) émettra le résultat
+}
+
+void SyncRunner::onThreadFinished() {
+    QThread* t = thread_;
+    thread_ = nullptr;
+    if (t) t->deleteLater();   // déjà terminé : suppression sûre, dans la boucle d'événements
+    cancel_.reset();
+
+    // Bilan de la dernière synchro réussie, mémorisé ici pour que tous les récepteurs le voient.
+    if (result_.ok && result_.reason != SyncReason::Test)
+        chui::recordLastSync(result_.outcome.applied, result_.outcome.accepted);
+
+    emit busyChanged(false);
+    emit finished(result_);
+}
+
+} // namespace chui

@@ -46,6 +46,7 @@ add_library(componenthub_core STATIC
     ${CH_DOMAIN}/import_export_service.cpp
     src/storage/SQLiteRepositories.cpp
     src/platform/Tar.cpp
+    src/platform/Backup.cpp       # sauvegarde cohérente (VACUUM INTO) + restauration en deux temps
     src/net/HttpClient.cpp        # client HTTP minimal (synchro HomeServerHub)
     src/sync/SyncService.cpp      # orchestration PUSH/PULL vers le hub
 )
@@ -91,6 +92,7 @@ add_executable(ComponentHub WIN32
     src/ui/ReferentialsPage.cpp
     src/ui/ImportExportPage.cpp
     src/ui/SettingsPage.cpp
+    src/sync/SyncRunner.cpp       # synchro dans un thread de travail dédié (Qt)
     ${CH_APP_RESOURCES}
 )
 target_link_libraries(ComponentHub PRIVATE componenthub_core Qt6::Widgets Qt6::PrintSupport morfBeacon::morfBeacon morfUpdate::morfUpdate morfUpdate::Widgets)
@@ -171,6 +173,28 @@ option(CH_BUILD_SMOKE "Construire le test de fumée headless" OFF)
 if(CH_BUILD_SMOKE)
     add_executable(ch_smoke src/smoke_main.cpp)
     target_link_libraries(ch_smoke PRIVATE componenthub_core)
+endif()
+
+# --- Tests ctest du cœur (sans Qt) ----------------------------------------
+# chunked, JSON tolérant, Tar (récursif, archives hostiles), NULL SQLite, enregistrement distant
+# mal typé, sauvegarde/restauration avec pièces jointes, synchro (thread, annulation, concurrence).
+# Lancer : ctest --output-on-failure
+option(CH_BUILD_TESTS "Construire les tests ctest" ON)
+if(CH_BUILD_TESTS)
+    enable_testing()
+    find_package(Threads REQUIRED)
+    add_executable(ch_tests tests/test_core.cpp)
+    target_link_libraries(ch_tests PRIVATE componenthub_core)
+    add_test(NAME ch_tests COMMAND ch_tests)
+    # Synchronisation : faux hub injecté, deux connexions SQLite (interface + thread de travail),
+    # annulation, enregistrement poison.
+    add_executable(ch_tests_sync tests/test_sync.cpp)
+    target_link_libraries(ch_tests_sync PRIVATE componenthub_core Threads::Threads)
+    add_test(NAME ch_tests_sync COMMAND ch_tests_sync)
+    # SyncRunner (thread de travail Qt) : cycle de vie, une tâche à la fois, annulation, arrêt borné.
+    add_executable(ch_tests_runner tests/test_runner.cpp src/sync/SyncRunner.cpp)
+    target_link_libraries(ch_tests_runner PRIVATE componenthub_core Qt6::Core)
+    add_test(NAME ch_tests_runner COMMAND ch_tests_runner)
 endif()
 
 # Signale la duree de compile a morfAnalytics apres le lien de l'executable.

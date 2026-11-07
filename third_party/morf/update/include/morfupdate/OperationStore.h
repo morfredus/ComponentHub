@@ -37,7 +37,8 @@ public:
     // active() to the client with HTTP 409, without ever queueing a second
     // installation behind an unknown result.
     UpdateOperation create(QString project, QString fromVersion, QString toVersion,
-                           QString platform, bool selfUpdate = false, QString* error = nullptr);
+                           QString platform, bool selfUpdate = false, QString* error = nullptr,
+                           bool allowDowngrade = false);
     bool transition(const QString& id, UpdateState state, QString detail,
                     QString* error = nullptr);
 

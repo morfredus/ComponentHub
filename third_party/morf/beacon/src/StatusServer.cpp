@@ -23,6 +23,7 @@ namespace morfbeacon {
 
 namespace {
 constexpr int kMaxRequestBytes = 8192; // garde-fou : une requete GET est minuscule
+constexpr int kHeaderTimeoutMs = 5000; // delai max pour recevoir les en-tetes complets
 }
 
 StatusServer::StatusServer(PresenceConfig config, IMetricsProvider* provider, QObject* parent)
@@ -84,10 +85,22 @@ void StatusServer::onNewConnection() {
         });
 
         connect(sock, &QTcpSocket::disconnected, sock, &QObject::deleteLater);
+
+        // Delai sur les connexions incomplètes : sans lui, un client qui ouvre la socket
+        // puis n'envoie jamais ses en-têtes l'occuperait indéfiniment (un lot de ces
+        // clients épuiserait les descripteurs du service). 5 s suffisent largement pour
+        // une requête GET minuscule ; `sock` sert d'objet-contexte, donc socket déjà
+        // détruite = timer annulé. La propriété "handled" distingue une requête déjà
+        // servie (fermeture gérée par handleRequest) d'une requête restée muette.
+        QTimer::singleShot(kHeaderTimeoutMs, sock, [sock]() {
+            if (!sock->property("handled").toBool())
+                sock->abort();
+        });
     }
 }
 
 void StatusServer::handleRequest(QTcpSocket* sock, const QByteArray& requestLine) {
+    sock->setProperty("handled", true); // requête reçue : le délai d'en-têtes ne s'applique plus
     const QList<QByteArray> parts = requestLine.split(' ');
     const QByteArray method = parts.value(0);
     const QByteArray path   = parts.value(1);

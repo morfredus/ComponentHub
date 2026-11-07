@@ -12,7 +12,6 @@
 #include <QUrl>
 #include <QSettings>
 #include <QCheckBox>
-#include <QApplication>
 #include <QMessageBox>
 
 #include "AppContext.h"
@@ -21,8 +20,9 @@
 #include "ui/SyncPrefs.h"
 #include "ui/Language.h"
 #include "sync/SyncService.h"
+#include "sync/SyncRunner.h"
 
-SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
+SettingsPage::SettingsPage(chdesktop::AppContext& ctx, chui::SyncRunner* runner, QWidget* parent)
     : QWidget(parent), ctx_(ctx) {
     auto* v = new QVBoxLayout(this);
     v->setContentsMargins(20, 20, 20, 20);
@@ -159,7 +159,9 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     auto* btnRow = new QHBoxLayout;
     auto* testBtn = uikit::button(chui::tr("Tester la connexion"), icons::Glyph::Projects, "ghost");
     auto* syncBtn = uikit::button(chui::tr("Synchroniser maintenant"), icons::Glyph::Link);
-    btnRow->addWidget(testBtn); btnRow->addWidget(syncBtn); btnRow->addStretch(1);
+    auto* cancelBtn = uikit::button(chui::tr("Annuler la synchronisation"), icons::Glyph::Projects, "ghost");
+    cancelBtn->setEnabled(false);
+    btnRow->addWidget(testBtn); btnRow->addWidget(syncBtn); btnRow->addWidget(cancelBtn); btnRow->addStretch(1);
     sv->addLayout(btnRow);
     sv->addWidget(status);
 
@@ -169,12 +171,22 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
     sv->addWidget(lastSync);
     v->addWidget(sync);
 
+    // Activation des boutons : grisés en mode local ET pendant qu'une tâche tourne ; seul
+    // « Annuler » ne s'active que pendant l'exécution.
+    auto refreshButtons = [=] {
+        const bool local = localOnly->isChecked();
+        const bool busy = runner->busy();
+        testBtn->setEnabled(!local && !busy);
+        syncBtn->setEnabled(!local && !busy);
+        cancelBtn->setEnabled(busy);
+    };
+
     // « Mode local uniquement » grise toute la section synchro.
     auto applyLocalOnly = [=](bool local) {
         for (QWidget* w : {static_cast<QWidget*>(urlEdit), static_cast<QWidget*>(tokEdit),
-                           static_cast<QWidget*>(autoStart), static_cast<QWidget*>(askQuit),
-                           static_cast<QWidget*>(testBtn), static_cast<QWidget*>(syncBtn)})
+                           static_cast<QWidget*>(autoStart), static_cast<QWidget*>(askQuit)})
             w->setEnabled(!local);
+        refreshButtons();
         status->setText(local ? chui::tr("Mode local : la synchronisation est désactivée.") : QString());
     };
     applyLocalOnly(localOnly->isChecked());
@@ -183,34 +195,40 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, QWidget* parent)
         applyLocalOnly(on);
     });
 
-    // Un SyncService partagé pour cette page (état persistant dans le dossier de données).
-    auto statePath = ctx_.dir() + "/sync_state.json";
-
-    connect(testBtn, &QPushButton::clicked, this, [this, persist, status, statePath] {
+    // Test et synchro passent par le thread de travail du runner (jamais par le thread GUI) :
+    // les boutons sont désactivés pendant l'exécution, et le résultat revient par signal.
+    connect(testBtn, &QPushButton::clicked, this, [this, runner, persist, status] {
         persist();
-        chsync::SyncService svc(ctx_.syncables(), statePath);
-        std::string info;
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-        const bool ok = svc.testConnection(chui::readSyncConfig(), info);
-        QApplication::restoreOverrideCursor();
-        status->setText((ok ? chui::tr("✅ Connecté - ") : chui::tr("❌ Échec - "))
-                        + chui::syncError(QString::fromStdString(info)));
+        status->setText(chui::tr("Test de la connexion…"));
+        if (!runner->start(chui::SyncReason::Test, chui::readSyncConfig()))
+            status->setText(chui::tr("Une synchronisation est déjà en cours."));
     });
 
-    connect(syncBtn, &QPushButton::clicked, this, [this, persist, status, lastSync, statePath] {
+    connect(syncBtn, &QPushButton::clicked, this, [this, runner, persist, status] {
         persist();
-        chsync::SyncService svc(ctx_.syncables(), statePath);
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-        const chsync::SyncOutcome o = svc.sync(chui::readSyncConfig());
-        QApplication::restoreOverrideCursor();
-        if (!o.ok) {
-            status->setText(chui::tr("❌ Échec - ") + chui::syncError(QString::fromStdString(o.error)));
-            return;
+        status->setText(chui::tr("Synchronisation en cours…"));
+        if (!runner->start(chui::SyncReason::Manual, chui::readSyncConfig()))
+            status->setText(chui::tr("Une synchronisation est déjà en cours."));
+    });
+    connect(cancelBtn, &QPushButton::clicked, runner, &chui::SyncRunner::cancel);
+
+    connect(runner, &chui::SyncRunner::busyChanged, this, [refreshButtons](bool) { refreshButtons(); });
+    connect(runner, &chui::SyncRunner::finished, this,
+            [status, lastSync](const chui::SyncJobResult& r) {
+        if (r.reason == chui::SyncReason::Test) {
+            status->setText((r.ok ? chui::tr("✅ Connecté - ") : chui::tr("❌ Échec - "))
+                            + chui::syncError(QString::fromStdString(r.info)));
+        } else if (r.cancelled) {
+            status->setText(chui::tr("Synchronisation annulée."));
+        } else if (r.hubUnavailable) {
+            status->setText(chui::tr("Hub de synchronisation indisponible - travail en local."));
+        } else if (!r.ok) {
+            status->setText(chui::tr("❌ Échec - ") + chui::syncError(QString::fromStdString(r.outcome.error)));
+        } else {
+            status->setText(QString(chui::tr("✅ Synchronisé - %1 envoyé(s), %2 reçu(s), %3 conflit(s)."))
+                                .arg(r.outcome.accepted).arg(r.outcome.applied).arg(r.outcome.conflicts));
         }
-        status->setText(QString("✅ Synchronisé - %1 envoyé(s), %2 reçu(s), %3 conflit(s).")
-                            .arg(o.accepted).arg(o.applied).arg(o.conflicts));
-        chui::recordLastSync(o.applied, o.accepted);
-        lastSync->setText(chui::lastSyncSummary());
+        lastSync->setText(chui::lastSyncSummary());   // déjà mis à jour par le runner
     });
 
     // --- À propos ---

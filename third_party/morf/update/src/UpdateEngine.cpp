@@ -2,6 +2,7 @@
 
 #include "morfupdate/OperationStore.h"
 #include "morfupdate/ReleaseValidator.h"
+#include "morfupdate/Version.h"
 
 #include <QDir>
 #include <QEventLoop>
@@ -89,13 +90,26 @@ bool taggedCommit(const QString& repository, const QString& version, const QByte
     return true;
 }
 
-bool runProcess(const QString& program, const QStringList& arguments, QString* error) {
+// timeoutMs : jamais d'attente infinie (waitForFinished(-1) figeait le thread worker, donc
+// toute mise a jour, si dpkg ou le helper restait bloque). A l'echeance : terminate puis
+// kill, et l'operation echoue franchement.
+bool runProcess(const QString& program, const QStringList& arguments, QString* error,
+                int timeoutMs = 900000) {
     QProcess process;
     process.setProgram(program);
     process.setArguments(arguments);
     process.start();
-    if (!process.waitForStarted(10000) || !process.waitForFinished(-1)
-        || process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
+    const bool started = process.waitForStarted(10000);
+    if (started && !process.waitForFinished(timeoutMs)) {
+        process.terminate();
+        if (!process.waitForFinished(5000)) {
+            process.kill();
+            process.waitForFinished(5000);
+        }
+        *error = QStringLiteral("%1 timed out").arg(program);
+        return false;
+    }
+    if (!started || process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
         const QString output = QString::fromUtf8(process.readAllStandardError()).trimmed();
         const QString startErr = process.errorString();
         if (!output.isEmpty())
@@ -107,6 +121,28 @@ bool runProcess(const QString& program, const QStringList& arguments, QString* e
         return false;
     }
     return true;
+}
+
+// Version annoncee par le service (champ `version` de GET /status, meme hote et port que
+// l'URL de sante). Vide si injoignable ou illisible. Courte attente : appel local.
+QString installedVersion(const QString& healthUrl) {
+    QUrl status(healthUrl);
+    status.setPath(QStringLiteral("/status"));
+    status.setQuery(QString());
+    QNetworkAccessManager manager;
+    QNetworkReply* reply = manager.get(QNetworkRequest(status));
+    QEventLoop loop;
+    QTimer timeout;
+    timeout.setSingleShot(true);
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QObject::connect(&timeout, &QTimer::timeout, reply, &QNetworkReply::abort);
+    timeout.start(5000);
+    loop.exec();
+    QString version;
+    if (reply->error() == QNetworkReply::NoError)
+        version = QJsonDocument::fromJson(reply->readAll()).object().value("version").toString();
+    reply->deleteLater();
+    return version;
 }
 
 bool healthCheck(const QString& url, QString* error) {
@@ -232,6 +268,19 @@ bool safeBundleEntries(const QString& archive, QString* error) {
             return false;
         }
     }
+    // Aucune entree de type lien (ou peripherique) : le helper root copie l'arborescence
+    // extraite avec cp -a, qui preserverait un lien pointant hors du bundle.
+    QProcess verbose;
+    verbose.start(QStringLiteral("tar"), {QStringLiteral("-tvzf"), archive});
+    if (!verbose.waitForFinished(30000) || verbose.exitStatus() != QProcess::NormalExit
+        || verbose.exitCode() != 0) {
+        *error = QStringLiteral("cannot inspect source bundle entry types");
+        return false;
+    }
+    if (ReleaseValidator::listingHasSpecialEntry(QString::fromUtf8(verbose.readAllStandardOutput()))) {
+        *error = QStringLiteral("source bundle contains a link or special file");
+        return false;
+    }
     return !entries.isEmpty();
 }
 
@@ -278,6 +327,16 @@ bool safeArchive(const QString& zip, QStringList* entries, QString* error) {
             return false;
         }
     }
+    QProcess verbose;
+    verbose.start(QStringLiteral("tar.exe"), {QStringLiteral("-tvf"), zip});
+    if (!verbose.waitForFinished(30000) || verbose.exitCode() != 0) {
+        *error = QStringLiteral("cannot inspect ZIP archive entry types");
+        return false;
+    }
+    if (ReleaseValidator::listingHasSpecialEntry(QString::fromUtf8(verbose.readAllStandardOutput()))) {
+        *error = QStringLiteral("ZIP archive contains a link or special file");
+        return false;
+    }
     return !entries->isEmpty();
 }
 
@@ -302,17 +361,29 @@ bool installWindows(const QString& zip, const AgentTarget& target, const QString
                     task ? QStringList{QStringLiteral("/End"), QStringLiteral("/TN"), target.service}
                          : QStringList{QStringLiteral("stop"), target.service}, error)) return false;
     const QString backup = QDir(stage).filePath(QStringLiteral("previous"));
-    if (QDir(target.appDir).exists() && !QDir().rename(target.appDir, backup)) {
+    // Le service est ARRETE a ce stade : tout echec doit le relancer (ancienne
+    // installation restauree), sinon il reste a terre.
+    auto startService = [&](QString* startError) {
+        return runProcess(task ? QStringLiteral("schtasks.exe") : QStringLiteral("sc.exe"),
+                          task ? QStringList{QStringLiteral("/Run"), QStringLiteral("/TN"), target.service}
+                               : QStringList{QStringLiteral("start"), target.service}, startError);
+    };
+    QString ignored;
+    const bool hadPrevious = QDir(target.appDir).exists();
+    if (hadPrevious && !QDir().rename(target.appDir, backup)) {
         *error = QStringLiteral("cannot preserve current Windows application directory");
+        startService(&ignored);
         return false;
     }
     if (!QDir().rename(payload, target.appDir)) {
         *error = QStringLiteral("cannot install verified Windows application directory");
+        // Remettre l'ancienne installation en place avant de relancer le service.
+        if (hadPrevious && !QDir().rename(backup, target.appDir))
+            *error += QStringLiteral("; previous installation could not be restored from ") + backup;
+        startService(&ignored);
         return false;
     }
-    return runProcess(task ? QStringLiteral("schtasks.exe") : QStringLiteral("sc.exe"),
-                      task ? QStringList{QStringLiteral("/Run"), QStringLiteral("/TN"), target.service}
-                           : QStringList{QStringLiteral("start"), target.service}, error);
+    return startService(error);
 }
 #endif
 
@@ -371,6 +442,18 @@ void UpdateEngine::run(const QString& operationId) {
     ValidatedAsset asset;
     if (!ReleaseValidator::selectAsset(manifestDoc.object(), operation.project, operation.toVersion,
                                        operation.platform, commit, &asset, &error)) { fail(operationId, error); return; }
+    // Refus d'un downgrade ou d'une reinstallation a l'identique sans `allow_downgrade`.
+    // La version installee est lue sur /status du service ; si elle est illisible
+    // (service a terre, justement la ce qu'on veut reparer), on ne bloque pas a l'aveugle.
+    if (!operation.allowDowngrade) {
+        const QString installed = installedVersion(target.healthUrl);
+        if (isNotNewer(installed, operation.toVersion)) {
+            fail(operationId, QStringLiteral("downgrade refused: installed %1, requested %2 "
+                                             "(set allow_downgrade to override)")
+                                  .arg(installed, operation.toVersion));
+            return;
+        }
+    }
     // Stratégie d'installation déclarée par le manifeste ; défaut "package" pour
     // les releases antérieures au champ (rétro-compat). morfUpdate lit QUOI
     // installer plutôt que de présumer un binaire compilé.

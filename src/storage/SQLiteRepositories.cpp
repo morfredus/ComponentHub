@@ -3,6 +3,7 @@
 #include <sstream>
 #include <nlohmann/json.hpp>
 #include "sync_meta.h"
+#include "json_tolerant.h"
 
 using nlohmann::json;
 using namespace domain;
@@ -16,6 +17,29 @@ void checkSqlite(int rc, sqlite3* db, const std::string& operation) {
         std::string msg = "SQLite error in " + operation + ": " + sqlite3_errmsg(db);
         throw std::runtime_error(msg);
     }
+}
+
+// Garde RAII d'un statement : finalise toujours, y compris quand checkSqlite ou une
+// conversion JSON lève une exception au milieu d'une boucle (sinon le statement fuit
+// et peut verrouiller la base).
+class StmtGuard {
+public:
+    StmtGuard() = default;
+    StmtGuard(const StmtGuard&) = delete;
+    StmtGuard& operator=(const StmtGuard&) = delete;
+    ~StmtGuard() { finalize(); }
+    sqlite3_stmt** operator&() { return &p_; }
+    operator sqlite3_stmt*() const { return p_; }
+    void finalize() { if (p_) { sqlite3_finalize(p_); p_ = nullptr; } }
+private:
+    sqlite3_stmt* p_ = nullptr;
+};
+
+// Lecture texte tolerante : sqlite3_column_text renvoie nullptr pour une valeur NULL,
+// et construire un std::string depuis nullptr est un comportement indefini.
+std::string colText(sqlite3_stmt* stmt, int i) {
+    const unsigned char* t = sqlite3_column_text(stmt, i);
+    return t ? reinterpret_cast<const char*>(t) : std::string();
 }
 
 // Helper pour exécuter une requête sans résultat
@@ -32,8 +56,8 @@ void exec(sqlite3* db, const std::string& sql) {
 // --- Enveloppe de synchronisation (SyncMeta) ------------------------
 SyncMeta metaFromSqlite(sqlite3_stmt* stmt, int offset) {
     SyncMeta m;
-    m.createdAt = reinterpret_cast<const char*>(sqlite3_column_text(stmt, offset + 0));
-    m.updatedAt = reinterpret_cast<const char*>(sqlite3_column_text(stmt, offset + 1));
+    m.createdAt = colText(stmt, offset + 0);
+    m.updatedAt = colText(stmt, offset + 1);
     m.rev = sqlite3_column_int64(stmt, offset + 2);
     m.deleted = sqlite3_column_int(stmt, offset + 3) != 0;
     m.localSeq = sqlite3_column_int64(stmt, offset + 4);
@@ -62,12 +86,12 @@ void prepareMetaForSave(sqlite3* db, const char* table, SyncMeta& meta) {
     stampForSave(meta);
     const std::string sql = "SELECT COALESCE(MAX(localSeq), 0) + 1 FROM " +
                             std::string(table) + ";";
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard stmt;
     checkSqlite(sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr), db,
                 "prepare next local sequence");
     if (sqlite3_step(stmt) == SQLITE_ROW)
         meta.localSeq = sqlite3_column_int64(stmt, 0);
-    sqlite3_finalize(stmt);
+    stmt.finalize();
 }
 
 // --- Conversion Component ↔ SQLite ------------------------------------
@@ -88,36 +112,36 @@ json componentToJson(const Component& c) {
 
 Component componentFromJson(const json& j) {
     Component c;
-    c.id = j.value("id", std::string());
-    c.kind = componentKindFromString(j.value("kind", "component"));
-    c.name = j.value("name", "");
-    c.reference = j.value("reference", "");
-    c.manufacturer = j.value("manufacturer", "");
-    c.description = j.value("description", "");
-    c.category = j.value("category", "");
-    c.subcategory = j.value("subcategory", "");
-    c.type = j.value("type", "");
-    c.voltage = j.value("voltage", "");
-    c.current = j.value("current", "");
-    c.interfaceType = j.value("interfaceType", "");
-    c.protocols = j.value("protocols", "");
-    c.i2cAddress = j.value("i2cAddress", "");
-    c.frequency = j.value("frequency", "");
-    c.pinCount = j.value("pinCount", 0);
-    c.compatibility = j.value("compatibility", "");
-    c.price = j.value("price", 0.0);
-    c.supplier = j.value("supplier", "");
-    c.purchaseDate = j.value("purchaseDate", "");
-    c.receptionDate = j.value("receptionDate", "");
-    c.warranty = j.value("warranty", "");
-    c.state = j.value("state", "");
-    c.status = j.value("status", "to_test");
-    c.origin = j.value("origin", "");
-    c.notes = j.value("notes", "");
-    c.locationId = j.value("locationId", "");
-    c.quantity = j.value("quantity", 0);
-    c.minStock = j.value("minStock", 0);
-    c.idealStock = j.value("idealStock", 0);
+    c.id = jget(j, "id", std::string());
+    c.kind = componentKindFromString(jget(j, "kind", "component"));
+    c.name = jget(j, "name", "");
+    c.reference = jget(j, "reference", "");
+    c.manufacturer = jget(j, "manufacturer", "");
+    c.description = jget(j, "description", "");
+    c.category = jget(j, "category", "");
+    c.subcategory = jget(j, "subcategory", "");
+    c.type = jget(j, "type", "");
+    c.voltage = jget(j, "voltage", "");
+    c.current = jget(j, "current", "");
+    c.interfaceType = jget(j, "interfaceType", "");
+    c.protocols = jget(j, "protocols", "");
+    c.i2cAddress = jget(j, "i2cAddress", "");
+    c.frequency = jget(j, "frequency", "");
+    c.pinCount = jget(j, "pinCount", 0);
+    c.compatibility = jget(j, "compatibility", "");
+    c.price = jget(j, "price", 0.0);
+    c.supplier = jget(j, "supplier", "");
+    c.purchaseDate = jget(j, "purchaseDate", "");
+    c.receptionDate = jget(j, "receptionDate", "");
+    c.warranty = jget(j, "warranty", "");
+    c.state = jget(j, "state", "");
+    c.status = jget(j, "status", "to_test");
+    c.origin = jget(j, "origin", "");
+    c.notes = jget(j, "notes", "");
+    c.locationId = jget(j, "locationId", "");
+    c.quantity = jget(j, "quantity", 0);
+    c.minStock = jget(j, "minStock", 0);
+    c.idealStock = jget(j, "idealStock", 0);
     return c;
 }
 
@@ -141,10 +165,34 @@ SQLiteDatabase::~SQLiteDatabase() {
 bool SQLiteDatabase::initialize() {
     // Activer les clés étrangères et le mode WAL pour de meilleures performances.
     // Les erreurs remontent au point de démarrage, qui les affiche à l'utilisateur.
-    exec(db_, "PRAGMA foreign_keys = ON;");
-    exec(db_, "PRAGMA journal_mode = WAL;");
-    exec(db_, "PRAGMA synchronous = NORMAL;");
+    configureConnection();
+    exec(db_, "PRAGMA journal_mode = WAL;");   // persistant dans le fichier : vaut pour toutes les connexions
     return createSchema();
+}
+
+void SQLiteDatabase::configureConnection() {
+    // busy_timeout : plusieurs connexions (interface + thread de synchro) écrivent la même base.
+    // En WAL un seul écrivain à la fois ; sans délai, le second reçoit SQLITE_BUSY aussitôt au
+    // lieu d'attendre la fin de la transaction courte de l'autre.
+    sqlite3_busy_timeout(db_, kBusyTimeoutMs);
+    exec(db_, "PRAGMA foreign_keys = ON;");
+    exec(db_, "PRAGMA synchronous = NORMAL;");
+}
+
+bool SQLiteDatabase::openExisting() {
+    // Connexion annexe (thread de travail) : le schéma et le mode WAL existent déjà.
+    configureConnection();
+    return true;
+}
+
+void SQLiteDatabase::execSql(const std::string& sql) { exec(db_, sql); }
+
+void SQLiteDatabase::snapshotTo(const std::string& destPath) {
+    // Le chemin est passé en paramètre lié : aucune concaténation SQL.
+    StmtGuard stmt;
+    checkSqlite(sqlite3_prepare_v2(db_, "VACUUM INTO ?;", -1, &stmt, nullptr), db_, "prepare snapshot");
+    sqlite3_bind_text(stmt, 1, destPath.c_str(), -1, SQLITE_TRANSIENT);
+    checkSqlite(sqlite3_step(stmt), db_, "snapshot");
 }
 
 bool SQLiteDatabase::createSchema() {
@@ -326,39 +374,39 @@ std::vector<Component> SQLiteComponentRepository::findAll() const {
                      "quantity, minStock, idealStock, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM components WHERE deleted = 0;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findAll");
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         Component c;
-        c.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        c.kind = componentKindFromString(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
-        c.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-        c.reference = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
-        c.manufacturer = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
-        c.description = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
-        c.category = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
-        c.subcategory = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
-        c.type = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8));
-        c.voltage = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9));
-        c.current = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10));
-        c.interfaceType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 11));
-        c.protocols = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 12));
-        c.i2cAddress = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 13));
-        c.frequency = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 14));
+        c.id = colText(stmt, 0);
+        c.kind = componentKindFromString(colText(stmt, 1));
+        c.name = colText(stmt, 2);
+        c.reference = colText(stmt, 3);
+        c.manufacturer = colText(stmt, 4);
+        c.description = colText(stmt, 5);
+        c.category = colText(stmt, 6);
+        c.subcategory = colText(stmt, 7);
+        c.type = colText(stmt, 8);
+        c.voltage = colText(stmt, 9);
+        c.current = colText(stmt, 10);
+        c.interfaceType = colText(stmt, 11);
+        c.protocols = colText(stmt, 12);
+        c.i2cAddress = colText(stmt, 13);
+        c.frequency = colText(stmt, 14);
         c.pinCount = sqlite3_column_int(stmt, 15);
-        c.compatibility = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 16));
+        c.compatibility = colText(stmt, 16);
         c.price = sqlite3_column_double(stmt, 17);
-        c.supplier = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 18));
-        c.purchaseDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 19));
-        c.receptionDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 20));
-        c.warranty = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 21));
-        c.state = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 22));
-        c.status = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 23));
-        c.origin = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 24));
-        c.notes = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 25));
-        c.locationId = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 26));
+        c.supplier = colText(stmt, 18);
+        c.purchaseDate = colText(stmt, 19);
+        c.receptionDate = colText(stmt, 20);
+        c.warranty = colText(stmt, 21);
+        c.state = colText(stmt, 22);
+        c.status = colText(stmt, 23);
+        c.origin = colText(stmt, 24);
+        c.notes = colText(stmt, 25);
+        c.locationId = colText(stmt, 26);
         c.quantity = sqlite3_column_int(stmt, 27);
         c.minStock = sqlite3_column_int(stmt, 28);
         c.idealStock = sqlite3_column_int(stmt, 29);
@@ -366,7 +414,7 @@ std::vector<Component> SQLiteComponentRepository::findAll() const {
         result.push_back(c);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -378,7 +426,7 @@ std::optional<Component> SQLiteComponentRepository::findById(Id id) const {
                      "quantity, minStock, idealStock, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM components WHERE id = ? AND deleted = 0;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findById");
     sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
@@ -386,33 +434,33 @@ std::optional<Component> SQLiteComponentRepository::findById(Id id) const {
     std::optional<Component> result;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         Component c;
-        c.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        c.kind = componentKindFromString(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
-        c.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-        c.reference = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
-        c.manufacturer = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
-        c.description = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
-        c.category = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
-        c.subcategory = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
-        c.type = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8));
-        c.voltage = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9));
-        c.current = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10));
-        c.interfaceType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 11));
-        c.protocols = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 12));
-        c.i2cAddress = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 13));
-        c.frequency = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 14));
+        c.id = colText(stmt, 0);
+        c.kind = componentKindFromString(colText(stmt, 1));
+        c.name = colText(stmt, 2);
+        c.reference = colText(stmt, 3);
+        c.manufacturer = colText(stmt, 4);
+        c.description = colText(stmt, 5);
+        c.category = colText(stmt, 6);
+        c.subcategory = colText(stmt, 7);
+        c.type = colText(stmt, 8);
+        c.voltage = colText(stmt, 9);
+        c.current = colText(stmt, 10);
+        c.interfaceType = colText(stmt, 11);
+        c.protocols = colText(stmt, 12);
+        c.i2cAddress = colText(stmt, 13);
+        c.frequency = colText(stmt, 14);
         c.pinCount = sqlite3_column_int(stmt, 15);
-        c.compatibility = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 16));
+        c.compatibility = colText(stmt, 16);
         c.price = sqlite3_column_double(stmt, 17);
-        c.supplier = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 18));
-        c.purchaseDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 19));
-        c.receptionDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 20));
-        c.warranty = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 21));
-        c.state = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 22));
-        c.status = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 23));
-        c.origin = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 24));
-        c.notes = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 25));
-        c.locationId = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 26));
+        c.supplier = colText(stmt, 18);
+        c.purchaseDate = colText(stmt, 19);
+        c.receptionDate = colText(stmt, 20);
+        c.warranty = colText(stmt, 21);
+        c.state = colText(stmt, 22);
+        c.status = colText(stmt, 23);
+        c.origin = colText(stmt, 24);
+        c.notes = colText(stmt, 25);
+        c.locationId = colText(stmt, 26);
         c.quantity = sqlite3_column_int(stmt, 27);
         c.minStock = sqlite3_column_int(stmt, 28);
         c.idealStock = sqlite3_column_int(stmt, 29);
@@ -420,7 +468,7 @@ std::optional<Component> SQLiteComponentRepository::findById(Id id) const {
         result = c;
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -435,7 +483,7 @@ Component SQLiteComponentRepository::save(Component c) {
                      "deleted, localSeq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
                      "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare save");
     
@@ -476,7 +524,7 @@ Component SQLiteComponentRepository::save(Component c) {
     
     rc = sqlite3_step(stmt);
     checkSqlite(rc, db_, "step save");
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     
     return c;
 }
@@ -505,7 +553,7 @@ bool SQLiteComponentRepository::remove(Id id) {
     const char* sql = "UPDATE components SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
                       "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM components) WHERE id = ?;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
     const std::string updatedAt = nowIso8601Utc();
@@ -513,7 +561,7 @@ bool SQLiteComponentRepository::remove(Id id) {
     sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     
     return rc == SQLITE_DONE;
 }
@@ -529,46 +577,46 @@ std::vector<SyncRecord> SQLiteComponentRepository::exportForSync(std::int64_t si
                      "quantity, minStock, idealStock, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM components WHERE localSeq > ?;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare exportForSync");
     sqlite3_bind_int64(stmt, 1, since);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         SyncRecord rec;
-        rec.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        rec.id = colText(stmt, 0);
         rec.type = "component";
         rec.meta = metaFromSqlite(stmt, 30);
         
         // Construire l'objet JSON complet
         Component c;
         c.id = rec.id;
-        c.kind = componentKindFromString(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
-        c.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-        c.reference = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
-        c.manufacturer = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
-        c.description = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
-        c.category = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
-        c.subcategory = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
-        c.type = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8));
-        c.voltage = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 9));
-        c.current = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10));
-        c.interfaceType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 11));
-        c.protocols = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 12));
-        c.i2cAddress = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 13));
-        c.frequency = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 14));
+        c.kind = componentKindFromString(colText(stmt, 1));
+        c.name = colText(stmt, 2);
+        c.reference = colText(stmt, 3);
+        c.manufacturer = colText(stmt, 4);
+        c.description = colText(stmt, 5);
+        c.category = colText(stmt, 6);
+        c.subcategory = colText(stmt, 7);
+        c.type = colText(stmt, 8);
+        c.voltage = colText(stmt, 9);
+        c.current = colText(stmt, 10);
+        c.interfaceType = colText(stmt, 11);
+        c.protocols = colText(stmt, 12);
+        c.i2cAddress = colText(stmt, 13);
+        c.frequency = colText(stmt, 14);
         c.pinCount = sqlite3_column_int(stmt, 15);
-        c.compatibility = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 16));
+        c.compatibility = colText(stmt, 16);
         c.price = sqlite3_column_double(stmt, 17);
-        c.supplier = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 18));
-        c.purchaseDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 19));
-        c.receptionDate = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 20));
-        c.warranty = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 21));
-        c.state = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 22));
-        c.status = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 23));
-        c.origin = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 24));
-        c.notes = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 25));
-        c.locationId = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 26));
+        c.supplier = colText(stmt, 18);
+        c.purchaseDate = colText(stmt, 19);
+        c.receptionDate = colText(stmt, 20);
+        c.warranty = colText(stmt, 21);
+        c.state = colText(stmt, 22);
+        c.status = colText(stmt, 23);
+        c.origin = colText(stmt, 24);
+        c.notes = colText(stmt, 25);
+        c.locationId = colText(stmt, 26);
         c.quantity = sqlite3_column_int(stmt, 27);
         c.minStock = sqlite3_column_int(stmt, 28);
         c.idealStock = sqlite3_column_int(stmt, 29);
@@ -577,13 +625,13 @@ std::vector<SyncRecord> SQLiteComponentRepository::exportForSync(std::int64_t si
         result.push_back(rec);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
 std::int64_t SQLiteComponentRepository::maxLocalSeq() const {
     const char* sql = "SELECT MAX(localSeq) FROM components;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare maxLocalSeq");
     
@@ -592,7 +640,7 @@ std::int64_t SQLiteComponentRepository::maxLocalSeq() const {
         result = sqlite3_column_int64(stmt, 0);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -601,7 +649,7 @@ bool SQLiteComponentRepository::applyRemote(const SyncRecord& rec) {
     
     // Vérifier si l'entité existe et comparer les versions
     const char* checkSql = "SELECT rev, updatedAt FROM components WHERE id = ?;";
-    sqlite3_stmt* checkStmt;
+    StmtGuard checkStmt;
     int rc = sqlite3_prepare_v2(db_, checkSql, -1, &checkStmt, nullptr);
     checkSqlite(rc, db_, "prepare checkRemote");
     sqlite3_bind_text(checkStmt, 1, rec.id.c_str(), -1, SQLITE_TRANSIENT);
@@ -609,13 +657,13 @@ bool SQLiteComponentRepository::applyRemote(const SyncRecord& rec) {
     bool shouldApply = true;
     if (sqlite3_step(checkStmt) == SQLITE_ROW) {
         std::int64_t localRev = sqlite3_column_int64(checkStmt, 0);
-        std::string localUpdatedAt = reinterpret_cast<const char*>(sqlite3_column_text(checkStmt, 1));
+        std::string localUpdatedAt = colText(checkStmt, 1);
         
         const bool remoteNewer = (rec.meta.rev > localRev) ||
             (rec.meta.rev == localRev && rec.meta.updatedAt > localUpdatedAt);
         shouldApply = remoteNewer;
     }
-    sqlite3_finalize(checkStmt);
+    checkStmt.finalize();
     
     if (!shouldApply) return false;
     
@@ -636,20 +684,20 @@ std::vector<Location> SQLiteLocationRepository::findAll() const {
     const char* sql = "SELECT id, name, parentId, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM locations WHERE deleted = 0;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findAll");
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         Location l;
-        l.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        l.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        l.parentId = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        l.id = colText(stmt, 0);
+        l.name = colText(stmt, 1);
+        l.parentId = colText(stmt, 2);
         l.meta = metaFromSqlite(stmt, 3);
         result.push_back(l);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -657,7 +705,7 @@ std::optional<Location> SQLiteLocationRepository::findById(Id id) const {
     const char* sql = "SELECT id, name, parentId, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM locations WHERE id = ? AND deleted = 0;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findById");
     sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
@@ -665,14 +713,14 @@ std::optional<Location> SQLiteLocationRepository::findById(Id id) const {
     std::optional<Location> result;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         Location l;
-        l.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        l.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        l.parentId = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        l.id = colText(stmt, 0);
+        l.name = colText(stmt, 1);
+        l.parentId = colText(stmt, 2);
         l.meta = metaFromSqlite(stmt, 3);
         result = l;
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -682,7 +730,7 @@ Location SQLiteLocationRepository::save(Location l) {
     const char* sql = "INSERT OR REPLACE INTO locations (id, name, parentId, createdAt, updatedAt, rev, deleted, localSeq) "
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare save");
     
@@ -696,7 +744,7 @@ Location SQLiteLocationRepository::save(Location l) {
     
     rc = sqlite3_step(stmt);
     checkSqlite(rc, db_, "step save");
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     
     return l;
 }
@@ -704,7 +752,7 @@ Location SQLiteLocationRepository::save(Location l) {
 bool SQLiteLocationRepository::remove(Id id) {
     const char* sql = "UPDATE locations SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
                       "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM locations) WHERE id = ?;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
     const std::string updatedAt = nowIso8601Utc();
@@ -712,7 +760,7 @@ bool SQLiteLocationRepository::remove(Id id) {
     sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return rc == SQLITE_DONE;
 }
 
@@ -722,28 +770,28 @@ std::vector<SyncRecord> SQLiteLocationRepository::exportForSync(std::int64_t sin
     const char* sql = "SELECT id, name, parentId, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM locations WHERE localSeq > ?;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare exportForSync");
     sqlite3_bind_int64(stmt, 1, since);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         SyncRecord rec;
-        rec.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        rec.id = colText(stmt, 0);
         rec.type = "location";
         rec.meta = metaFromSqlite(stmt, 3);
-        rec.data = {{"id", rec.id}, {"name", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))}, 
-                   {"parentId", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2))}};
+        rec.data = {{"id", rec.id}, {"name", colText(stmt, 1)}, 
+                   {"parentId", colText(stmt, 2)}};
         result.push_back(rec);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
 std::int64_t SQLiteLocationRepository::maxLocalSeq() const {
     const char* sql = "SELECT MAX(localSeq) FROM locations;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare maxLocalSeq");
     
@@ -751,7 +799,7 @@ std::int64_t SQLiteLocationRepository::maxLocalSeq() const {
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         result = sqlite3_column_int64(stmt, 0);
     }
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -759,7 +807,7 @@ bool SQLiteLocationRepository::applyRemote(const SyncRecord& rec) {
     if (rec.id == kNoId) return false;
     
     const char* checkSql = "SELECT rev, updatedAt FROM locations WHERE id = ?;";
-    sqlite3_stmt* checkStmt;
+    StmtGuard checkStmt;
     int rc = sqlite3_prepare_v2(db_, checkSql, -1, &checkStmt, nullptr);
     checkSqlite(rc, db_, "prepare checkRemote");
     sqlite3_bind_text(checkStmt, 1, rec.id.c_str(), -1, SQLITE_TRANSIENT);
@@ -767,19 +815,19 @@ bool SQLiteLocationRepository::applyRemote(const SyncRecord& rec) {
     bool shouldApply = true;
     if (sqlite3_step(checkStmt) == SQLITE_ROW) {
         std::int64_t localRev = sqlite3_column_int64(checkStmt, 0);
-        std::string localUpdatedAt = reinterpret_cast<const char*>(sqlite3_column_text(checkStmt, 1));
+        std::string localUpdatedAt = colText(checkStmt, 1);
         const bool remoteNewer = (rec.meta.rev > localRev) ||
             (rec.meta.rev == localRev && rec.meta.updatedAt > localUpdatedAt);
         shouldApply = remoteNewer;
     }
-    sqlite3_finalize(checkStmt);
+    checkStmt.finalize();
     
     if (!shouldApply) return false;
     
     Location l;
     l.id = rec.id;
-    l.name = rec.data.value("name", "");
-    l.parentId = rec.data.value("parentId", "");
+    l.name = jget(rec.data, "name", "");
+    l.parentId = jget(rec.data, "parentId", "");
     l.meta = rec.meta;
     l.meta.localSeq = kRemoteSequence;
     
@@ -794,19 +842,19 @@ std::vector<Category> SQLiteCategoryRepository::findAll() const {
     const char* sql = "SELECT id, name, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM categories WHERE deleted = 0;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findAll");
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         Category c;
-        c.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        c.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        c.id = colText(stmt, 0);
+        c.name = colText(stmt, 1);
         c.meta = metaFromSqlite(stmt, 2);
         result.push_back(c);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -814,7 +862,7 @@ std::optional<Category> SQLiteCategoryRepository::findById(Id id) const {
     const char* sql = "SELECT id, name, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM categories WHERE id = ? AND deleted = 0;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findById");
     sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
@@ -822,13 +870,13 @@ std::optional<Category> SQLiteCategoryRepository::findById(Id id) const {
     std::optional<Category> result;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         Category c;
-        c.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        c.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        c.id = colText(stmt, 0);
+        c.name = colText(stmt, 1);
         c.meta = metaFromSqlite(stmt, 2);
         result = c;
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -838,7 +886,7 @@ Category SQLiteCategoryRepository::save(Category c) {
     const char* sql = "INSERT OR REPLACE INTO categories (id, name, createdAt, updatedAt, rev, deleted, localSeq) "
                      "VALUES (?, ?, ?, ?, ?, ?, ?);";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare save");
     
@@ -851,7 +899,7 @@ Category SQLiteCategoryRepository::save(Category c) {
     
     rc = sqlite3_step(stmt);
     checkSqlite(rc, db_, "step save");
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     
     return c;
 }
@@ -859,7 +907,7 @@ Category SQLiteCategoryRepository::save(Category c) {
 bool SQLiteCategoryRepository::remove(Id id) {
     const char* sql = "UPDATE categories SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
                       "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM categories) WHERE id = ?;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
     const std::string updatedAt = nowIso8601Utc();
@@ -867,7 +915,7 @@ bool SQLiteCategoryRepository::remove(Id id) {
     sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return rc == SQLITE_DONE;
 }
 
@@ -877,27 +925,27 @@ std::vector<SyncRecord> SQLiteCategoryRepository::exportForSync(std::int64_t sin
     const char* sql = "SELECT id, name, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM categories WHERE localSeq > ?;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare exportForSync");
     sqlite3_bind_int64(stmt, 1, since);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         SyncRecord rec;
-        rec.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        rec.id = colText(stmt, 0);
         rec.type = "category";
         rec.meta = metaFromSqlite(stmt, 2);
-        rec.data = {{"id", rec.id}, {"name", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))}};
+        rec.data = {{"id", rec.id}, {"name", colText(stmt, 1)}};
         result.push_back(rec);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
 std::int64_t SQLiteCategoryRepository::maxLocalSeq() const {
     const char* sql = "SELECT MAX(localSeq) FROM categories;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare maxLocalSeq");
     
@@ -905,7 +953,7 @@ std::int64_t SQLiteCategoryRepository::maxLocalSeq() const {
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         result = sqlite3_column_int64(stmt, 0);
     }
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -913,7 +961,7 @@ bool SQLiteCategoryRepository::applyRemote(const SyncRecord& rec) {
     if (rec.id == kNoId) return false;
     
     const char* checkSql = "SELECT rev, updatedAt FROM categories WHERE id = ?;";
-    sqlite3_stmt* checkStmt;
+    StmtGuard checkStmt;
     int rc = sqlite3_prepare_v2(db_, checkSql, -1, &checkStmt, nullptr);
     checkSqlite(rc, db_, "prepare checkRemote");
     sqlite3_bind_text(checkStmt, 1, rec.id.c_str(), -1, SQLITE_TRANSIENT);
@@ -921,18 +969,18 @@ bool SQLiteCategoryRepository::applyRemote(const SyncRecord& rec) {
     bool shouldApply = true;
     if (sqlite3_step(checkStmt) == SQLITE_ROW) {
         std::int64_t localRev = sqlite3_column_int64(checkStmt, 0);
-        std::string localUpdatedAt = reinterpret_cast<const char*>(sqlite3_column_text(checkStmt, 1));
+        std::string localUpdatedAt = colText(checkStmt, 1);
         const bool remoteNewer = (rec.meta.rev > localRev) ||
             (rec.meta.rev == localRev && rec.meta.updatedAt > localUpdatedAt);
         shouldApply = remoteNewer;
     }
-    sqlite3_finalize(checkStmt);
+    checkStmt.finalize();
     
     if (!shouldApply) return false;
     
     Category c;
     c.id = rec.id;
-    c.name = rec.data.value("name", "");
+    c.name = jget(rec.data, "name", "");
     c.meta = rec.meta;
     c.meta.localSeq = kRemoteSequence;
     
@@ -947,23 +995,23 @@ std::vector<StockMovement> SQLiteStockMovementRepository::findByComponent(Id com
     const char* sql = "SELECT id, componentId, type, quantity, timestamp, note "
                      "FROM stock_movements WHERE componentId = ? ORDER BY timestamp DESC;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findByComponent");
     sqlite3_bind_text(stmt, 1, componentId.c_str(), -1, SQLITE_TRANSIENT);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         StockMovement m;
-        m.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        m.componentId = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        m.type = stockMovementTypeFromString(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
+        m.id = colText(stmt, 0);
+        m.componentId = colText(stmt, 1);
+        m.type = stockMovementTypeFromString(colText(stmt, 2));
         m.quantity = sqlite3_column_int(stmt, 3);
-        m.timestamp = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
-        m.note = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+        m.timestamp = colText(stmt, 4);
+        m.note = colText(stmt, 5);
         result.push_back(m);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -973,7 +1021,7 @@ StockMovement SQLiteStockMovementRepository::add(StockMovement m) {
     const char* sql = "INSERT INTO stock_movements (id, componentId, type, quantity, timestamp, note) "
                      "VALUES (?, ?, ?, ?, ?, ?);";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare add");
     
@@ -987,7 +1035,7 @@ StockMovement SQLiteStockMovementRepository::add(StockMovement m) {
     
     rc = sqlite3_step(stmt);
     checkSqlite(rc, db_, "step add");
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     
     return m;
 }
@@ -1000,7 +1048,7 @@ std::vector<Document> SQLiteDocumentRepository::findByOwner(DocumentOwnerKind ow
     const char* sql = "SELECT id, ownerKind, ownerId, title, category, url, notes, blobHash, fileName, sizeBytes, mime, "
                      "createdAt, updatedAt, rev, deleted, localSeq FROM documents WHERE deleted = 0 AND ownerKind = ? AND ownerId = ?;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findByOwner");
     sqlite3_bind_text(stmt, 1, toString(ownerKind), -1, SQLITE_TRANSIENT);
@@ -1008,22 +1056,22 @@ std::vector<Document> SQLiteDocumentRepository::findByOwner(DocumentOwnerKind ow
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         Document d;
-        d.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        d.ownerKind = documentOwnerKindFromString(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
-        d.ownerId = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-        d.title = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
-        d.category = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
-        d.url = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
-        d.notes = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
-        d.blobHash = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
-        d.fileName = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8));
+        d.id = colText(stmt, 0);
+        d.ownerKind = documentOwnerKindFromString(colText(stmt, 1));
+        d.ownerId = colText(stmt, 2);
+        d.title = colText(stmt, 3);
+        d.category = colText(stmt, 4);
+        d.url = colText(stmt, 5);
+        d.notes = colText(stmt, 6);
+        d.blobHash = colText(stmt, 7);
+        d.fileName = colText(stmt, 8);
         d.sizeBytes = sqlite3_column_int64(stmt, 9);
-        d.mime = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10));
+        d.mime = colText(stmt, 10);
         d.meta = metaFromSqlite(stmt, 11);
         result.push_back(d);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1033,7 +1081,7 @@ Document SQLiteDocumentRepository::save(Document d) {
     const char* sql = "INSERT OR REPLACE INTO documents (id, ownerKind, ownerId, title, category, url, notes, blobHash, fileName, sizeBytes, mime, "
                      "createdAt, updatedAt, rev, deleted, localSeq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare save");
     
@@ -1055,7 +1103,7 @@ Document SQLiteDocumentRepository::save(Document d) {
     
     rc = sqlite3_step(stmt);
     checkSqlite(rc, db_, "step save");
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     
     return d;
 }
@@ -1063,7 +1111,7 @@ Document SQLiteDocumentRepository::save(Document d) {
 bool SQLiteDocumentRepository::remove(Id id) {
     const char* sql = "UPDATE documents SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
                       "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM documents) WHERE id = ?;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
     const std::string updatedAt = nowIso8601Utc();
@@ -1071,7 +1119,7 @@ bool SQLiteDocumentRepository::remove(Id id) {
     sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return rc == SQLITE_DONE;
 }
 
@@ -1081,39 +1129,39 @@ std::vector<SyncRecord> SQLiteDocumentRepository::exportForSync(std::int64_t sin
     const char* sql = "SELECT id, ownerKind, ownerId, title, category, url, notes, blobHash, fileName, sizeBytes, mime, "
                      "createdAt, updatedAt, rev, deleted, localSeq FROM documents WHERE localSeq > ?;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare exportForSync");
     sqlite3_bind_int64(stmt, 1, since);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         SyncRecord rec;
-        rec.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        rec.id = colText(stmt, 0);
         rec.type = "document";
         rec.meta = metaFromSqlite(stmt, 11);
         rec.data = {
             {"id", rec.id},
-            {"ownerKind", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))},
-            {"ownerId", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2))},
-            {"title", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3))},
-            {"category", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4))},
-            {"url", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5))},
-            {"notes", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6))},
-            {"blobHash", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7))},
-            {"fileName", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 8))},
+            {"ownerKind", colText(stmt, 1)},
+            {"ownerId", colText(stmt, 2)},
+            {"title", colText(stmt, 3)},
+            {"category", colText(stmt, 4)},
+            {"url", colText(stmt, 5)},
+            {"notes", colText(stmt, 6)},
+            {"blobHash", colText(stmt, 7)},
+            {"fileName", colText(stmt, 8)},
             {"sizeBytes", sqlite3_column_int64(stmt, 9)},
-            {"mime", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 10))}
+            {"mime", colText(stmt, 10)}
         };
         result.push_back(rec);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
 std::int64_t SQLiteDocumentRepository::maxLocalSeq() const {
     const char* sql = "SELECT MAX(localSeq) FROM documents;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare maxLocalSeq");
     
@@ -1121,7 +1169,7 @@ std::int64_t SQLiteDocumentRepository::maxLocalSeq() const {
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         result = sqlite3_column_int64(stmt, 0);
     }
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1129,7 +1177,7 @@ bool SQLiteDocumentRepository::applyRemote(const SyncRecord& rec) {
     if (rec.id == kNoId) return false;
     
     const char* checkSql = "SELECT rev, updatedAt FROM documents WHERE id = ?;";
-    sqlite3_stmt* checkStmt;
+    StmtGuard checkStmt;
     int rc = sqlite3_prepare_v2(db_, checkSql, -1, &checkStmt, nullptr);
     checkSqlite(rc, db_, "prepare checkRemote");
     sqlite3_bind_text(checkStmt, 1, rec.id.c_str(), -1, SQLITE_TRANSIENT);
@@ -1137,27 +1185,27 @@ bool SQLiteDocumentRepository::applyRemote(const SyncRecord& rec) {
     bool shouldApply = true;
     if (sqlite3_step(checkStmt) == SQLITE_ROW) {
         std::int64_t localRev = sqlite3_column_int64(checkStmt, 0);
-        std::string localUpdatedAt = reinterpret_cast<const char*>(sqlite3_column_text(checkStmt, 1));
+        std::string localUpdatedAt = colText(checkStmt, 1);
         const bool remoteNewer = (rec.meta.rev > localRev) ||
             (rec.meta.rev == localRev && rec.meta.updatedAt > localUpdatedAt);
         shouldApply = remoteNewer;
     }
-    sqlite3_finalize(checkStmt);
+    checkStmt.finalize();
     
     if (!shouldApply) return false;
     
     Document d;
     d.id = rec.id;
-    d.ownerKind = documentOwnerKindFromString(rec.data.value("ownerKind", "component"));
-    d.ownerId = rec.data.value("ownerId", "");
-    d.title = rec.data.value("title", "");
-    d.category = rec.data.value("category", "");
-    d.url = rec.data.value("url", "");
-    d.notes = rec.data.value("notes", "");
-    d.blobHash = rec.data.value("blobHash", "");
-    d.fileName = rec.data.value("fileName", "");
-    d.sizeBytes = rec.data.value("sizeBytes", std::int64_t(0));
-    d.mime = rec.data.value("mime", "");
+    d.ownerKind = documentOwnerKindFromString(jget(rec.data, "ownerKind", "component"));
+    d.ownerId = jget(rec.data, "ownerId", "");
+    d.title = jget(rec.data, "title", "");
+    d.category = jget(rec.data, "category", "");
+    d.url = jget(rec.data, "url", "");
+    d.notes = jget(rec.data, "notes", "");
+    d.blobHash = jget(rec.data, "blobHash", "");
+    d.fileName = jget(rec.data, "fileName", "");
+    d.sizeBytes = jget(rec.data, "sizeBytes", std::int64_t(0));
+    d.mime = jget(rec.data, "mime", "");
     d.meta = rec.meta;
     d.meta.localSeq = kRemoteSequence;
     
@@ -1168,16 +1216,16 @@ std::vector<std::string> SQLiteDocumentRepository::referencedBlobs() const {
     std::vector<std::string> result;
     const char* sql = "SELECT blobHash FROM documents WHERE deleted = 0 AND blobHash IS NOT NULL AND blobHash != '';";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare referencedBlobs");
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        const char* hash = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        if (hash) result.push_back(hash);
+        std::string hash = colText(stmt, 0);
+        if (!hash.empty()) result.push_back(std::move(hash));
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1189,25 +1237,25 @@ std::vector<Project> SQLiteProjectRepository::findAll() const {
     const char* sql = "SELECT id, name, description, version, firmware, gitRepo, status, notes, "
                      "createdAt, updatedAt, rev, deleted, localSeq FROM projects WHERE deleted = 0;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findAll");
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         Project p;
-        p.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        p.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        p.description = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-        p.version = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
-        p.firmware = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
-        p.gitRepo = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
-        p.status = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
-        p.notes = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
+        p.id = colText(stmt, 0);
+        p.name = colText(stmt, 1);
+        p.description = colText(stmt, 2);
+        p.version = colText(stmt, 3);
+        p.firmware = colText(stmt, 4);
+        p.gitRepo = colText(stmt, 5);
+        p.status = colText(stmt, 6);
+        p.notes = colText(stmt, 7);
         p.meta = metaFromSqlite(stmt, 8);
         result.push_back(p);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1215,7 +1263,7 @@ std::optional<Project> SQLiteProjectRepository::findById(Id id) const {
     const char* sql = "SELECT id, name, description, version, firmware, gitRepo, status, notes, "
                      "createdAt, updatedAt, rev, deleted, localSeq FROM projects WHERE id = ? AND deleted = 0;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findById");
     sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
@@ -1223,19 +1271,19 @@ std::optional<Project> SQLiteProjectRepository::findById(Id id) const {
     std::optional<Project> result;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         Project p;
-        p.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        p.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        p.description = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-        p.version = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
-        p.firmware = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
-        p.gitRepo = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
-        p.status = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
-        p.notes = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7));
+        p.id = colText(stmt, 0);
+        p.name = colText(stmt, 1);
+        p.description = colText(stmt, 2);
+        p.version = colText(stmt, 3);
+        p.firmware = colText(stmt, 4);
+        p.gitRepo = colText(stmt, 5);
+        p.status = colText(stmt, 6);
+        p.notes = colText(stmt, 7);
         p.meta = metaFromSqlite(stmt, 8);
         result = p;
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1245,7 +1293,7 @@ Project SQLiteProjectRepository::save(Project p) {
     const char* sql = "INSERT OR REPLACE INTO projects (id, name, description, version, firmware, gitRepo, status, notes, "
                      "createdAt, updatedAt, rev, deleted, localSeq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare save");
     
@@ -1264,7 +1312,7 @@ Project SQLiteProjectRepository::save(Project p) {
     
     rc = sqlite3_step(stmt);
     checkSqlite(rc, db_, "step save");
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     
     return p;
 }
@@ -1272,7 +1320,7 @@ Project SQLiteProjectRepository::save(Project p) {
 bool SQLiteProjectRepository::remove(Id id) {
     const char* sql = "UPDATE projects SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
                       "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM projects) WHERE id = ?;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
     const std::string updatedAt = nowIso8601Utc();
@@ -1280,7 +1328,7 @@ bool SQLiteProjectRepository::remove(Id id) {
     sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return rc == SQLITE_DONE;
 }
 
@@ -1290,36 +1338,36 @@ std::vector<SyncRecord> SQLiteProjectRepository::exportForSync(std::int64_t sinc
     const char* sql = "SELECT id, name, description, version, firmware, gitRepo, status, notes, "
                      "createdAt, updatedAt, rev, deleted, localSeq FROM projects WHERE localSeq > ?;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare exportForSync");
     sqlite3_bind_int64(stmt, 1, since);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         SyncRecord rec;
-        rec.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        rec.id = colText(stmt, 0);
         rec.type = "project";
         rec.meta = metaFromSqlite(stmt, 8);
         rec.data = {
             {"id", rec.id},
-            {"name", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))},
-            {"description", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2))},
-            {"version", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3))},
-            {"firmware", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4))},
-            {"gitRepo", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5))},
-            {"status", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6))},
-            {"notes", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 7))}
+            {"name", colText(stmt, 1)},
+            {"description", colText(stmt, 2)},
+            {"version", colText(stmt, 3)},
+            {"firmware", colText(stmt, 4)},
+            {"gitRepo", colText(stmt, 5)},
+            {"status", colText(stmt, 6)},
+            {"notes", colText(stmt, 7)}
         };
         result.push_back(rec);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
 std::int64_t SQLiteProjectRepository::maxLocalSeq() const {
     const char* sql = "SELECT MAX(localSeq) FROM projects;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare maxLocalSeq");
     
@@ -1327,7 +1375,7 @@ std::int64_t SQLiteProjectRepository::maxLocalSeq() const {
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         result = sqlite3_column_int64(stmt, 0);
     }
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1335,7 +1383,7 @@ bool SQLiteProjectRepository::applyRemote(const SyncRecord& rec) {
     if (rec.id == kNoId) return false;
     
     const char* checkSql = "SELECT rev, updatedAt FROM projects WHERE id = ?;";
-    sqlite3_stmt* checkStmt;
+    StmtGuard checkStmt;
     int rc = sqlite3_prepare_v2(db_, checkSql, -1, &checkStmt, nullptr);
     checkSqlite(rc, db_, "prepare checkRemote");
     sqlite3_bind_text(checkStmt, 1, rec.id.c_str(), -1, SQLITE_TRANSIENT);
@@ -1343,24 +1391,24 @@ bool SQLiteProjectRepository::applyRemote(const SyncRecord& rec) {
     bool shouldApply = true;
     if (sqlite3_step(checkStmt) == SQLITE_ROW) {
         std::int64_t localRev = sqlite3_column_int64(checkStmt, 0);
-        std::string localUpdatedAt = reinterpret_cast<const char*>(sqlite3_column_text(checkStmt, 1));
+        std::string localUpdatedAt = colText(checkStmt, 1);
         const bool remoteNewer = (rec.meta.rev > localRev) ||
             (rec.meta.rev == localRev && rec.meta.updatedAt > localUpdatedAt);
         shouldApply = remoteNewer;
     }
-    sqlite3_finalize(checkStmt);
+    checkStmt.finalize();
     
     if (!shouldApply) return false;
     
     Project p;
     p.id = rec.id;
-    p.name = rec.data.value("name", "");
-    p.description = rec.data.value("description", "");
-    p.version = rec.data.value("version", "");
-    p.firmware = rec.data.value("firmware", "");
-    p.gitRepo = rec.data.value("gitRepo", "");
-    p.status = rec.data.value("status", "");
-    p.notes = rec.data.value("notes", "");
+    p.name = jget(rec.data, "name", "");
+    p.description = jget(rec.data, "description", "");
+    p.version = jget(rec.data, "version", "");
+    p.firmware = jget(rec.data, "firmware", "");
+    p.gitRepo = jget(rec.data, "gitRepo", "");
+    p.status = jget(rec.data, "status", "");
+    p.notes = jget(rec.data, "notes", "");
     p.meta = rec.meta;
     p.meta.localSeq = kRemoteSequence;
     
@@ -1375,23 +1423,23 @@ std::vector<ProjectComponent> SQLiteProjectComponentRepository::findByProject(Id
     const char* sql = "SELECT id, projectId, componentId, label, quantityRequired, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM project_components WHERE deleted = 0 AND projectId = ?;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findByProject");
     sqlite3_bind_text(stmt, 1, projectId.c_str(), -1, SQLITE_TRANSIENT);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         ProjectComponent link;
-        link.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        link.projectId = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        link.componentId = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-        link.label = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+        link.id = colText(stmt, 0);
+        link.projectId = colText(stmt, 1);
+        link.componentId = colText(stmt, 2);
+        link.label = colText(stmt, 3);
         link.quantityRequired = sqlite3_column_int(stmt, 4);
         link.meta = metaFromSqlite(stmt, 5);
         result.push_back(link);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1401,7 +1449,7 @@ ProjectComponent SQLiteProjectComponentRepository::save(ProjectComponent link) {
     const char* sql = "INSERT OR REPLACE INTO project_components (id, projectId, componentId, label, quantityRequired, "
                      "createdAt, updatedAt, rev, deleted, localSeq) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare save");
     
@@ -1417,7 +1465,7 @@ ProjectComponent SQLiteProjectComponentRepository::save(ProjectComponent link) {
     
     rc = sqlite3_step(stmt);
     checkSqlite(rc, db_, "step save");
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     
     return link;
 }
@@ -1425,7 +1473,7 @@ ProjectComponent SQLiteProjectComponentRepository::save(ProjectComponent link) {
 bool SQLiteProjectComponentRepository::remove(Id id) {
     const char* sql = "UPDATE project_components SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
                       "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM project_components) WHERE id = ?;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
     const std::string updatedAt = nowIso8601Utc();
@@ -1433,14 +1481,14 @@ bool SQLiteProjectComponentRepository::remove(Id id) {
     sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return rc == SQLITE_DONE;
 }
 
 bool SQLiteProjectComponentRepository::removeByProject(Id projectId) {
     const char* sql = "UPDATE project_components SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
                       "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM project_components) WHERE projectId = ?;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare removeByProject");
     const std::string updatedAt = nowIso8601Utc();
@@ -1448,7 +1496,7 @@ bool SQLiteProjectComponentRepository::removeByProject(Id projectId) {
     sqlite3_bind_text(stmt, 2, projectId.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return rc == SQLITE_DONE;
 }
 
@@ -1458,33 +1506,33 @@ std::vector<SyncRecord> SQLiteProjectComponentRepository::exportForSync(std::int
     const char* sql = "SELECT id, projectId, componentId, label, quantityRequired, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM project_components WHERE localSeq > ?;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare exportForSync");
     sqlite3_bind_int64(stmt, 1, since);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         SyncRecord rec;
-        rec.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        rec.id = colText(stmt, 0);
         rec.type = "project_component";
         rec.meta = metaFromSqlite(stmt, 5);
         rec.data = {
             {"id", rec.id},
-            {"projectId", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))},
-            {"componentId", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2))},
-            {"label", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3))},
+            {"projectId", colText(stmt, 1)},
+            {"componentId", colText(stmt, 2)},
+            {"label", colText(stmt, 3)},
             {"quantityRequired", sqlite3_column_int(stmt, 4)}
         };
         result.push_back(rec);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
 std::int64_t SQLiteProjectComponentRepository::maxLocalSeq() const {
     const char* sql = "SELECT MAX(localSeq) FROM project_components;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare maxLocalSeq");
     
@@ -1492,7 +1540,7 @@ std::int64_t SQLiteProjectComponentRepository::maxLocalSeq() const {
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         result = sqlite3_column_int64(stmt, 0);
     }
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1500,7 +1548,7 @@ bool SQLiteProjectComponentRepository::applyRemote(const SyncRecord& rec) {
     if (rec.id == kNoId) return false;
     
     const char* checkSql = "SELECT rev, updatedAt FROM project_components WHERE id = ?;";
-    sqlite3_stmt* checkStmt;
+    StmtGuard checkStmt;
     int rc = sqlite3_prepare_v2(db_, checkSql, -1, &checkStmt, nullptr);
     checkSqlite(rc, db_, "prepare checkRemote");
     sqlite3_bind_text(checkStmt, 1, rec.id.c_str(), -1, SQLITE_TRANSIENT);
@@ -1508,21 +1556,21 @@ bool SQLiteProjectComponentRepository::applyRemote(const SyncRecord& rec) {
     bool shouldApply = true;
     if (sqlite3_step(checkStmt) == SQLITE_ROW) {
         std::int64_t localRev = sqlite3_column_int64(checkStmt, 0);
-        std::string localUpdatedAt = reinterpret_cast<const char*>(sqlite3_column_text(checkStmt, 1));
+        std::string localUpdatedAt = colText(checkStmt, 1);
         const bool remoteNewer = (rec.meta.rev > localRev) ||
             (rec.meta.rev == localRev && rec.meta.updatedAt > localUpdatedAt);
         shouldApply = remoteNewer;
     }
-    sqlite3_finalize(checkStmt);
+    checkStmt.finalize();
     
     if (!shouldApply) return false;
     
     ProjectComponent link;
     link.id = rec.id;
-    link.projectId = rec.data.value("projectId", "");
-    link.componentId = rec.data.value("componentId", "");
-    link.label = rec.data.value("label", "");
-    link.quantityRequired = rec.data.value("quantityRequired", 1);
+    link.projectId = jget(rec.data, "projectId", "");
+    link.componentId = jget(rec.data, "componentId", "");
+    link.label = jget(rec.data, "label", "");
+    link.quantityRequired = jget(rec.data, "quantityRequired", 1);
     link.meta = rec.meta;
     link.meta.localSeq = kRemoteSequence;
     
@@ -1537,21 +1585,21 @@ std::vector<RefItem> SQLiteReferentialRepository::findAll() const {
     const char* sql = "SELECT id, list, value, position, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM referentials WHERE deleted = 0 ORDER BY list, position;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findAll");
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         RefItem item;
-        item.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        item.list = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        item.value = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        item.id = colText(stmt, 0);
+        item.list = colText(stmt, 1);
+        item.value = colText(stmt, 2);
         item.position = sqlite3_column_int(stmt, 3);
         item.meta = metaFromSqlite(stmt, 4);
         result.push_back(item);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1560,22 +1608,22 @@ std::vector<RefItem> SQLiteReferentialRepository::findByList(const std::string& 
     const char* sql = "SELECT id, list, value, position, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM referentials WHERE deleted = 0 AND list = ? ORDER BY position;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare findByList");
     sqlite3_bind_text(stmt, 1, list.c_str(), -1, SQLITE_TRANSIENT);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         RefItem item;
-        item.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        item.list = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        item.value = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        item.id = colText(stmt, 0);
+        item.list = colText(stmt, 1);
+        item.value = colText(stmt, 2);
         item.position = sqlite3_column_int(stmt, 3);
         item.meta = metaFromSqlite(stmt, 4);
         result.push_back(item);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1585,7 +1633,7 @@ RefItem SQLiteReferentialRepository::save(RefItem item) {
     const char* sql = "INSERT OR REPLACE INTO referentials (id, list, value, position, createdAt, updatedAt, rev, deleted, localSeq) "
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare save");
     
@@ -1600,7 +1648,7 @@ RefItem SQLiteReferentialRepository::save(RefItem item) {
     
     rc = sqlite3_step(stmt);
     checkSqlite(rc, db_, "step save");
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     
     return item;
 }
@@ -1627,7 +1675,7 @@ std::vector<RefItem> SQLiteReferentialRepository::saveAll(const std::vector<RefI
 bool SQLiteReferentialRepository::remove(Id id) {
     const char* sql = "UPDATE referentials SET deleted = 1, updatedAt = ?, rev = rev + 1, localSeq = "
                       "(SELECT COALESCE(MAX(localSeq), 0) + 1 FROM referentials) WHERE id = ?;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare remove");
     const std::string updatedAt = nowIso8601Utc();
@@ -1635,7 +1683,7 @@ bool SQLiteReferentialRepository::remove(Id id) {
     sqlite3_bind_text(stmt, 2, id.c_str(), -1, SQLITE_TRANSIENT);
     
     rc = sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return rc == SQLITE_DONE;
 }
 
@@ -1645,32 +1693,32 @@ std::vector<SyncRecord> SQLiteReferentialRepository::exportForSync(std::int64_t 
     const char* sql = "SELECT id, list, value, position, createdAt, updatedAt, rev, deleted, localSeq "
                      "FROM referentials WHERE localSeq > ?;";
     
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare exportForSync");
     sqlite3_bind_int64(stmt, 1, since);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         SyncRecord rec;
-        rec.id = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        rec.id = colText(stmt, 0);
         rec.type = "referential";
         rec.meta = metaFromSqlite(stmt, 4);
         rec.data = {
             {"id", rec.id},
-            {"list", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))},
-            {"value", reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2))},
+            {"list", colText(stmt, 1)},
+            {"value", colText(stmt, 2)},
             {"position", sqlite3_column_int(stmt, 3)}
         };
         result.push_back(rec);
     }
     
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
 std::int64_t SQLiteReferentialRepository::maxLocalSeq() const {
     const char* sql = "SELECT MAX(localSeq) FROM referentials;";
-    sqlite3_stmt* stmt;
+    StmtGuard stmt;
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     checkSqlite(rc, db_, "prepare maxLocalSeq");
     
@@ -1678,7 +1726,7 @@ std::int64_t SQLiteReferentialRepository::maxLocalSeq() const {
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         result = sqlite3_column_int64(stmt, 0);
     }
-    sqlite3_finalize(stmt);
+    stmt.finalize();
     return result;
 }
 
@@ -1686,7 +1734,7 @@ bool SQLiteReferentialRepository::applyRemote(const SyncRecord& rec) {
     if (rec.id == kNoId) return false;
     
     const char* checkSql = "SELECT rev, updatedAt FROM referentials WHERE id = ?;";
-    sqlite3_stmt* checkStmt;
+    StmtGuard checkStmt;
     int rc = sqlite3_prepare_v2(db_, checkSql, -1, &checkStmt, nullptr);
     checkSqlite(rc, db_, "prepare checkRemote");
     sqlite3_bind_text(checkStmt, 1, rec.id.c_str(), -1, SQLITE_TRANSIENT);
@@ -1694,20 +1742,20 @@ bool SQLiteReferentialRepository::applyRemote(const SyncRecord& rec) {
     bool shouldApply = true;
     if (sqlite3_step(checkStmt) == SQLITE_ROW) {
         std::int64_t localRev = sqlite3_column_int64(checkStmt, 0);
-        std::string localUpdatedAt = reinterpret_cast<const char*>(sqlite3_column_text(checkStmt, 1));
+        std::string localUpdatedAt = colText(checkStmt, 1);
         const bool remoteNewer = (rec.meta.rev > localRev) ||
             (rec.meta.rev == localRev && rec.meta.updatedAt > localUpdatedAt);
         shouldApply = remoteNewer;
     }
-    sqlite3_finalize(checkStmt);
+    checkStmt.finalize();
     
     if (!shouldApply) return false;
     
     RefItem item;
     item.id = rec.id;
-    item.list = rec.data.value("list", "");
-    item.value = rec.data.value("value", "");
-    item.position = rec.data.value("position", 0);
+    item.list = jget(rec.data, "list", "");
+    item.value = jget(rec.data, "value", "");
+    item.position = jget(rec.data, "position", 0);
     item.meta = rec.meta;
     item.meta.localSeq = kRemoteSequence;
     

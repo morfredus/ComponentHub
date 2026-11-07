@@ -1476,5 +1476,58 @@ Choisissez un autre nom ou corrigez la saisie.</translation>
     <message><source>ComponentHub Desktop - version %1
 Mémoire technique d&apos;atelier. © morfredus.</source><translation>ComponentHub Desktop - version %1
 Mémoire technique d&apos;atelier. © morfredus.</translation></message>
+    <message><source>
+
+REDÉMARREZ l&apos;application pour terminer la restauration : les données ne seront remplacées qu&apos;à ce moment-là.</source><translation>
+
+REDÉMARREZ l&apos;application pour terminer la restauration : les données ne seront remplacées qu&apos;à ce moment-là.</translation></message>
+    <message><source> %1 enregistrement(s) distant(s) illisible(s) ignoré(s).</source><translation> %1 enregistrement(s) distant(s) illisible(s) ignoré(s).</translation></message>
+    <message><source>Annuler la synchronisation</source><translation>Annuler la synchronisation</translation></message>
+    <message><source>ComponentHub - restauration</source><translation>ComponentHub - restauration</translation></message>
+    <message><source>Inclure le jeton de synchronisation dans le fichier ?
+(Il sera lisible en clair.)</source><translation>Inclure le jeton de synchronisation dans le fichier ?
+(Il sera lisible en clair.)</translation></message>
+    <message><source>La restauration en attente n&apos;a pas pu être appliquée ; les données actuelles sont conservées.
+
+</source><translation>La restauration en attente n&apos;a pas pu être appliquée ; les données actuelles sont conservées.
+
+</translation></message>
+    <message><source>Restauration prête</source><translation>Restauration prête</translation></message>
+    <message><source>Sauvegarde complète créée (données, pièces jointes et configuration, sans le jeton de synchro) :
+</source><translation>Sauvegarde complète créée (données, pièces jointes et configuration, sans le jeton de synchro) :
+</translation></message>
+    <message><source>Sauvegarde invalide, rien n&apos;a été modifié :
+</source><translation>Sauvegarde invalide, rien n&apos;a été modifié :
+</translation></message>
+    <message><source>Sauvegarde vérifiée et mise en attente.</source><translation>Sauvegarde vérifiée et mise en attente.</translation></message>
+    <message><source>Synchronisation : envoi de %1 modification(s)…</source><translation>Synchronisation : envoi de %1 modification(s)…</translation></message>
+    <message><source>Synchronisation : pièces jointes %1/%2…</source><translation>Synchronisation : pièces jointes %1/%2…</translation></message>
+    <message><source>Synchronisation : réception des modifications…</source><translation>Synchronisation : réception des modifications…</translation></message>
+    <message><source>Synchronisation annulée.</source><translation>Synchronisation annulée.</translation></message>
+    <message><source>Synchronisation avant la fermeture… (fermer à nouveau pour annuler)</source><translation>Synchronisation avant la fermeture… (fermer à nouveau pour annuler)</translation></message>
+    <message><source>Test de la connexion…</source><translation>Test de la connexion…</translation></message>
+    <message><source>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront REMPLACÉES par la sauvegarde au prochain démarrage.
+
+L&apos;ancienne base (componenthub.sqlite.bak) et les anciennes pièces jointes (dossier attachments.bak) seront conservées à côté. Continuer ?</source><translation>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront REMPLACÉES par la sauvegarde au prochain démarrage.
+
+L&apos;ancienne base (componenthub.sqlite.bak) et les anciennes pièces jointes (dossier attachments.bak) seront conservées à côté. Continuer ?</translation></message>
+    <message><source>Une synchronisation est déjà en cours.</source><translation>Une synchronisation est déjà en cours.</translation></message>
+    <message><source>✅ Connecté - </source><translation>✅ Connecté - </translation></message>
+    <message><source>✅ Synchronisé - %1 envoyé(s), %2 reçu(s), %3 conflit(s).</source><translation>✅ Synchronisé - %1 envoyé(s), %2 reçu(s), %3 conflit(s).</translation></message>
+    <message><source>❌ Échec - </source><translation>❌ Échec - </translation></message>
+    <message><source>Backup preparation failed: </source><translation>Préparation de la sauvegarde impossible : </translation></message>
+    <message><source>Cancelled.</source><translation>Annulé.</translation></message>
+    <message><source>Could not read file: </source><translation>Impossible de lire le fichier : </translation></message>
+    <message><source>Could not replace the data: </source><translation>Impossible de remplacer les données : </translation></message>
+    <message><source>Data too large for a single archive: </source><translation>Données trop volumineuses pour une seule archive : </translation></message>
+    <message><source>File name not allowed in the archive: </source><translation>Nom de fichier non autorisé dans l&apos;archive : </translation></message>
+    <message><source>File name too long for the archive: </source><translation>Nom de fichier trop long pour l&apos;archive : </translation></message>
+    <message><source>Folder tree too deep for the archive: </source><translation>Arborescence trop profonde pour l&apos;archive : </translation></message>
+    <message><source>Local database error: </source><translation>Erreur de la base locale : </translation></message>
+    <message><source>Skipped damaged attachment (it will be downloaded again from the hub): </source><translation>Pièce jointe abîmée ignorée (elle sera retéléchargée depuis le hub) : </translation></message>
+    <message><source>Synchronization cancelled.</source><translation>Synchronisation annulée.</translation></message>
+    <message><source>The archive does not contain a valid ComponentHub database.</source><translation>L&apos;archive ne contient pas de base ComponentHub valide.</translation></message>
+    <message><source>The archive is damaged or incomplete.</source><translation>L&apos;archive est abîmée ou incomplète.</translation></message>
+    <message><source>The hub took too long to answer.</source><translation>Le hub a mis trop de temps à répondre.</translation></message>
 </context>
 </TS>

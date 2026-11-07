@@ -27,6 +27,7 @@
 
 #include "AppContext.h"
 #include "sync/SyncService.h"
+#include "sync/SyncRunner.h"
 #include "ui/SyncPrefs.h"
 #include "ui/Theme.h"
 #include "ui/Icons.h"
@@ -48,6 +49,14 @@ MainWindow::MainWindow(chdesktop::AppContext& ctx, bool startup, QWidget* parent
     setWindowTitle(QStringLiteral("ComponentHub %1").arg(QString::fromLatin1(CH_APP_VERSION)));
     resize(1180, 760);
 
+    // Synchro hors du thread GUI : créée avant les pages (la page Réglages s'y connecte).
+    runner_ = new chui::SyncRunner(ctx_.dir(), this);
+    connect(runner_, &chui::SyncRunner::progress, this, &MainWindow::onSyncProgress);
+    connect(runner_, &chui::SyncRunner::finished, this, &MainWindow::onSyncFinished);
+    connect(runner_, &chui::SyncRunner::recordRejected, this, [](const QString& id, const QString& why) {
+        qWarning("[sync] enregistrement distant rejeté (%s) : %s", qPrintable(id), qPrintable(why));
+    });
+
     auto* central = new QWidget;
     auto* root = new QHBoxLayout(central);
     root->setContentsMargins(0, 0, 0, 0);
@@ -64,7 +73,7 @@ MainWindow::MainWindow(chdesktop::AppContext& ctx, bool startup, QWidget* parent
     stack_->addWidget(new ProjectsPage(ctx_));
     stack_->addWidget(new ReferentialsPage(ctx_));
     stack_->addWidget(new ImportExportPage(ctx_));
-    auto* settings = new SettingsPage(ctx_);
+    auto* settings = new SettingsPage(ctx_, runner_);
     stack_->addWidget(settings);
     // Le signal part d'un widget de l'ancienne fenêtre : main() la détruit en différé.
     connect(settings, &SettingsPage::localeChanged, this,
@@ -102,63 +111,105 @@ void MainWindow::maybeSyncOnStartup() {
     // configuré : on ne fait rien (syncConfigured() intègre déjà le mode local).
     if (!chui::syncAutoStart() || !chui::syncConfigured()) return;
 
-    // Retour visuel AVANT l'appel bloquant : sans ça, la sonde (jusqu'à 1,5 s)
-    // donnerait l'impression que l'appli est figée au lancement. processEvents()
-    // force l'affichage du message avant de bloquer.
+    // La sonde du hub (jusqu'à 1,5 s) et la synchro tournent dans le thread de travail : la
+    // fenêtre reste réactive. Hub injoignable -> simple message, l'appli reste en local.
     statusBar()->showMessage(chui::tr("Recherche du hub de synchronisation…"));
-    QApplication::processEvents();
+    runSync(int(chui::SyncReason::Startup));
+}
 
-    chsync::SyncService svc(ctx_.syncables(), ctx_.dir() + "/sync_state.json", &ctx_.attachments);
-    std::string info;
-    // Sonde courte : si le hub ne répond pas vite, on reste sur la base locale
-    // (souveraine) sans bloquer le démarrage ni afficher d'erreur bloquante.
-    if (!svc.testConnection(chui::readSyncConfig(), info, 1500)) {
-        statusBar()->showMessage(chui::tr("Hub de synchronisation indisponible - travail en local."), 5000);
-        return;
-    }
+void MainWindow::runSync(int reason) {
+    if (!runner_->start(chui::SyncReason(reason), chui::readSyncConfig()))
+        statusBar()->showMessage(chui::tr("Une synchronisation est déjà en cours."), 4000);
+}
 
-    statusBar()->showMessage(chui::tr("Synchronisation en cours…"));
-    QApplication::processEvents();
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-    const chsync::SyncOutcome o = svc.sync(chui::readSyncConfig());
-    QApplication::restoreOverrideCursor();
-    if (o.ok) {
-        chui::recordLastSync(o.applied, o.accepted);
-        statusBar()->showMessage(
-            QString(chui::tr("Synchronisé au démarrage : %1 reçu(s), %2 envoyé(s).")).arg(o.applied).arg(o.accepted), 6000);
-        nav_->setCurrentRow(nav_->currentRow());  // ré-affiche la page pour refléter les données reçues
-    } else {
-        statusBar()->showMessage(chui::tr("Synchro au démarrage impossible : ") + chui::syncError(QString::fromStdString(o.error)), 5000);
+void MainWindow::onSyncProgress(int phase, int done, int total) {
+    using Phase = chsync::SyncProgress::Phase;
+    switch (Phase(phase)) {
+    case Phase::Connect:
+        statusBar()->showMessage(chui::tr("Synchronisation en cours…")); break;
+    case Phase::Push:
+        statusBar()->showMessage(QString(chui::tr("Synchronisation : envoi de %1 modification(s)…")).arg(total)); break;
+    case Phase::Pull:
+        statusBar()->showMessage(chui::tr("Synchronisation : réception des modifications…")); break;
+    case Phase::Blobs:
+        statusBar()->showMessage(QString(chui::tr("Synchronisation : pièces jointes %1/%2…")).arg(done).arg(total)); break;
     }
 }
 
-void MainWindow::runSync(bool showUpToDate) {
-    chsync::SyncService svc(ctx_.syncables(), ctx_.dir() + "/sync_state.json", &ctx_.attachments);
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-    const chsync::SyncOutcome o = svc.sync(chui::readSyncConfig());
-    QApplication::restoreOverrideCursor();
-    if (o.ok) {
-        chui::recordLastSync(o.applied, o.accepted);
-        QString msg = QString(chui::tr("Synchronisé : %1 reçu(s), %2 envoyé(s), %3 conflit(s)."))
-                          .arg(o.applied).arg(o.accepted).arg(o.conflicts);
+void MainWindow::onSyncFinished(const chui::SyncJobResult& r) {
+    if (r.reason == chui::SyncReason::Test) return;   // traité par la page Réglages
+    const chsync::SyncOutcome& o = r.outcome;
+    const bool startup = (r.reason == chui::SyncReason::Startup);
+
+    if (r.cancelled) {
+        statusBar()->showMessage(chui::tr("Synchronisation annulée."), 5000);
+    } else if (r.hubUnavailable) {
+        statusBar()->showMessage(chui::tr("Hub de synchronisation indisponible - travail en local."), 5000);
+    } else if (r.ok) {
+        QString msg = startup
+            ? QString(chui::tr("Synchronisé au démarrage : %1 reçu(s), %2 envoyé(s).")).arg(o.applied).arg(o.accepted)
+            : QString(chui::tr("Synchronisé : %1 reçu(s), %2 envoyé(s), %3 conflit(s)."))
+                  .arg(o.applied).arg(o.accepted).arg(o.conflicts);
         // Ne mentionner les pièces jointes que s'il y en a eu : le cas courant
         // (rien à transférer) ne doit pas alourdir le message.
-        if (o.blobsUploaded || o.blobsDownloaded)
+        if (!startup && (o.blobsUploaded || o.blobsDownloaded))
             msg += QString(chui::tr(" Pièces jointes : %1 envoyée(s), %2 reçue(s)."))
                        .arg(o.blobsUploaded).arg(o.blobsDownloaded);
+        if (o.rejected)
+            msg += QString(chui::tr(" %1 enregistrement(s) distant(s) illisible(s) ignoré(s).")).arg(o.rejected);
         statusBar()->showMessage(msg, 6000);
-    } else if (showUpToDate)
-        statusBar()->showMessage(chui::tr("Synchro impossible : ") + chui::syncError(QString::fromStdString(o.error)), 6000);
+    } else {
+        const QString why = chui::syncError(QString::fromStdString(o.error));
+        statusBar()->showMessage(startup ? chui::tr("Synchro au démarrage impossible : ") + why
+                                         : chui::tr("Synchro impossible : ") + why, 6000);
+    }
+
+    // Les pages se rechargent depuis la base (le thread de travail y a écrit via sa connexion).
+    if (r.ok || o.applied || o.blobsDownloaded) refreshAfterSync();
+
+    // Synchro proposée à la fermeture : terminée (réussie ou non), la fenêtre peut se fermer.
+    if (quitAfterSync_) {
+        quitAfterSync_ = false;
+        close();
+    }
+}
+
+void MainWindow::refreshAfterSync() {
+    // Une boîte de dialogue modale (fiche en édition) ne doit pas voir ses données changer
+    // sous elle : on réessaie une fois qu'elle est fermée.
+    if (QApplication::activeModalWidget()) {
+        QTimer::singleShot(1000, this, [this] { refreshAfterSync(); });
+        return;
+    }
+    // Chaque page se recharge dans son showEvent : masquer puis ré-afficher la page courante.
+    if (QWidget* page = stack_->currentWidget()) { page->hide(); page->show(); }
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-    // Proposition de synchro en quittant (désactivable dans Réglages).
-    if (chui::syncAskOnQuit() && chui::syncConfigured()) {
+    // Synchro en cours : annulation coopérative puis attente bornée. La fenêtre ne reste jamais
+    // bloquée sur un hub qui ne répond pas, et le thread n'est jamais détruit en cours.
+    if (runner_->busy()) {
+        quitAfterSync_ = false;
+        runner_->shutdown(5000);
+        QMainWindow::closeEvent(event);
+        return;
+    }
+    // Proposition de synchro en quittant (désactivable dans Réglages), une seule fois.
+    if (!quitAsked_ && chui::syncAskOnQuit() && chui::syncConfigured()) {
+        quitAsked_ = true;
         const auto btn = QMessageBox::question(
             this, chui::tr("Synchroniser avant de quitter"),
             chui::tr("Synchroniser vos données avec morfSync avant de fermer ?\n(Désactivable dans Réglages → Synchronisation.)"),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-        if (btn == QMessageBox::Yes) runSync(false);
+        if (btn == QMessageBox::Yes) {
+            // La synchro tourne en arrière-plan : on garde la fenêtre ouverte jusqu'à sa fin
+            // (une nouvelle demande de fermeture l'annule, voir le début de cette méthode).
+            quitAfterSync_ = true;
+            statusBar()->showMessage(chui::tr("Synchronisation avant la fermeture… (fermer à nouveau pour annuler)"));
+            runSync(int(chui::SyncReason::Quit));
+            event->ignore();
+            return;
+        }
     }
     QMainWindow::closeEvent(event);
 }

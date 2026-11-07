@@ -45,6 +45,7 @@ public:
     {}
 
     const std::string& dir() const { return _dir; }
+    SQLiteDatabase& database() { return *_db; }
 
     std::vector<domain::ISyncableRepository*> syncables() {
         return { &components, &locations, &categories, &documents,
