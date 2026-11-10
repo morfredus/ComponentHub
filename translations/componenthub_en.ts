@@ -82,7 +82,8 @@
         <location filename="../src/ui/LocationsPage.cpp" line="137" />
         <source> » existe déjà.
 Choisissez un autre nom ou corrigez la saisie.</source>
-        <translation>La catégorie « </translation>
+        <translation>" already exists.
+Choose another name or correct the entry.</translation>
     </message>
     <message>
         <location filename="../src/ui/CategoriesPage.cpp" line="90" />
@@ -617,7 +618,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ImportExportPage.cpp" line="104" />
         <source>Export terminé :
 </source>
-        <translation />
+        <translation>Export complete:
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="108" />
@@ -650,7 +652,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ImportExportPage.cpp" line="131" />
         <source>Sauvegarde complète créée (données + configuration) :
 </source>
-        <translation />
+        <translation>Full backup created (data + configuration):
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="133" />
@@ -682,7 +685,9 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <source>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront ÉCRASÉES par la sauvegarde.
 
 Cette action est irréversible. Continuer ?</source>
-        <translation />
+        <translation>All current data (components, categories, locations, stock movements, documents, projects) will be OVERWRITTEN by the backup.
+
+This action cannot be undone. Continue?</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="152" />
@@ -693,14 +698,17 @@ Cette action est irréversible. Continuer ?</source>
         <location filename="../src/ui/ImportExportPage.cpp" line="153" />
         <source>
 Configuration restaurée.</source>
-        <translation />
+        <translation>
+Configuration restored.</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="155" />
         <source>
 
 Redémarrez l'application pour recharger les données et la configuration.</source>
-        <translation />
+        <translation>
+
+Restart the application to reload the data and configuration.</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="156" />
@@ -724,7 +732,8 @@ Redémarrez l'application pour recharger les données et la configuration.</sour
         <location filename="../src/ui/ImportExportPage.cpp" line="164" />
         <source>Configuration sauvegardée :
 </source>
-        <translation />
+        <translation>Configuration saved:
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="166" />
@@ -746,7 +755,8 @@ Redémarrez l'application pour recharger les données et la configuration.</sour
         <location filename="../src/ui/ImportExportPage.cpp" line="178" />
         <source>Configuration restaurée.
 Redémarrez l'application pour l'appliquer entièrement.</source>
-        <translation />
+        <translation>Configuration restored.
+Restart the application to apply it fully.</translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="180" />
@@ -847,11 +857,6 @@ Redémarrez l'application pour l'appliquer entièrement.</source>
         <translation>Free hierarchy: Workshop › Cabinet A › Drawer A12 › ESD box... "Add child" creates a sub-location under the selection.</translation>
     </message>
     <message>
-        <location filename="../src/ui/LocationsPage.cpp" line="24" />
-        <source>Glisser-déposer : déposer un emplacement sur un autre pour en faire un enfant, ou dans le vide pour en faire une racine.</source>
-        <translation>Drag and drop: drop a location onto another to make it a child, or onto empty space to make it a root.</translation>
-    </message>
-    <message>
         <location filename="../src/ui/LocationsPage.cpp" line="26" />
         <source>Ajouter (racine)</source>
         <translation>Add (root)</translation>
@@ -943,7 +948,8 @@ Redémarrez l'application pour l'appliquer entièrement.</source>
         <location filename="../src/ui/MainWindow.cpp" line="150" />
         <source>Synchroniser vos données avec morfSync avant de fermer ?
 (Désactivable dans Réglages → Synchronisation.)</source>
-        <translation>Synchronize before quitting</translation>
+        <translation>Synchronize your data with morfSync before closing?
+(Can be disabled in Settings → Synchronization.)</translation>
     </message>
     <message>
         <location filename="../src/ui/MainWindow.cpp" line="176" />
@@ -1236,7 +1242,8 @@ Redémarrez l'application pour l'appliquer entièrement.</source>
         <location filename="../src/ui/ReferentialsPage.cpp" line="250" />
         <source> » existe déjà dans ce référentiel.
 Choisissez un autre nom ou corrigez la saisie.</source>
-        <translation />
+        <translation>" already exists in this reference list.
+Choose another name or correct the entry.</translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="294" />
@@ -1277,7 +1284,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ReferentialsPage.cpp" line="325" />
         <source>
 %1 composant(s) réaffecté(s).</source>
-        <translation />
+        <translation>
+%1 component(s) reassigned.</translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="330" />
@@ -1293,7 +1301,8 @@ Choisissez un autre nom ou corrigez la saisie.</source>
         <location filename="../src/ui/ReferentialsPage.cpp" line="339" />
         <source>Référentiel exporté :
 </source>
-        <translation />
+        <translation>Reference list exported:
+</translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="344" />
@@ -1468,6 +1477,38 @@ Workshop technical memory. © morfredus.</translation>
     <message><source>Invalid HTTP response.</source><translation>Invalid HTTP response.</translation></message>
     <message><source>Skipped unsafe archive entry: </source><translation>Skipped unsafe archive entry: </translation></message>
     <message><source>Could not restore file: </source><translation>Could not restore file: </translation></message>
+    <message><source>Étiquettes</source><translation>Labels</translation></message>
+    <message><source>Label fields</source><translation>Label fields</translation></message>
+    <message><source>Preview</source><translation>Preview</translation></message>
+    <message><source>Large</source><translation>Large</translation></message>
+    <message><source>Medium</source><translation>Medium</translation></message>
+    <message><source>Small</source><translation>Small</translation></message>
+    <message><source>Paper configuration</source><translation>Paper configuration</translation></message>
+    <message><source>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</source><translation>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</translation></message>
+    <message><source>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</source><translation>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</translation></message>
+    <message><source>Generate PDF</source><translation>Generate PDF</translation></message>
+    <message><source>Print</source><translation>Print</translation></message>
+    <message><source>Print labels</source><translation>Print labels</translation></message>
+    <message><source>PDF created successfully.</source><translation>PDF created successfully.</translation></message>
+    <message><source>New custom label format</source><translation>New custom label format</translation></message>
+    <message><source>New custom format</source><translation>New custom format</translation></message>
+    <message><source>Name</source><translation>Name</translation></message>
+    <message><source>Delete format</source><translation>Delete format</translation></message>
+    <message><source>Edit format</source><translation>Edit format</translation></message>
+    <message><source>Page width</source><translation>Page width</translation></message>
+    <message><source>Page height</source><translation>Page height</translation></message>
+    <message><source>Columns</source><translation>Columns</translation></message>
+    <message><source>Rows</source><translation>Rows</translation></message>
+    <message><source>Label width</source><translation>Label width</translation></message>
+    <message><source>Label height</source><translation>Label height</translation></message>
+    <message><source>Left margin</source><translation>Left margin</translation></message>
+    <message><source>Top margin</source><translation>Top margin</translation></message>
+    <message><source>Horizontal pitch</source><translation>Horizontal pitch</translation></message>
+    <message><source>Vertical pitch</source><translation>Vertical pitch</translation></message>
+    <message><source>Start row</source><translation>Start row</translation></message>
+    <message><source>Start column</source><translation>Start column</translation></message>
+    <message><source>Show calibration borders</source><translation>Show calibration borders</translation></message>
+    <message><source>Supprimer %1 composants sélectionnés ?</source><translation>Delete %1 selected components?</translation></message>
     <message><source>HTTP status: </source><translation>HTTP status: </translation></message>
     <message><source>Unexpected response.</source><translation>Unexpected response.</translation></message>
     <message><source>Hub unreachable (HTTP %1).</source><translation>Hub unreachable (HTTP %1).</translation></message>
@@ -1477,59 +1518,174 @@ Workshop technical memory. © morfredus.</translation>
     <message><source>Invalid PUSH response.</source><translation>Invalid PUSH response.</translation></message>
     <message><source>PULL failed (HTTP %1).</source><translation>PULL failed (HTTP %1).</translation></message>
     <message><source>Invalid PULL response.</source><translation>Invalid PULL response.</translation></message>
-    <message><source>
+    <message><source>Labels</source><translation>Labels</translation></message>
+    <message><source>Close</source><translation>Close</translation></message>
+    <message><source>%1 pins</source><translation>%1 pins</translation></message>
+    <message><source>This label format no longer exists.</source><translation>This label format no longer exists.</translation></message>
+    <message><source>Unable to start printing.</source><translation>Unable to start printing.</translation></message>
+    <message><source>Unable to write the PDF file.</source><translation>Unable to write the PDF file.</translation></message>
+    <message>
+        <source>Glisser-déposer : déposer un emplacement sur un autre pour en faire un enfant, ou dans le vide pour en faire une racine.</source>
+        <translation>Drag and drop: drop a location onto another to make it a child, or onto empty space to make it a root.</translation>
+    </message>
+    <message>
+        <source>
 
-REDÉMARREZ l&apos;application pour terminer la restauration : les données ne seront remplacées qu&apos;à ce moment-là.</source><translation>
+REDÉMARREZ l'application pour terminer la restauration : les données ne seront remplacées qu'à ce moment-là.</source>
+        <translation>
 
-RESTART the application to finish the restoration: the data will only be replaced at that point.</translation></message>
-    <message><source> %1 enregistrement(s) distant(s) illisible(s) ignoré(s).</source><translation> %1 unreadable remote record(s) ignored.</translation></message>
-    <message><source>Annuler la synchronisation</source><translation>Cancel synchronization</translation></message>
-    <message><source>ComponentHub - restauration</source><translation>ComponentHub - restore</translation></message>
-    <message><source>Inclure le jeton de synchronisation dans le fichier ?
-(Il sera lisible en clair.)</source><translation>Include the synchronization token in the file?
-(It will be readable in clear text.)</translation></message>
-    <message><source>La restauration en attente n&apos;a pas pu être appliquée ; les données actuelles sont conservées.
+RESTART the application to finish the restoration: the data will only be replaced at that point.</translation>
+    </message>
+    <message>
+        <source> %1 enregistrement(s) distant(s) illisible(s) ignoré(s).</source>
+        <translation> %1 unreadable remote record(s) ignored.</translation>
+    </message>
+    <message>
+        <source>Annuler la synchronisation</source>
+        <translation>Cancel synchronization</translation>
+    </message>
+    <message>
+        <source>ComponentHub - restauration</source>
+        <translation>ComponentHub - restore</translation>
+    </message>
+    <message>
+        <source>Inclure le jeton de synchronisation dans le fichier ?
+(Il sera lisible en clair.)</source>
+        <translation>Include the synchronization token in the file?
+(It will be readable in clear text.)</translation>
+    </message>
+    <message>
+        <source>La restauration en attente n'a pas pu être appliquée ; les données actuelles sont conservées.
 
-</source><translation>The pending restore could not be applied; the current data is kept.
+</source>
+        <translation>The pending restore could not be applied; the current data is kept.
 
-</translation></message>
-    <message><source>Restauration prête</source><translation>Restore ready</translation></message>
-    <message><source>Sauvegarde complète créée (données, pièces jointes et configuration, sans le jeton de synchro) :
-</source><translation>Full backup created (data, attachments and configuration, without the sync token):
-</translation></message>
-    <message><source>Sauvegarde invalide, rien n&apos;a été modifié :
-</source><translation>Invalid backup, nothing was changed:
-</translation></message>
-    <message><source>Sauvegarde vérifiée et mise en attente.</source><translation>Backup verified and queued.</translation></message>
-    <message><source>Synchronisation : envoi de %1 modification(s)…</source><translation>Synchronization: sending %1 change(s)...</translation></message>
-    <message><source>Synchronisation : pièces jointes %1/%2…</source><translation>Synchronization: attachments %1/%2...</translation></message>
-    <message><source>Synchronisation : réception des modifications…</source><translation>Synchronization: receiving changes...</translation></message>
-    <message><source>Synchronisation annulée.</source><translation>Synchronization cancelled.</translation></message>
-    <message><source>Synchronisation avant la fermeture… (fermer à nouveau pour annuler)</source><translation>Synchronizing before closing... (close again to cancel)</translation></message>
-    <message><source>Test de la connexion…</source><translation>Testing the connection...</translation></message>
-    <message><source>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront REMPLACÉES par la sauvegarde au prochain démarrage.
+</translation>
+    </message>
+    <message>
+        <source>Restauration prête</source>
+        <translation>Restore ready</translation>
+    </message>
+    <message>
+        <source>Sauvegarde complète créée (données, pièces jointes et configuration, sans le jeton de synchro) :
+</source>
+        <translation>Full backup created (data, attachments and configuration, without the sync token):
+</translation>
+    </message>
+    <message>
+        <source>Sauvegarde invalide, rien n'a été modifié :
+</source>
+        <translation>Invalid backup, nothing was changed:
+</translation>
+    </message>
+    <message>
+        <source>Sauvegarde vérifiée et mise en attente.</source>
+        <translation>Backup verified and queued.</translation>
+    </message>
+    <message>
+        <source>Synchronisation : envoi de %1 modification(s)…</source>
+        <translation>Synchronization: sending %1 change(s)...</translation>
+    </message>
+    <message>
+        <source>Synchronisation : pièces jointes %1/%2…</source>
+        <translation>Synchronization: attachments %1/%2...</translation>
+    </message>
+    <message>
+        <source>Synchronisation : réception des modifications…</source>
+        <translation>Synchronization: receiving changes...</translation>
+    </message>
+    <message>
+        <source>Synchronisation annulée.</source>
+        <translation>Synchronization cancelled.</translation>
+    </message>
+    <message>
+        <source>Synchronisation avant la fermeture… (fermer à nouveau pour annuler)</source>
+        <translation>Synchronizing before closing... (close again to cancel)</translation>
+    </message>
+    <message>
+        <source>Test de la connexion…</source>
+        <translation>Testing the connection...</translation>
+    </message>
+    <message>
+        <source>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront REMPLACÉES par la sauvegarde au prochain démarrage.
 
-L&apos;ancienne base (componenthub.sqlite.bak) et les anciennes pièces jointes (dossier attachments.bak) seront conservées à côté. Continuer ?</source><translation>All current data (components, categories, locations, stock movements, documents, projects) will be REPLACED by the backup at the next start.
+L'ancienne base (componenthub.sqlite.bak) et les anciennes pièces jointes (dossier attachments.bak) seront conservées à côté. Continuer ?</source>
+        <translation>All current data (components, categories, locations, stock movements, documents, projects) will be REPLACED by the backup at the next start.
 
-The previous database (componenthub.sqlite.bak) and the previous attachments (attachments.bak folder) will be kept alongside. Continue?</translation></message>
-    <message><source>Une synchronisation est déjà en cours.</source><translation>A synchronization is already running.</translation></message>
-    <message><source>✅ Connecté - </source><translation>✅ Connected - </translation></message>
-    <message><source>✅ Synchronisé - %1 envoyé(s), %2 reçu(s), %3 conflit(s).</source><translation>✅ Synchronized - %1 sent, %2 received, %3 conflict(s).</translation></message>
-    <message><source>❌ Échec - </source><translation>❌ Failed - </translation></message>
-    <message><source>Backup preparation failed: </source><translation>Backup preparation failed: </translation></message>
-    <message><source>Cancelled.</source><translation>Cancelled.</translation></message>
-    <message><source>Could not read file: </source><translation>Could not read file: </translation></message>
-    <message><source>Could not replace the data: </source><translation>Could not replace the data: </translation></message>
-    <message><source>Data too large for a single archive: </source><translation>Data too large for a single archive: </translation></message>
-    <message><source>File name not allowed in the archive: </source><translation>File name not allowed in the archive: </translation></message>
-    <message><source>File name too long for the archive: </source><translation>File name too long for the archive: </translation></message>
-    <message><source>Folder tree too deep for the archive: </source><translation>Folder tree too deep for the archive: </translation></message>
-    <message><source>Local database error: </source><translation>Local database error: </translation></message>
-    <message><source>Skipped damaged attachment (it will be downloaded again from the hub): </source><translation>Skipped damaged attachment (it will be downloaded again from the hub): </translation></message>
-    <message><source>Synchronization cancelled.</source><translation>Synchronization cancelled.</translation></message>
-    <message><source>The archive does not contain a valid ComponentHub database.</source><translation>The archive does not contain a valid ComponentHub database.</translation></message>
-    <message><source>The archive is damaged or incomplete.</source><translation>The archive is damaged or incomplete.</translation></message>
-    <message><source>The hub took too long to answer.</source><translation>The hub took too long to answer.</translation></message>
+The previous database (componenthub.sqlite.bak) and the previous attachments (attachments.bak folder) will be kept alongside. Continue?</translation>
+    </message>
+    <message>
+        <source>Une synchronisation est déjà en cours.</source>
+        <translation>A synchronization is already running.</translation>
+    </message>
+    <message>
+        <source>✅ Connecté - </source>
+        <translation>✅ Connected - </translation>
+    </message>
+    <message>
+        <source>✅ Synchronisé - %1 envoyé(s), %2 reçu(s), %3 conflit(s).</source>
+        <translation>✅ Synchronized - %1 sent, %2 received, %3 conflict(s).</translation>
+    </message>
+    <message>
+        <source>❌ Échec - </source>
+        <translation>❌ Failed - </translation>
+    </message>
+    <message>
+        <source>Backup preparation failed: </source>
+        <translation>Backup preparation failed: </translation>
+    </message>
+    <message>
+        <source>Cancelled.</source>
+        <translation>Cancelled.</translation>
+    </message>
+    <message>
+        <source>Could not read file: </source>
+        <translation>Could not read file: </translation>
+    </message>
+    <message>
+        <source>Could not replace the data: </source>
+        <translation>Could not replace the data: </translation>
+    </message>
+    <message>
+        <source>Data too large for a single archive: </source>
+        <translation>Data too large for a single archive: </translation>
+    </message>
+    <message>
+        <source>File name not allowed in the archive: </source>
+        <translation>File name not allowed in the archive: </translation>
+    </message>
+    <message>
+        <source>File name too long for the archive: </source>
+        <translation>File name too long for the archive: </translation>
+    </message>
+    <message>
+        <source>Folder tree too deep for the archive: </source>
+        <translation>Folder tree too deep for the archive: </translation>
+    </message>
+    <message>
+        <source>Local database error: </source>
+        <translation>Local database error: </translation>
+    </message>
+    <message>
+        <source>Skipped damaged attachment (it will be downloaded again from the hub): </source>
+        <translation>Skipped damaged attachment (it will be downloaded again from the hub): </translation>
+    </message>
+    <message>
+        <source>Synchronization cancelled.</source>
+        <translation>Synchronization cancelled.</translation>
+    </message>
+    <message>
+        <source>The archive does not contain a valid ComponentHub database.</source>
+        <translation>The archive does not contain a valid ComponentHub database.</translation>
+    </message>
+    <message>
+        <source>The archive is damaged or incomplete.</source>
+        <translation>The archive is damaged or incomplete.</translation>
+    </message>
+    <message>
+        <source>The hub took too long to answer.</source>
+        <translation>The hub took too long to answer.</translation>
+    </message>
     <message>
         <source>Nouvelle fiche (Ctrl+N)</source>
         <translation>New record (Ctrl+N)</translation>
@@ -1593,158 +1749,6 @@ The previous database (componenthub.sqlite.bak) and the previous attachments (at
     <message>
         <source>Rechercher un composant (nom, référence, type, catégorie, emplacement)</source>
         <translation>Search for a component (name, reference, type, category, location)</translation>
-    </message>
-    <message>
-        <source>%1 pins</source>
-        <translation>%1 pins</translation>
-    </message>
-    <message>
-        <source>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</source>
-        <translation>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</translation>
-    </message>
-    <message>
-        <source>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</source>
-        <translation>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation>Close</translation>
-    </message>
-    <message>
-        <source>Columns</source>
-        <translation>Columns</translation>
-    </message>
-    <message>
-        <source>Delete format</source>
-        <translation>Delete format</translation>
-    </message>
-    <message>
-        <source>Edit format</source>
-        <translation>Edit format</translation>
-    </message>
-    <message>
-        <source>Generate PDF</source>
-        <translation>Generate PDF</translation>
-    </message>
-    <message>
-        <source>Horizontal pitch</source>
-        <translation>Horizontal pitch</translation>
-    </message>
-    <message>
-        <source>Label fields</source>
-        <translation>Label fields</translation>
-    </message>
-    <message>
-        <source>Label height</source>
-        <translation>Label height</translation>
-    </message>
-    <message>
-        <source>Label width</source>
-        <translation>Label width</translation>
-    </message>
-    <message>
-        <source>Labels</source>
-        <translation>Labels</translation>
-    </message>
-    <message>
-        <source>Large</source>
-        <translation>Large</translation>
-    </message>
-    <message>
-        <source>Left margin</source>
-        <translation>Left margin</translation>
-    </message>
-    <message>
-        <source>Medium</source>
-        <translation>Medium</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Name</translation>
-    </message>
-    <message>
-        <source>New custom format</source>
-        <translation>New custom format</translation>
-    </message>
-    <message>
-        <source>New custom label format</source>
-        <translation>New custom label format</translation>
-    </message>
-    <message>
-        <source>PDF created successfully.</source>
-        <translation>PDF created successfully.</translation>
-    </message>
-    <message>
-        <source>Page height</source>
-        <translation>Page height</translation>
-    </message>
-    <message>
-        <source>Page width</source>
-        <translation>Page width</translation>
-    </message>
-    <message>
-        <source>Paper configuration</source>
-        <translation>Paper configuration</translation>
-    </message>
-    <message>
-        <source>Preview</source>
-        <translation>Preview</translation>
-    </message>
-    <message>
-        <source>Print</source>
-        <translation>Print</translation>
-    </message>
-    <message>
-        <source>Print labels</source>
-        <translation>Print labels</translation>
-    </message>
-    <message>
-        <source>Rows</source>
-        <translation>Rows</translation>
-    </message>
-    <message>
-        <source>Show calibration borders</source>
-        <translation>Show calibration borders</translation>
-    </message>
-    <message>
-        <source>Small</source>
-        <translation>Small</translation>
-    </message>
-    <message>
-        <source>Start column</source>
-        <translation>Start column</translation>
-    </message>
-    <message>
-        <source>Start row</source>
-        <translation>Start row</translation>
-    </message>
-    <message>
-        <source>Supprimer %1 composants sélectionnés ?</source>
-        <translation>Delete %1 selected components?</translation>
-    </message>
-    <message>
-        <source>This label format no longer exists.</source>
-        <translation>This label format no longer exists.</translation>
-    </message>
-    <message>
-        <source>Top margin</source>
-        <translation>Top margin</translation>
-    </message>
-    <message>
-        <source>Unable to start printing.</source>
-        <translation>Unable to start printing.</translation>
-    </message>
-    <message>
-        <source>Unable to write the PDF file.</source>
-        <translation>Unable to write the PDF file.</translation>
-    </message>
-    <message>
-        <source>Vertical pitch</source>
-        <translation>Vertical pitch</translation>
-    </message>
-    <message>
-        <source>Étiquettes</source>
-        <translation>Labels</translation>
     </message>
 </context>
 </TS>

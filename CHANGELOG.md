@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.17.0] - 2026-11-10
+
+### Changed
+
+- **`dev-i18n-es` branch merged.** Its Spanish catalog (reviewed, 336 strings) is the base; the strings added since on `main` were completed in English, French and Spanish. The French and English catalog fixes of that branch are kept (no more empty or misaligned entries). `.editorconfig`, `.clang-format` and the CONTRIBUTING rules for live language and currency changes are now on `main`.
+
 ## [1.16.0] - 2026-11-10
 
 ### Added

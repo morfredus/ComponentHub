@@ -138,7 +138,9 @@ Windows, often faster). Per-OS branches quietly break that promise.
 - **Language:** C++17. No compiler extensions; it must build with MinGW-w64 and
   GCC. Keep warnings clean.
 - **Style:** match the surrounding code (indentation, naming, comment density).
-  Comments explain *why*, not *what*.
+  Comments explain *why*, not *what*. `.editorconfig` (UTF-8, LF, 4 spaces) and
+  `.clang-format` (120 columns) encode the basics; apply `git clang-format` to the
+  lines you change, not to whole existing files.
 - **UTF-8 everywhere.** Source files are UTF-8; accented characters and `€` must
   render correctly. On MSVC builds the `/utf-8` flag is already set.
 - **Comments and source UI strings** are currently written in **French** (the
@@ -146,7 +148,13 @@ Windows, often faster). Per-OS branches quietly break that promise.
   translation helper (`chui::tr(...)`), even when the French source text is
   the default. Keep the French source text in the code, then add its English
   translation to `translations/componenthub_en.ts` and keep the French catalog
-  in sync in `translations/componenthub_fr.ts`.
+  in sync in `translations/componenthub_fr.ts` (and the Spanish one in
+  `translations/componenthub_es.ts`).
+- **Language and currency apply live.** Changing them in Settings rebuilds the main
+  window (see `showWindow` in `main.cpp`), so every widget re-reads its texts when it is
+  constructed. Never keep a translated string or the currency in a `static`/global
+  variable or compute it once at startup: call `chui::tr(...)` and `chui::currency()`
+  where the widget is built or refreshed.
 - **Translation catalogs:** do not edit generated `.qm` files. They are built
   from the `.ts` catalogs by `lrelease` during the CMake build. When adding or
   changing UI strings, update the catalogs deliberately and verify both
