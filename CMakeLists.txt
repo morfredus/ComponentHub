@@ -24,7 +24,7 @@ set(CH_DOMAIN "${CMAKE_SOURCE_DIR}/src/domain")
 
 # --- Dépendances ----------------------------------------------------------
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets PrintSupport)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -85,6 +85,7 @@ add_executable(ComponentHub WIN32
     src/ui/MainWindow.cpp
     src/ui/InventoryPage.cpp
     src/ui/ComponentDialog.cpp
+    src/ui/LabelDialog.cpp
     src/ui/CategoriesPage.cpp
     src/ui/LocationsPage.cpp
     src/ui/ProjectsPage.cpp
@@ -94,7 +95,7 @@ add_executable(ComponentHub WIN32
     src/sync/SyncRunner.cpp       # synchro dans un thread de travail dédié (Qt)
     ${CH_APP_RESOURCES}
 )
-target_link_libraries(ComponentHub PRIVATE componenthub_core Qt6::Widgets morfBeacon::morfBeacon morfUpdate::morfUpdate morfUpdate::Widgets)
+target_link_libraries(ComponentHub PRIVATE componenthub_core Qt6::Widgets Qt6::PrintSupport morfBeacon::morfBeacon morfUpdate::morfUpdate morfUpdate::Widgets)
 target_compile_definitions(ComponentHub PRIVATE CH_APP_VERSION="${CH_VERSION}")
 find_program(CH_LRELEASE_EXECUTABLE NAMES lrelease lrelease-qt6
     HINTS "${Qt6_DIR}/../../../bin" "$ENV{QT_ROOT}/bin" "/usr/lib/qt6/bin")

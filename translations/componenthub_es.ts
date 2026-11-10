@@ -1450,5 +1450,157 @@ La base anterior (componenthub.sqlite.bak) y los adjuntos anteriores (carpeta at
         <source>Rechercher un composant (nom, référence, type, catégorie, emplacement)</source>
         <translation>Buscar un componente (nombre, referencia, tipo, categoría, ubicación)</translation>
     </message>
+    <message>
+        <source>%1 pins</source>
+        <translation>%1 pines</translation>
+    </message>
+    <message>
+        <source>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</source>
+        <translation>Avery n.º 8728 - 30,5 x 16,9 mm - 6 x 16 etiquetas</translation>
+    </message>
+    <message>
+        <source>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</source>
+        <translation>Avery n.º 8790 - 17,8 x 10 mm - 10 x 27 etiquetas</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Cerrar</translation>
+    </message>
+    <message>
+        <source>Columns</source>
+        <translation>Columnas</translation>
+    </message>
+    <message>
+        <source>Delete format</source>
+        <translation>Eliminar formato</translation>
+    </message>
+    <message>
+        <source>Edit format</source>
+        <translation>Modificar formato</translation>
+    </message>
+    <message>
+        <source>Generate PDF</source>
+        <translation>Generar PDF</translation>
+    </message>
+    <message>
+        <source>Horizontal pitch</source>
+        <translation>Paso horizontal</translation>
+    </message>
+    <message>
+        <source>Label fields</source>
+        <translation>Campos de la etiqueta</translation>
+    </message>
+    <message>
+        <source>Label height</source>
+        <translation>Alto de etiqueta</translation>
+    </message>
+    <message>
+        <source>Label width</source>
+        <translation>Ancho de etiqueta</translation>
+    </message>
+    <message>
+        <source>Labels</source>
+        <translation>Etiquetas</translation>
+    </message>
+    <message>
+        <source>Large</source>
+        <translation>Grande</translation>
+    </message>
+    <message>
+        <source>Left margin</source>
+        <translation>Margen izquierdo</translation>
+    </message>
+    <message>
+        <source>Medium</source>
+        <translation>Mediana</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nombre</translation>
+    </message>
+    <message>
+        <source>New custom format</source>
+        <translation>Nuevo formato personalizado</translation>
+    </message>
+    <message>
+        <source>New custom label format</source>
+        <translation>Nuevo formato de etiqueta personalizado</translation>
+    </message>
+    <message>
+        <source>PDF created successfully.</source>
+        <translation>PDF creado correctamente.</translation>
+    </message>
+    <message>
+        <source>Page height</source>
+        <translation>Alto de página</translation>
+    </message>
+    <message>
+        <source>Page width</source>
+        <translation>Ancho de página</translation>
+    </message>
+    <message>
+        <source>Paper configuration</source>
+        <translation>Configuración del papel</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation>Vista previa</translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation>Imprimir</translation>
+    </message>
+    <message>
+        <source>Print labels</source>
+        <translation>Imprimir etiquetas</translation>
+    </message>
+    <message>
+        <source>Rows</source>
+        <translation>Filas</translation>
+    </message>
+    <message>
+        <source>Show calibration borders</source>
+        <translation>Mostrar bordes de calibración</translation>
+    </message>
+    <message>
+        <source>Small</source>
+        <translation>Pequeña</translation>
+    </message>
+    <message>
+        <source>Start column</source>
+        <translation>Columna inicial</translation>
+    </message>
+    <message>
+        <source>Start row</source>
+        <translation>Fila inicial</translation>
+    </message>
+    <message>
+        <source>Supprimer %1 composants sélectionnés ?</source>
+        <translation>¿Eliminar los %1 componentes seleccionados?</translation>
+    </message>
+    <message>
+        <source>This label format no longer exists.</source>
+        <translation>Este formato de etiqueta ya no existe.</translation>
+    </message>
+    <message>
+        <source>Top margin</source>
+        <translation>Margen superior</translation>
+    </message>
+    <message>
+        <source>Unable to start printing.</source>
+        <translation>No se pudo iniciar la impresión.</translation>
+    </message>
+    <message>
+        <source>Unable to write the PDF file.</source>
+        <translation>No se pudo escribir el archivo PDF.</translation>
+    </message>
+    <message>
+        <source>Vertical pitch</source>
+        <translation>Paso vertical</translation>
+    </message>
+    <message>
+        <source>Étiquettes</source>
+        <translation>Etiquetas</translation>
+    </message>
 </context>
 </TS>

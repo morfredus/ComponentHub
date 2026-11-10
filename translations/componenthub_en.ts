@@ -1594,5 +1594,157 @@ The previous database (componenthub.sqlite.bak) and the previous attachments (at
         <source>Rechercher un composant (nom, référence, type, catégorie, emplacement)</source>
         <translation>Search for a component (name, reference, type, category, location)</translation>
     </message>
+    <message>
+        <source>%1 pins</source>
+        <translation>%1 pins</translation>
+    </message>
+    <message>
+        <source>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</source>
+        <translation>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</translation>
+    </message>
+    <message>
+        <source>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</source>
+        <translation>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Close</translation>
+    </message>
+    <message>
+        <source>Columns</source>
+        <translation>Columns</translation>
+    </message>
+    <message>
+        <source>Delete format</source>
+        <translation>Delete format</translation>
+    </message>
+    <message>
+        <source>Edit format</source>
+        <translation>Edit format</translation>
+    </message>
+    <message>
+        <source>Generate PDF</source>
+        <translation>Generate PDF</translation>
+    </message>
+    <message>
+        <source>Horizontal pitch</source>
+        <translation>Horizontal pitch</translation>
+    </message>
+    <message>
+        <source>Label fields</source>
+        <translation>Label fields</translation>
+    </message>
+    <message>
+        <source>Label height</source>
+        <translation>Label height</translation>
+    </message>
+    <message>
+        <source>Label width</source>
+        <translation>Label width</translation>
+    </message>
+    <message>
+        <source>Labels</source>
+        <translation>Labels</translation>
+    </message>
+    <message>
+        <source>Large</source>
+        <translation>Large</translation>
+    </message>
+    <message>
+        <source>Left margin</source>
+        <translation>Left margin</translation>
+    </message>
+    <message>
+        <source>Medium</source>
+        <translation>Medium</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Name</translation>
+    </message>
+    <message>
+        <source>New custom format</source>
+        <translation>New custom format</translation>
+    </message>
+    <message>
+        <source>New custom label format</source>
+        <translation>New custom label format</translation>
+    </message>
+    <message>
+        <source>PDF created successfully.</source>
+        <translation>PDF created successfully.</translation>
+    </message>
+    <message>
+        <source>Page height</source>
+        <translation>Page height</translation>
+    </message>
+    <message>
+        <source>Page width</source>
+        <translation>Page width</translation>
+    </message>
+    <message>
+        <source>Paper configuration</source>
+        <translation>Paper configuration</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation>Preview</translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation>Print</translation>
+    </message>
+    <message>
+        <source>Print labels</source>
+        <translation>Print labels</translation>
+    </message>
+    <message>
+        <source>Rows</source>
+        <translation>Rows</translation>
+    </message>
+    <message>
+        <source>Show calibration borders</source>
+        <translation>Show calibration borders</translation>
+    </message>
+    <message>
+        <source>Small</source>
+        <translation>Small</translation>
+    </message>
+    <message>
+        <source>Start column</source>
+        <translation>Start column</translation>
+    </message>
+    <message>
+        <source>Start row</source>
+        <translation>Start row</translation>
+    </message>
+    <message>
+        <source>Supprimer %1 composants sélectionnés ?</source>
+        <translation>Delete %1 selected components?</translation>
+    </message>
+    <message>
+        <source>This label format no longer exists.</source>
+        <translation>This label format no longer exists.</translation>
+    </message>
+    <message>
+        <source>Top margin</source>
+        <translation>Top margin</translation>
+    </message>
+    <message>
+        <source>Unable to start printing.</source>
+        <translation>Unable to start printing.</translation>
+    </message>
+    <message>
+        <source>Unable to write the PDF file.</source>
+        <translation>Unable to write the PDF file.</translation>
+    </message>
+    <message>
+        <source>Vertical pitch</source>
+        <translation>Vertical pitch</translation>
+    </message>
+    <message>
+        <source>Étiquettes</source>
+        <translation>Labels</translation>
+    </message>
 </context>
 </TS>

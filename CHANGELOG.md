@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.16.0] - 2026-11-10
+
+### Added
+
+- **Label printing restored.** The Labels dialog (Avery 8728 / 8790 and custom formats, live preview, print and PDF export) lived only on the unmerged `dev-i18n-es` branch and was missing from `main`. It is now on `main`. The inventory table accepts multiple selection (labels, bulk delete).
+
 ## [1.15.0] - 2026-11-10
 
 ### Changed
