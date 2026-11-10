@@ -3,6 +3,7 @@
 #include <QSettings>
 #include <QCoreApplication>
 #include <QLocale>
+#include <QTranslator>
 #include <QStringList>
 
 namespace chui {
@@ -33,6 +34,15 @@ Language languageFromCode(const QString& code) {
     if (code == "en") return Language::English;
     if (code == "es") return Language::Spanish;
     return Language::French;
+}
+
+void applyLanguage() {
+    // Un seul traducteur, conservé pour toute la vie du processus : on le retire,
+    // on le recharge dans la langue voulue, on le réinstalle.
+    static QTranslator translator;
+    QCoreApplication::removeTranslator(&translator);
+    if (translator.load(QStringLiteral(":/i18n/componenthub_%1.qm").arg(languageCode(language()))))
+        QCoreApplication::installTranslator(&translator);
 }
 
 void setLanguage(Language value) {

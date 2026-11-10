@@ -44,7 +44,7 @@
 #define CH_APP_VERSION "0.0.0-dev"   // repli : la vraie valeur vient de CMake
 #endif
 
-MainWindow::MainWindow(chdesktop::AppContext& ctx, QWidget* parent)
+MainWindow::MainWindow(chdesktop::AppContext& ctx, bool startup, QWidget* parent)
     : QMainWindow(parent), ctx_(ctx) {
     setWindowTitle(QStringLiteral("ComponentHub %1").arg(QString::fromLatin1(CH_APP_VERSION)));
     resize(1180, 760);
@@ -73,7 +73,9 @@ MainWindow::MainWindow(chdesktop::AppContext& ctx, QWidget* parent)
     stack_->addWidget(new ProjectsPage(ctx_));
     stack_->addWidget(new ReferentialsPage(ctx_));
     stack_->addWidget(new ImportExportPage(ctx_));
-    stack_->addWidget(new SettingsPage(ctx_, runner_));
+    auto* settings = new SettingsPage(ctx_, runner_);
+    stack_->addWidget(settings);
+    connect(settings, &SettingsPage::localeChanged, this, &MainWindow::rebuildRequested);
 
     auto* sidebarHost = qobject_cast<QWidget*>(nav_->parentWidget());
     root->addWidget(sidebarHost);
@@ -92,10 +94,16 @@ MainWindow::MainWindow(chdesktop::AppContext& ctx, QWidget* parent)
     statusBar()->showMessage(chui::tr("Données : ") + QString::fromStdString(ctx_.dir()));
 
     // Vérification silencieuse des mises à jour, peu après l'affichage de l'UI.
-    QTimer::singleShot(2000, this, [this]{ checkForUpdates(false); });
-    // Synchro au démarrage (si activée et hub joignable), juste après l'affichage.
-    QTimer::singleShot(600, this, [this]{ maybeSyncOnStartup(); });
+    if (startup) {
+        QTimer::singleShot(2000, this, [this]{ checkForUpdates(false); });
+        // Synchro au démarrage (si activée et hub joignable), juste après l'affichage.
+        QTimer::singleShot(600, this, [this]{ maybeSyncOnStartup(); });
+    }
 }
+
+int MainWindow::currentPage() const { return nav_->currentRow(); }
+void MainWindow::setCurrentPage(int row) { if (row >= 0 && row < nav_->count()) nav_->setCurrentRow(row); }
+void MainWindow::prepareForRebuild() { if (runner_->busy()) runner_->shutdown(5000); }
 
 void MainWindow::maybeSyncOnStartup() {
     // Mode local uniquement, synchro au démarrage désactivée, ou hub non

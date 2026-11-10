@@ -9,6 +9,8 @@ enum class Currency { Euro, Dollar, Pound };
 
 Language language();
 void setLanguage(Language language);
+// Installe (ou remplace) le traducteur de la langue courante : appelable à chaud.
+void applyLanguage();
 QString languageCode(Language language);
 Language languageFromCode(const QString& code);
 QString languageName(Language language);

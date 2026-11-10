@@ -3,7 +3,7 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QMessageBox>
-#include <QTranslator>
+#include <QTimer>
 
 #include "AppContext.h"
 #include "platform/Backup.h"
@@ -18,6 +18,7 @@
 
 #include <exception>
 #include <memory>
+#include <functional>
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
@@ -25,10 +26,7 @@ int main(int argc, char* argv[]) {
     app.setOrganizationName("morfredus");
     app.setApplicationDisplayName("ComponentHub");
 
-    QTranslator translator;
-    const QString locale = chui::languageCode(chui::language());
-    if (translator.load(QStringLiteral(":/i18n/componenthub_%1.qm").arg(locale)))
-        app.installTranslator(&translator);
+    chui::applyLanguage();
 
     // Dossier de données par utilisateur.
     QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -67,9 +65,31 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     auto& ctx = *context;
-    MainWindow window(ctx);
-    window.setWindowIcon(icons::icon(icons::Glyph::Chip, QColor(Theme::instance().color("accent")), 32));
-    window.show();
+    std::unique_ptr<MainWindow> window;
+    std::function<void(bool)> openWindow;
+    openWindow = [&](bool startup) {
+        window = std::make_unique<MainWindow>(ctx, startup);
+        window->setWindowIcon(icons::icon(icons::Glyph::Chip, QColor(Theme::instance().color("accent")), 32));
+        // Langue ou devise changée : on reconstruit la fenêtre (tous les textes sont
+        // posés à la construction) à la même place, à la même taille, sur la même page.
+        // Différé d'un tour de boucle : la fenêtre ne doit pas être détruite pendant
+        // l'exécution d'un de ses propres signaux.
+        QObject::connect(window.get(), &MainWindow::rebuildRequested, &app, [&] {
+            QTimer::singleShot(0, [&] {
+                auto old = std::move(window);
+                old->prepareForRebuild();
+                const QByteArray geometry = old->saveGeometry();   // position, taille, état maximisé
+                const int page = old->currentPage();
+                openWindow(false);
+                window->restoreGeometry(geometry);                 // avant show() : pas de saut visible
+                window->setCurrentPage(page);
+                window->show();
+                old.reset();                                       // après show() : jamais zéro fenêtre
+            });
+        });
+    };
+    openWindow(true);
+    window->show();
 
     // --- Supervision LAN : annonce de présence + métriques (morfBeacon) -----
     // Heartbeat UDP « je suis actif » broadcast, plus un endpoint HTTP /status

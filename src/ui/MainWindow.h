@@ -15,7 +15,14 @@ namespace chui { class SyncRunner; struct SyncJobResult; }
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit MainWindow(chdesktop::AppContext& ctx, QWidget* parent = nullptr);
+    // startup=false : fenêtre reconstruite après un changement de langue/devise
+    // (ni vérification de mise à jour ni synchro de démarrage à refaire).
+    explicit MainWindow(chdesktop::AppContext& ctx, bool startup = true, QWidget* parent = nullptr);
+    int currentPage() const;
+    void setCurrentPage(int row);
+    void prepareForRebuild();   // arrête proprement une synchro en cours
+signals:
+    void rebuildRequested();    // langue ou devise changée
 
 protected:
     void closeEvent(QCloseEvent* event) override;  // propose la synchro en quittant

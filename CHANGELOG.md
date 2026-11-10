@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.15.0] - 2026-11-10
+
+### Changed
+
+- **Language and currency apply immediately, no restart.** The window is rebuilt with the new translation at the same position, the same size (maximized state included) and on the same page. A synchronization in progress is cancelled cleanly first; the startup update check and sync are not replayed.
+
 ## [1.14.0] - 2026-11-10
 
 ### Added
