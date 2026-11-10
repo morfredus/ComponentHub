@@ -1629,4 +1629,63 @@ Workshop technical memory. © morfredus.</source>
 Memoria técnica del taller. © morfredus.</translation>
     </message>
 </context>
+<context>
+    <name>morfupdate</name>
+    <message>
+        <source>owner/repo not set</source>
+        <translation>owner/repo no indicados</translation>
+    </message>
+    <message>
+        <source>Network error: %1</source>
+        <translation>Error de red: %1</translation>
+    </message>
+    <message>
+        <source>Unreadable response: %1</source>
+        <translation>Respuesta ilegible: %1</translation>
+    </message>
+    <message>
+        <source>No usable release found</source>
+        <translation>No se encontró ninguna versión utilizable</translation>
+    </message>
+    <message>
+        <source>%1 update</source>
+        <translation>Actualización de %1</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;A new version of %1 is available.&lt;/b&gt;</source>
+        <translation>&lt;b&gt;Hay una nueva versión de %1 disponible.&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>Installed version: &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;&amp;nbsp;→&amp;nbsp;&amp;nbsp;New version: &lt;b&gt;%2&lt;/b&gt;</source>
+        <translation>Versión instalada: &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;&amp;nbsp;→&amp;nbsp;&amp;nbsp;Nueva versión: &lt;b&gt;%2&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>Release: %1</source>
+        <translation>Versión publicada: %1</translation>
+    </message>
+    <message>
+        <source>(No release notes.)</source>
+        <translation>(Sin notas de la versión.)</translation>
+    </message>
+    <message>
+        <source>View release</source>
+        <translation>Ver la versión</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation>Descargar</translation>
+    </message>
+    <message>
+        <source>Later</source>
+        <translation>Más tarde</translation>
+    </message>
+    <message>
+        <source>%1 is up to date (version %2).</source>
+        <translation>%1 está actualizado (versión %2).</translation>
+    </message>
+    <message>
+        <source>Unable to check for updates: %1</source>
+        <translation>No se pudo comprobar si hay actualizaciones: %1</translation>
+    </message>
+</context>
 </TS>

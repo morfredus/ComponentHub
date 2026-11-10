@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.18.1] - 2026-11-10
+
+### Fixed
+
+- **"Check for updates" is translated.** The update dialog and its messages came from the vendored morfUpdate library with hard-coded French text. morfUpdate 0.9.1 now uses English sources in its own `morfupdate` context; `scripts/i18n/update-catalogs.py` collects them into the same catalogs (French and Spanish are filled in), so the dialog follows the selected language.
+
 ## [1.18.0] - 2026-11-10
 
 ### Changed

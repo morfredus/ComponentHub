@@ -13,10 +13,19 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QUrl>
+#include <QCoreApplication>
 
 #include <utility>
 
 namespace morfupdate {
+
+namespace {
+// Textes sources en anglais, traduits par le catalogue de l'application hote
+// (contexte "morfupdate", le meme que UpdateDialog.cpp).
+QString mt(const char* text) {
+    return QCoreApplication::translate("morfupdate", text);
+}
+} // namespace
 
 GitHubReleaseSource::GitHubReleaseSource(morfUpdateConfig config, QObject* parent)
     : IUpdateSource(parent),
@@ -27,7 +36,7 @@ GitHubReleaseSource::~GitHubReleaseSource() = default;
 
 void GitHubReleaseSource::fetchLatest(bool includePrereleases) {
     if (m_config.owner.isEmpty() || m_config.repo.isEmpty()) {
-        emit failed(QStringLiteral("owner/repo non renseignes"));
+        emit failed(mt("owner/repo not set"));
         return;
     }
 
@@ -56,7 +65,7 @@ void GitHubReleaseSource::handleReply(QNetworkReply* reply, bool includePrerelea
     reply->deleteLater();
 
     if (reply->error() != QNetworkReply::NoError) {
-        emit failed(QStringLiteral("Erreur reseau : %1").arg(reply->errorString()));
+        emit failed(mt("Network error: %1").arg(reply->errorString()));
         return;
     }
 
@@ -64,7 +73,7 @@ void GitHubReleaseSource::handleReply(QNetworkReply* reply, bool includePrerelea
     QJsonParseError perr{};
     const QJsonDocument doc = QJsonDocument::fromJson(body, &perr);
     if (perr.error != QJsonParseError::NoError) {
-        emit failed(QStringLiteral("Reponse illisible : %1").arg(perr.errorString()));
+        emit failed(mt("Unreadable response: %1").arg(perr.errorString()));
         return;
     }
 
@@ -88,7 +97,7 @@ void GitHubReleaseSource::handleReply(QNetworkReply* reply, bool includePrerelea
     }
 
     if (!info.valid) {
-        emit failed(QStringLiteral("Aucune release exploitable trouvee"));
+        emit failed(mt("No usable release found"));
         return;
     }
     emit latestReady(info);

@@ -1629,4 +1629,63 @@ Workshop technical memory. © morfredus.</source>
 Mémoire technique d'atelier. © morfredus.</translation>
     </message>
 </context>
+<context>
+    <name>morfupdate</name>
+    <message>
+        <source>owner/repo not set</source>
+        <translation>owner/repo non renseignés</translation>
+    </message>
+    <message>
+        <source>Network error: %1</source>
+        <translation>Erreur réseau : %1</translation>
+    </message>
+    <message>
+        <source>Unreadable response: %1</source>
+        <translation>Réponse illisible : %1</translation>
+    </message>
+    <message>
+        <source>No usable release found</source>
+        <translation>Aucune release exploitable trouvée</translation>
+    </message>
+    <message>
+        <source>%1 update</source>
+        <translation>Mise à jour de %1</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;A new version of %1 is available.&lt;/b&gt;</source>
+        <translation>&lt;b&gt;Une nouvelle version de %1 est disponible.&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>Installed version: &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;&amp;nbsp;→&amp;nbsp;&amp;nbsp;New version: &lt;b&gt;%2&lt;/b&gt;</source>
+        <translation>Version installée : &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;&amp;nbsp;→&amp;nbsp;&amp;nbsp;Nouvelle version : &lt;b&gt;%2&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>Release: %1</source>
+        <translation>Release : %1</translation>
+    </message>
+    <message>
+        <source>(No release notes.)</source>
+        <translation>(Pas de notes de version.)</translation>
+    </message>
+    <message>
+        <source>View release</source>
+        <translation>Voir la release</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation>Télécharger</translation>
+    </message>
+    <message>
+        <source>Later</source>
+        <translation>Plus tard</translation>
+    </message>
+    <message>
+        <source>%1 is up to date (version %2).</source>
+        <translation>%1 est à jour (version %2).</translation>
+    </message>
+    <message>
+        <source>Unable to check for updates: %1</source>
+        <translation>Vérification impossible : %1</translation>
+    </message>
+</context>
 </TS>

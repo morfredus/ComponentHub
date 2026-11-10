@@ -1609,4 +1609,63 @@ Workshop technical memory. © morfredus.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
+<context>
+    <name>morfupdate</name>
+    <message>
+        <source>owner/repo not set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network error: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unreadable response: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No usable release found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;A new version of %1 is available.&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installed version: &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;&amp;nbsp;→&amp;nbsp;&amp;nbsp;New version: &lt;b&gt;%2&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(No release notes.)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Later</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is up to date (version %2).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to check for updates: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
 </TS>
