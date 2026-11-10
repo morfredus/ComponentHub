@@ -1,14 +1,14 @@
 /**
- * SyncSession - tout ce dont UN thread a besoin pour synchroniser : sa propre connexion SQLite,
- * ses propres instances de dépôts et son propre magasin de pièces jointes.
+ * SyncSession - everything ONE thread needs to synchronize: its own SQLite connection,
+ * its own repository instances and its own attachment store.
  *
- * Pourquoi : une connexion SQLite et les statements préparés des dépôts ne se partagent pas
- * entre threads. La synchro tourne dans un thread de travail dédié ; elle ouvre donc sa session
- * (fabrique « par thread ») sur la même base en WAL. Les écritures de l'utilisateur (connexion
- * de l'interface) et celles de la synchro s'alternent grâce à busy_timeout et à des
- * transactions courtes (une page du PULL à la fois).
+ * Why: a SQLite connection and the repositories' prepared statements cannot be shared
+ * between threads. Synchronization runs in a dedicated worker thread; it therefore opens its session
+ * ("per thread" factory) on the same database in WAL mode. The user's writes (connection
+ * of the interface) and those of the synchronization alternate thanks to busy_timeout and
+ * short transactions (one PULL page at a time).
  *
- * En-tête seul, sans Qt : testable en ctest.
+ * Header only, no Qt: testable with ctest.
  */
 #pragma once
 #include <memory>
@@ -24,8 +24,8 @@ namespace chsync {
 
 class SyncSession {
 public:
-    // `dir` : dossier de données (celui de l'AppContext). Lève std::runtime_error si la base
-    // ne s'ouvre pas.
+    // `dir`: data folder (the one of AppContext). Throws std::runtime_error if the database
+    // cannot be opened.
     explicit SyncSession(const std::string& dir)
         : dir_(dir)
         , db_(dir + "/componenthub.sqlite")
@@ -39,7 +39,7 @@ public:
         , referentials_(db_.handle())
         , attachments_(dir + "/attachments") {}
 
-    // Même liste, même ordre que AppContext::syncables().
+    // Same list, same order as AppContext::syncables().
     std::vector<domain::ISyncableRepository*> syncables() {
         return { &components_, &locations_, &categories_, &documents_,
                  &projects_, &projectComponents_, &referentials_ };
@@ -49,7 +49,7 @@ public:
     std::string statePath() const { return dir_ + "/sync_state.json"; }
 
 private:
-    // Ordre de déclaration = ordre de construction : la base avant les dépôts qui la lisent.
+    // Declaration order = construction order: the database before the repositories that read it.
     std::string dir_;
     chdesktop::SQLiteDatabase db_;
     bool ready_;

@@ -1,8 +1,8 @@
-// ReferentialsPage - administration des référentiels (listes de valeurs
-// normalisées) : ajout, modification, suppression, réordonnancement, fusion,
-// import/export. Pour les référentiels liés à un champ de composant (type,
-// fabricant, fournisseur, état), les renommages et fusions sont propagés aux
-// composants concernés pour garder la base cohérente.
+// ReferentialsPage - administration of the reference lists (lists of
+// standardized values): add, edit, delete, reorder, merge,
+// import/export. For lists linked to a component field (type,
+// manufacturer, supplier, condition), renames and merges are propagated to the
+// components concerned to keep the database consistent.
 #pragma once
 #include <QWidget>
 #include <QString>
@@ -31,10 +31,10 @@ private:
     QString currentKey() const;
     int currentBind() const;
     void seedIfEmpty(const QString& key, int bind);
-    int  reassignComponentField(const QString& from, const QString& to, int bind);  // renvoie le nb de composants modifiés
+    int  reassignComponentField(const QString& from, const QString& to, int bind);  // returns the number of components modified
     int  usageCount(const QString& value, int bind) const;
 
     chdesktop::AppContext& ctx_;
-    QListWidget* referentials_ = nullptr;  // les listes disponibles
-    QListWidget* values_ = nullptr;        // valeurs de la liste sélectionnée
+    QListWidget* referentials_ = nullptr;  // the available lists
+    QListWidget* values_ = nullptr;        // values of the selected list
 };

@@ -10,15 +10,15 @@ class ImportExportPage : public QWidget {
 public:
     explicit ImportExportPage(chdesktop::AppContext& ctx, QWidget* parent = nullptr);
 private:
-    // Exporte le CSV produit par `producer` vers un fichier choisi (préfixé du
-    // BOM UTF-8 pour Excel/LibreOffice).
+    // Exports the CSV produced by `producer` to a chosen file (prefixed with the
+    // UTF-8 BOM for Excel/LibreOffice).
     void exportCsv(const std::function<std::string()>& producer, const QString& defaultName);
-    // Importe un CSV choisi via `consumer` et affiche le bilan.
+    // Imports a CSV chosen through `consumer` and shows the result.
     void importCsv(const std::function<domain::ImportResult(const std::string&)>& consumer);
     void backup();
     void restore();
-    void backupConfig();    // sauvegarde la configuration seule (JSON)
-    void restoreConfig();   // restaure la configuration seule (JSON)
+    void backupConfig();    // backs up the configuration alone (JSON)
+    void restoreConfig();   // restores the configuration alone (JSON)
 
     chdesktop::AppContext& ctx_;
 };

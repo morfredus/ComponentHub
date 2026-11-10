@@ -1,7 +1,7 @@
-// icons - pictogrammes d'interface dessinés vectoriellement (QPainter) sur une
-// grille 24×24, teintés à la couleur passée (donc au thème). Aucune police ni
-// module SVG requis : rendu net et identique sur Windows, Linux et Raspberry,
-// sans dépendance à installer.
+// icons - interface pictograms drawn as vectors (QPainter) on a
+// 24x24 grid, tinted with the given color (hence with the theme). No font or
+// SVG module required: sharp, identical rendering on Windows, Linux and Raspberry,
+// with nothing to install.
 #pragma once
 #include <QIcon>
 #include <QPixmap>
@@ -15,7 +15,7 @@ enum class Glyph {
     MoveUp, MoveDown, Warning, Check, Close, Chip, Link
 };
 
-// Pixmap teinté (fond transparent), rendu à `px` pixels, net en haute densité.
+// Tinted pixmap (transparent background), rendered at `px` pixels, sharp on high density.
 QPixmap pixmap(Glyph g, const QColor& color, int px = 20);
 QIcon   icon(Glyph g, const QColor& color, int px = 20);
 

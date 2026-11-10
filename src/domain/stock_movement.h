@@ -1,8 +1,8 @@
 /**
- * StockMovement - Mouvement de stock enregistré pour un composant.
+ * StockMovement - Stock movement recorded for a component.
  *
- * In/Out ajustent la quantité de façon relative ; Correction/Inventory la
- * fixent à la valeur donnée (voir InventoryService::recordMovement).
+ * In/Out adjust the quantity relatively; Correction/Inventory
+ * set it to the given value (see InventoryService::recordMovement).
  */
 
 #pragma once
@@ -34,8 +34,8 @@ struct StockMovement {
     Id id = kNoId;
     Id componentId = kNoId;
     StockMovementType type = StockMovementType::In;
-    int quantity = 0;       // quantité du mouvement ; le sens est donné par `type`
-    std::string timestamp;  // ISO 8601, posé par la couche plateforme (horloge)
+    int quantity = 0;       // quantity of the movement; the direction is given by `type`
+    std::string timestamp;  // ISO 8601, set by the platform layer (clock)
     std::string note;
 };
 

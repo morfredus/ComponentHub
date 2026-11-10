@@ -8,7 +8,7 @@
 
 #include "net/HttpClient.h"
 #include "sync_meta.h"          // generateUuid
-#include "json_tolerant.h"      // lecture JSON sans exception sur champ mal typé
+#include "json_tolerant.h"      // JSON reading that does not throw on a badly typed field
 #include "attachment_store.h"   // magasin de blobs local + chutil::sha256Hex
 
 using nlohmann::json;
@@ -18,8 +18,8 @@ using domain::jget;
 namespace chsync {
 namespace {
 
-// SyncRecord -> enveloppe de synchronisation (docs/sync-contract.md §1).
-// La charge "data" est l'objet JSON complet de l'entité, tel que stocké.
+// SyncRecord -> synchronization envelope (docs/sync-contract.md §1).
+// The "data" payload is the complete JSON object of the entity, as stored.
 json toEnvelope(const SyncRecord& r, const std::string& deviceId) {
     return json{
         {"id", r.id}, {"type", r.type}, {"deleted", r.meta.deleted},
@@ -47,8 +47,8 @@ std::map<std::string, std::string> authHeaders(const SyncConfig& cfg) {
     return h;
 }
 
-// Pose l'indicateur d'annulation du thread courant pour la durée d'un appel public, même sur
-// exception (le client HTTP le lit en thread_local).
+// Sets the cancellation flag of the current thread for the duration of a public call, even on
+// exception (the HTTP client reads it as thread_local).
 struct ThreadCancelScope {
     explicit ThreadCancelScope(const std::atomic<bool>* flag) { chnet::setThreadCancelFlag(flag); }
     ~ThreadCancelScope() { chnet::setThreadCancelFlag(nullptr); }
@@ -93,9 +93,9 @@ void SyncService::saveState() const {
     for (const auto& [type, seq] : pushWatermarks_) wm[type] = seq;
     json j{{"deviceId", deviceId_}, {"lastSeq", lastSeq_},
            {"journalId", journalId_}, {"pushWatermarks", wm}};
-    // Écriture atomique (fichier temporaire puis renommage) : la sauvegarde complète copie ce
-    // fichier depuis le thread de l'interface pendant que la synchro peut le réécrire, et un
-    // arrêt brutal ne doit jamais laisser un état tronqué (deviceId perdu = nouvel appareil).
+    // Atomic write (temporary file then rename): the full backup copies this
+    // file from the interface thread while synchronization may rewrite it, and an
+    // abrupt stop must never leave a truncated state (lost deviceId = new device).
     namespace fs = std::filesystem;
     const fs::path target = fs::u8path(statePath_);
     const fs::path tmp = fs::u8path(statePath_ + ".tmp");
@@ -142,8 +142,8 @@ SyncOutcome SyncService::sync(const SyncConfig& cfg) {
     return syncGuarded(cfg, /*mayReset=*/true);
 }
 
-// Enveloppe commune : indicateur d'annulation du thread, et exceptions (base occupée, disque
-// plein...) converties en erreur lisible plutôt que propagées dans le thread de travail.
+// Common wrapper: thread cancellation flag, and exceptions (busy database, full
+// disk...) converted to a readable error instead of propagating in the worker thread.
 SyncOutcome SyncService::syncGuarded(const SyncConfig& cfg, bool mayReset) {
     ThreadCancelScope scope(cancel_);
     SyncOutcome out;
@@ -178,8 +178,8 @@ SyncOutcome SyncService::resetHubAndRepublish(const SyncConfig& cfg) {
     if (reset.status == 401)  { out.error = "sync.authentication_refused"; return out; }
     if (reset.status != 200)  { out.error = "sync.reset_refused|" + std::to_string(reset.status); return out; }
 
-    // Le hub vient de créer une nouvelle époque : aucun curseur ni repère de
-    // PUSH précédent ne doit empêcher la republication de la copie locale.
+    // The hub has just created a new epoch: no previous PUSH cursor or marker
+    // must prevent republishing the local copy.
     lastSeq_ = 0;
     journalId_.clear();
     pushWatermarks_.clear();
@@ -192,8 +192,8 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
     const std::string url = base(cfg);
     const auto headers = authHeaders(cfg);
 
-    // 1) Joignabilité (base locale souveraine : si le hub est absent, on n'échoue
-    //    pas silencieusement - l'appelant décide, l'appli continue en local).
+    // 1) Reachability (sovereign local database: if the hub is absent, we do not fail
+    //    silently - the caller decides, the app continues locally).
     progress(SyncProgress::Phase::Connect);
     auto health = http("GET", url + "/healthz", "", headers);
     if (!health.ok)           { out.error = health.error; return out; }
@@ -202,35 +202,35 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
 
     const std::string changesUrl = url + "/api/" + cfg.domain + "/changes";
 
-    // 2) PUSH INCRÉMENTAL : seulement les entités modifiées localement depuis le
-    //    dernier envoi (repère de push par table). Rien de changé -> aucun envoi.
+    // 2) INCREMENTAL PUSH: only the entities changed locally since the
+    //    last upload (push marker per table). Nothing changed -> nothing sent.
     {
         json changes = json::array();
         std::map<std::string, std::int64_t> newWatermarks;
         for (auto* repo : repos_) {
             const std::string type = repo->syncType();
-            // Aucun repère encore -> première synchro de cette table : on envoie
-            // tout (since=-1 inclut les entités héritées à localSeq=0).
+            // No marker yet -> first synchronization of this table: send
+            // everything (since=-1 includes legacy entities with localSeq=0).
             std::int64_t since = -1;
             if (auto it = pushWatermarks_.find(type); it != pushWatermarks_.end()) since = it->second;
 
-            // Le repère de cet envoi est lu AVANT l'export : l'utilisateur continue d'écrire
-            // pendant la synchro (autre connexion). Une ligne modifiée après cette lecture a une
-            // séquence supérieure au repère et repart donc au push suivant ; lu APRÈS l'export,
-            // le repère la dépasserait sans qu'elle ait été envoyée (modification perdue).
+            // The marker of this upload is read BEFORE the export: the user keeps writing
+            // during synchronization (another connection). A row modified after this read has a
+            // sequence greater than the marker and therefore goes out at the next push; read AFTER the export,
+            // the marker would skip it without it having been sent (lost modification).
             const std::int64_t maxSeq = repo->maxLocalSeq();
 
-            // Le passage JSON -> SQLite repart avec des séquences locales à 0.
-            // Un repère conservé dans sync_state.json peut donc être supérieur à
-            // la base courante et masquer toutes les lignes. On le rend alors
-            // invalide pour republier la table une seule fois.
+            // The JSON -> SQLite conversion restarts with local sequences at 0.
+            // A marker kept in sync_state.json can therefore be greater than
+            // the current database and hide all rows. It is then made
+            // invalid to republish the table once.
             if (maxSeq < since)
                 since = -1;
             for (const auto& rec : repo->exportForSync(since))
                 changes.push_back(toEnvelope(rec, deviceId_));
-            newWatermarks[type] = maxSeq;  // repère à valider si l'envoi réussit
+            newWatermarks[type] = maxSeq;  // marker to validate if the upload succeeds
         }
-        out.accepted = static_cast<int>(changes.size());  // « envoyés »
+        out.accepted = static_cast<int>(changes.size());  // "sent"
         if (isCancelled()) return out;
 
         if (!changes.empty()) {
@@ -245,13 +245,13 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
                 out.conflicts = j.contains("conflicts") ? (int)j["conflicts"].size() : 0;
             } catch (...) { out.error = "sync.push_invalid_response"; return out; }
         }
-        // Envoi réussi (ou rien à envoyer) : on avance les repères et on persiste
-        // immédiatement (évite de tout re-pousser si le PULL échoue ensuite).
+        // Upload succeeded (or nothing to send): advance the markers and persist them
+        // immediately (avoids pushing everything again if the PULL fails afterwards).
         for (const auto& [type, seq] : newWatermarks) pushWatermarks_[type] = seq;
         saveState();
     }
 
-    // 3) PULL depuis le curseur, avec pagination et dispatch par type.
+    // 3) PULL from the cursor, with pagination and dispatch by type.
     std::int64_t since = lastSeq_;
     bool firstPull = true;
     for (;;) {
@@ -265,9 +265,9 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
         try { j = json::parse(gr.body); } catch (...) { j = json(); }
         if (!j.is_object())   { out.error = "sync.pull_invalid_response"; return out; }
 
-        // Détection d'époque : si le journal du hub a changé (dossier déplacé /
-        // réinitialisé), notre curseur et nos repères de push ne valent plus.
-        // On réinitialise et on relance une synchro complète, une seule fois.
+        // Epoch detection: if the hub's journal changed (folder moved /
+        // reset), our cursor and push markers are no longer valid.
+        // We reset and restart a full synchronization, only once.
         if (firstPull) {
             firstPull = false;
             const std::string remoteJournal = jget(j, "journalId", std::string());
@@ -282,12 +282,12 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
             if (!remoteJournal.empty()) journalId_ = remoteJournal;
         }
 
-        // Toute la page est appliquée dans UNE transaction (un seul fsync, tout ou rien si le
-        // disque lâche) ; BEGIN IMMEDIATE verrouille l'écriture d'emblée pour que « révision
-        // distante plus récente ? » et l'écriture ne soient pas séparées par une écriture de
-        // l'utilisateur. Chaque enregistrement a en plus son propre try/catch : un enregistrement
-        // mal typé est compté et journalisé, il ne bloque pas la synchro, et le curseur avance
-        // quand même (sinon la même page serait rejouée à vie).
+        // The whole page is applied in ONE transaction (a single fsync, all or nothing if the
+        // disk fails); BEGIN IMMEDIATE takes the write lock right away so that "is the remote
+        // revision newer?" and the write are not separated by a user write.
+        // Each record also has its own try/catch: a badly typed record
+        // is counted and logged, it does not block synchronization, and the cursor still advances
+        // (otherwise the same page would be replayed forever).
         if (sqlExec_) sqlExec_("BEGIN IMMEDIATE");
         try {
             const json changes = j.contains("changes") && j["changes"].is_array()
@@ -298,7 +298,7 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
                     SyncRecord rec = fromEnvelope(ch);
                     auto it = byType_.find(rec.type);
                     if (it != byType_.end() && it->second->applyRemote(rec)) out.applied++;
-                    // Type inconnu (table pas encore gérée par ce client) : ignoré.
+                    // Unknown type (table not handled by this client yet): ignored.
                 } catch (const std::exception& ex) {
                     out.rejected++;
                     std::fprintf(stderr, "[sync] enregistrement distant rejeté (%s) : %s\n",
@@ -316,12 +316,12 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
         }
         const std::int64_t nextSince = jget(j, "lastSeq", since);
         const bool hasMore = jget(j, "hasMore", false);
-        // Un hub qui annonce « encore » sans avancer le curseur nous ferait boucler à l'infini.
+        // A hub that announces "more" without advancing the cursor would make us loop forever.
         if (hasMore && nextSince <= since) { out.error = "sync.pull_invalid_response"; return out; }
         since = nextSince;
 
-        // Curseur persisté page par page : une annulation ou une coupure reprend à la page
-        // suivante au lieu de rejouer toute la synchro (l'application est idempotente de toute façon).
+        // Cursor persisted page by page: a cancellation or a disconnection resumes at the
+        // next page instead of replaying the whole synchronization (applying is idempotent anyway).
         lastSeq_ = since;
         saveState();
 
@@ -330,10 +330,10 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
 
     out.lastSeq = lastSeq_;
 
-    // 4) Transfert du binaire des pièces jointes. Les métadonnées sont déjà
-    //    synchronisées : le transfert des blobs est best-effort et ne fait pas
-    //    échouer la synchro s'il achoppe (un blob manquant se rattrape à la passe
-    //    suivante, la référence de hash restant valide).
+    // 4) Transfer of the attachment binaries. The metadata is already
+    //    synchronized: the blob transfer is best-effort and does not make
+    //    the synchronization fail if it stumbles (a missing blob is caught up on the next
+    //    pass, the hash reference staying valid).
     transferBlobs(cfg, out);
 
     if (isCancelled()) return out;
@@ -344,8 +344,8 @@ SyncOutcome SyncService::syncOnce(const SyncConfig& cfg, bool mayReset) {
 void SyncService::transferBlobs(const SyncConfig& cfg, SyncOutcome& out) {
     if (!attachments_) return;
 
-    // Ensemble dédupliqué des hashes référencés par toutes les tables (en pratique
-    // seuls les documents en portent).
+    // Deduplicated set of the hashes referenced by all tables (in practice
+    // only documents carry some).
     std::set<std::string> hashes;
     for (auto* repo : repos_)
         for (const auto& h : repo->referencedBlobs())
@@ -358,30 +358,30 @@ void SyncService::transferBlobs(const SyncConfig& cfg, SyncOutcome& out) {
     int done = 0;
     const int total = static_cast<int>(hashes.size());
     for (const auto& h : hashes) {
-        if (isCancelled()) return;   // annulation coopérative entre deux blobs
+        if (isCancelled()) return;   // cooperative cancellation between two blobs
         progress(SyncProgress::Phase::Blobs, done++, total);
         const std::string blobUrl = url + "/api/blob/" + h;
 
         if (attachments_->has(h)) {
-            // Contenu présent localement : le téléverser SI le hub ne l'a pas déjà.
-            // Le HEAD évite de renvoyer un binaire déjà stocké (adressage par
-            // contenu = un seul exemplaire par hash).
+            // Content present locally: upload it IF the hub does not already have it.
+            // HEAD avoids sending again a binary that is already stored (content
+            // addressing = a single copy per hash).
             auto head = http("HEAD", blobUrl, "", headers);
-            if (!head.ok) continue;            // hub injoignable pour les blobs : best-effort
-            if (head.status == 200) continue;  // déjà présent côté hub
+            if (!head.ok) continue;            // hub unreachable for blobs: best-effort
+            if (head.status == 200) continue;  // already present on the hub side
             if (head.status == 404) {
                 std::string bytes;
                 if (!attachments_->get(h, bytes)) continue;
                 auto put = http("PUT", blobUrl, bytes, headers);
                 if (put.ok && (put.status == 201 || put.status == 200)) out.blobsUploaded++;
             }
-            // 405 (hub sans magasin de blobs) ou autre : on ignore proprement,
-            // la synchro des métadonnées a déjà réussi.
+            // 405 (hub without a blob store) or other: ignored cleanly,
+            // the metadata synchronization already succeeded.
         } else {
-            // Contenu absent localement : le télécharger, en VÉRIFIANT l'intégrité
-            // (on re-hache ce qu'on reçoit ; le hub ne garantit pas le contenu).
+            // Content missing locally: download it, CHECKING integrity
+            // (we re-hash what we receive; the hub does not guarantee the content).
             auto get = http("GET", blobUrl, "", headers);
-            if (!get.ok || get.status != 200) continue;      // pas encore dispo : prochaine passe
+            if (!get.ok || get.status != 200) continue;      // not available yet: next pass
             if (chutil::sha256Hex(get.body) != h) continue;  // corrompu : on refuse
             if (attachments_->put(h, get.body)) out.blobsDownloaded++;
         }

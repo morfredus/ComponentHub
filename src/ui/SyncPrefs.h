@@ -1,6 +1,6 @@
 /**
- * SyncPrefs.h - Préférences de synchronisation persistées (QSettings), partagées
- * entre la page Réglages et la fenêtre principale. Un seul endroit pour les clés.
+ * SyncPrefs.h - Persisted synchronization preferences (QSettings), shared
+ * between the Settings page and the main window. A single place for the keys.
  */
 
 #pragma once
@@ -19,16 +19,16 @@ inline chsync::SyncConfig readSyncConfig() {
     return cfg;
 }
 
-// Mode explicite « local uniquement » : l'utilisateur choisit de n'utiliser
-// AUCUNE synchronisation (ni démarrage, ni bouton, ni fermeture). Base locale
-// souveraine assumée jusqu'au bout. Prioritaire sur tout le reste.
+// Explicit "local only" mode: the user chooses to use ComponentHub offline.
+// NO synchronization (no startup, no button, no close). Sovereign
+// local database, fully assumed. Takes priority over everything else.
 inline bool syncLocalOnly() {
     return QSettings("morfredus", "ComponentHub").value("sync/localOnly", false).toBool();
 }
 
 inline bool syncConfigured() {
     QSettings s("morfredus", "ComponentHub");
-    if (syncLocalOnly()) return false;   // local pur : jamais « configuré » pour la synchro
+    if (syncLocalOnly()) return false;   // pure local: never "configured" for synchronization
     return !s.value("sync/serverUrl", "").toString().trimmed().isEmpty();
 }
 inline bool syncAutoStart() {
@@ -38,7 +38,7 @@ inline bool syncAskOnQuit() {
     return QSettings("morfredus", "ComponentHub").value("sync/askOnQuit", true).toBool();
 }
 
-// Mémorise l'horodatage et le bilan de la dernière synchro réussie.
+// Stores the timestamp and the result of the last successful synchronization.
 inline void recordLastSync(int received, int sent) {
     QSettings s("morfredus", "ComponentHub");
     s.setValue("sync/lastSyncAt", QDateTime::currentDateTime().toString(Qt::ISODate));
@@ -46,10 +46,10 @@ inline void recordLastSync(int received, int sent) {
     s.setValue("sync/lastSent", sent);
 }
 
-// Résumé lisible de la dernière synchro (vide si jamais synchronisé) :
-//   Dernière synchronisation :
-//   Aujourd'hui à 11:42
-//   12 reçus - 3 envoyés
+// Readable summary of the last synchronization (empty if never synchronized):
+//   Last synchronization:
+//   Today at 11:42
+//   12 received - 3 sent
 inline QString lastSyncSummary() {
     QSettings s("morfredus", "ComponentHub");
     const QString iso = s.value("sync/lastSyncAt", "").toString();

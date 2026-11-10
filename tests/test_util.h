@@ -1,4 +1,4 @@
-// Utilitaires communs aux tests ctest (sans framework) : CHECK, dossiers temporaires, fichiers.
+// Helpers shared by the ctest tests (no framework): CHECK, temporary folders, files.
 #pragma once
 #include <cstdio>
 #include <filesystem>

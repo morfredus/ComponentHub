@@ -19,22 +19,22 @@
 using domain::Location;
 
 namespace {
-// Arbre qui n'applique jamais le déplacement lui-même : le glisser-déposer est
-// délégué à la page (qui écrit en base puis reconstruit l'arbre). Évite que Qt
-// et la base divergent, et ignore l'ordre (les frères ne sont pas ordonnés).
+// Tree that never applies the move itself: drag and drop is
+// delegated to the page (which writes to the database then rebuilds the tree). This keeps Qt
+// and the database from diverging, and ignores order (siblings are not ordered).
 class DropTree : public QTreeWidget {
 public:
-    // (élément déplacé, nouveau parent ou nullptr = racine)
+    // (moved item, new parent or nullptr = root)
     std::function<void(QTreeWidgetItem*, QTreeWidgetItem*)> onMove;
 protected:
     void dropEvent(QDropEvent* e) override {
         QTreeWidgetItem* src = currentItem();
         QTreeWidgetItem* target = itemAt(e->position().toPoint());
-        e->ignore();  // jamais de déplacement natif
+        e->ignore();  // never a native move
         if (!src || !onMove) return;
         QTreeWidgetItem* newParent = nullptr;
         if (target) {
-            // Sur l'élément = enfant ; entre deux éléments = frère de la cible.
+            // On the item = child; between two items = sibling of the target.
             newParent = (dropIndicatorPosition() == OnItem) ? target : target->parent();
         }
         onMove(src, newParent);
@@ -47,15 +47,15 @@ LocationsPage::LocationsPage(chdesktop::AppContext& ctx, QWidget* parent)
     auto* v = new QVBoxLayout(this);
     v->setContentsMargins(20, 20, 20, 20);
     v->setSpacing(12);
-    v->addWidget(uikit::pageTitle(chui::tr("Emplacements")));
-    v->addWidget(uikit::hint(chui::tr("Hiérarchie libre : Atelier › Armoire A › Tiroir A12 › Boîte ESD… « Ajouter un enfant » crée un sous-emplacement sous la sélection.")));
-    v->addWidget(uikit::hint(chui::tr("Glisser-déposer : déposer un emplacement sur un autre pour en faire un enfant, ou dans le vide pour en faire une racine.")));
+    v->addWidget(uikit::pageTitle(chui::tr("Locations")));
+    v->addWidget(uikit::hint(chui::tr("Free hierarchy: Workshop › Cabinet A › Drawer A12 › ESD box... \"Add child\" creates a sub-location under the selection.")));
+    v->addWidget(uikit::hint(chui::tr("Drag and drop: drop a location onto another to make it a child, or onto empty space to make it a root.")));
 
     auto* bar = new QHBoxLayout;
-    auto* addRoot  = uikit::button(chui::tr("Ajouter (racine)"), icons::Glyph::Add);
-    auto* addChild = uikit::button(chui::tr("Ajouter un enfant"), icons::Glyph::Add, "ghost");
-    auto* ren = uikit::button(chui::tr("Renommer"), icons::Glyph::Edit, "ghost");
-    auto* del = uikit::button(chui::tr("Supprimer"), icons::Glyph::Delete, "danger");
+    auto* addRoot  = uikit::button(chui::tr("Add (root)"), icons::Glyph::Add);
+    auto* addChild = uikit::button(chui::tr("Add child"), icons::Glyph::Add, "ghost");
+    auto* ren = uikit::button(chui::tr("Rename"), icons::Glyph::Edit, "ghost");
+    auto* del = uikit::button(chui::tr("Delete"), icons::Glyph::Delete, "danger");
     bar->addWidget(addRoot); bar->addWidget(addChild); bar->addWidget(ren); bar->addWidget(del); bar->addStretch(1);
     v->addLayout(bar);
 
@@ -64,7 +64,7 @@ LocationsPage::LocationsPage(chdesktop::AppContext& ctx, QWidget* parent)
     tree_->setDragDropMode(QAbstractItemView::InternalMove);
     tree_->setDropIndicatorShown(true);
     dt->onMove = [this](QTreeWidgetItem* s, QTreeWidgetItem* p) { moveLocation(s, p); };
-    tree_->setHeaderLabels({chui::tr("Emplacement"), "id"});
+    tree_->setHeaderLabels({chui::tr("Location"), "id"});
     tree_->setColumnHidden(1, true);
     tree_->header()->setStretchLastSection(true);
     v->addWidget(tree_, 1);
@@ -87,17 +87,17 @@ void LocationsPage::refresh() {
     const domain::Id keep = currentId();
     tree_->clear();
 
-    // Les identifiants sont des UUID (chaînes) depuis la v0.2 : clé QString.
+    // Identifiers are UUIDs (strings) since v0.2: QString key.
     QMap<QString, QTreeWidgetItem*> items;
     std::vector<Location> locs = ctx_.inventory.listLocations();
-    // Première passe : un item par emplacement.
+    // First pass: one item per location.
     for (const auto& l : locs) {
         auto* it = new QTreeWidgetItem;
         it->setText(0, QString::fromStdString(l.name));
         it->setText(1, QString::fromStdString(l.id));
         items.insert(QString::fromStdString(l.id), it);
     }
-    // Seconde passe : rattachement parent/enfant (ordre indépendant).
+    // Second pass: parent/child attachment (order independent).
     for (const auto& l : locs) {
         auto* it = items.value(QString::fromStdString(l.id));
         auto* parent = items.value(QString::fromStdString(l.parentId), nullptr);
@@ -113,8 +113,8 @@ void LocationsPage::refresh() {
 void LocationsPage::addLocation(bool asChild) {
     const domain::Id parentId = asChild ? currentId() : domain::kNoId;
 
-    // Unicité imposée uniquement à la RACINE (un même nom peut se répéter sous
-    // des parents différents, ex. « Tiroir 1 » dans deux armoires).
+    // Uniqueness is enforced only at the ROOT (the same name may repeat under
+    // different parents, e.g. "Drawer 1" in two cabinets).
     auto existsAtRoot = [&](const QString& v) {
         if (asChild) return false;
         for (const auto& e : ctx_.inventory.listLocations())
@@ -126,11 +126,11 @@ void LocationsPage::addLocation(bool asChild) {
     QString name;
     while (true) {
         bool ok = false;
-        name = QInputDialog::getText(this, chui::tr("Nouvel emplacement"), chui::tr("Nom :"), QLineEdit::Normal, name, &ok).trimmed();
+        name = QInputDialog::getText(this, chui::tr("New location"), chui::tr("Name:"), QLineEdit::Normal, name, &ok).trimmed();
         if (!ok || name.isEmpty()) return;
         if (!existsAtRoot(name)) break;
-        QMessageBox::warning(this, chui::tr("Nom déjà utilisé"),
-            chui::tr("L'emplacement racine « ") + name + chui::tr(" » existe déjà.\nChoisissez un autre nom ou corrigez la saisie."));
+        QMessageBox::warning(this, chui::tr("Name already used"),
+            chui::tr("The root location \"%1\" already exists.\nChoose another name or correct your entry.").arg(name));
     }
 
     Location l;
@@ -146,12 +146,12 @@ void LocationsPage::renameLocation() {
     const domain::Id id = it->text(1).toStdString();
     const QString oldName = it->text(0);
 
-    // Récupère le parent (pour le conserver et savoir si c'est une racine).
+    // Gets the parent (to keep it and to know whether this is a root).
     const auto locs = ctx_.inventory.listLocations();
     domain::Id parentId = domain::kNoId;
     for (const auto& e : locs) if (e.id == id) { parentId = e.parentId; break; }
 
-    // Unicité imposée seulement à la racine ; on s'exclut soi-même.
+    // Uniqueness enforced only at the root; the location itself is excluded.
     auto existsOtherRoot = [&](const QString& v) {
         if (parentId != domain::kNoId) return false;
         for (const auto& e : locs)
@@ -163,11 +163,11 @@ void LocationsPage::renameLocation() {
     QString name = oldName;
     while (true) {
         bool ok = false;
-        name = QInputDialog::getText(this, chui::tr("Renommer"), chui::tr("Nom :"), QLineEdit::Normal, name, &ok).trimmed();
+        name = QInputDialog::getText(this, chui::tr("Rename"), chui::tr("Name:"), QLineEdit::Normal, name, &ok).trimmed();
         if (!ok || name.isEmpty() || name == oldName) return;
         if (!existsOtherRoot(name)) break;
-        QMessageBox::warning(this, chui::tr("Nom déjà utilisé"),
-            chui::tr("L'emplacement racine « ") + name + chui::tr(" » existe déjà.\nChoisissez un autre nom ou corrigez la saisie."));
+        QMessageBox::warning(this, chui::tr("Name already used"),
+            chui::tr("The root location \"%1\" already exists.\nChoose another name or correct your entry.").arg(name));
     }
 
     Location l;
@@ -179,8 +179,8 @@ void LocationsPage::renameLocation() {
 }
 
 void LocationsPage::moveLocation(QTreeWidgetItem* src, QTreeWidgetItem* newParent) {
-    if (src->parent() == newParent) return;  // rien à changer
-    // Interdit : se déposer sur soi-même ou sur un de ses descendants (cycle).
+    if (src->parent() == newParent) return;  // nothing to change
+    // Forbidden: dropping onto itself or onto one of its descendants (cycle).
     for (auto* a = newParent; a; a = a->parent())
         if (a == src) return;
 
@@ -188,13 +188,13 @@ void LocationsPage::moveLocation(QTreeWidgetItem* src, QTreeWidgetItem* newParen
     const domain::Id parentId = newParent ? newParent->text(1).toStdString() : domain::kNoId;
     const QString name = src->text(0);
 
-    // Même règle qu'à la création : nom unique seulement à la racine.
+    // Same rule as at creation: unique name only at the root.
     if (!newParent) {
         for (const auto& e : ctx_.inventory.listLocations())
             if (e.id != id && e.parentId == domain::kNoId &&
                 QString::fromStdString(e.name).compare(name, Qt::CaseInsensitive) == 0) {
-                QMessageBox::warning(this, chui::tr("Nom déjà utilisé"),
-                    chui::tr("L'emplacement racine « ") + name + chui::tr(" » existe déjà.\nChoisissez un autre nom ou corrigez la saisie."));
+                QMessageBox::warning(this, chui::tr("Name already used"),
+                    chui::tr("The root location \"%1\" already exists.\nChoose another name or correct your entry.").arg(name));
                 return;
             }
     }
@@ -204,7 +204,7 @@ void LocationsPage::moveLocation(QTreeWidgetItem* src, QTreeWidgetItem* newParen
     l.name = name.toStdString();
     l.parentId = parentId;
     ctx_.inventory.saveLocation(l);
-    // Reconstruction différée : on est encore dans le dropEvent de l'arbre.
+    // Deferred rebuild: we are still inside the tree's dropEvent.
     QTimer::singleShot(0, this, [this, id] {
         refresh();
         for (QTreeWidgetItemIterator it(tree_); *it; ++it)
@@ -216,9 +216,9 @@ void LocationsPage::deleteLocation() {
     auto* it = tree_->currentItem();
     if (!it) return;
     const QString msg = it->childCount() > 0
-        ? chui::tr("« ") + it->text(0) + chui::tr(" » contient des sous-emplacements qui deviendront orphelins. Supprimer quand même ?")
-        : chui::tr("Supprimer l'emplacement « ") + it->text(0) + chui::tr(" » ?");
-    if (QMessageBox::question(this, chui::tr("Supprimer"), msg) != QMessageBox::Yes) return;
+        ? chui::tr("\"%1\" contains sub-locations that will become orphaned. Delete anyway?").arg(it->text(0))
+        : chui::tr("Delete the location \"%1\"?").arg(it->text(0));
+    if (QMessageBox::question(this, chui::tr("Delete"), msg) != QMessageBox::Yes) return;
     ctx_.inventory.removeLocation(it->text(1).toStdString());
     refresh();
 }

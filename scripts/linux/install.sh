@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# ComponentHub - intégration au bureau Linux.
+# ComponentHub - Linux desktop integration.
 #
-# Copie un binaire ComponentHub DÉJÀ COMPILÉ dans les dossiers standards et crée
-# l'icône de lancement. Utilise le Qt du système (ne regroupe aucune
-# bibliothèque) : pour les machines où ComponentHub a été compilé localement
-# (cmake --preset linux). Pour une distribution sans compilation : package-appimage.sh.
+# Copies an ALREADY COMPILED ComponentHub binary into the standard folders and creates
+# the launcher icon. Uses the system Qt (bundles no
+# library): for machines where ComponentHub was compiled locally
+# (cmake --preset linux). For a distribution without compilation: package-appimage.sh.
 #
-# Usage : scripts/linux/install.sh [--system] [--binary <chemin>] [--uninstall]
+# Usage: scripts/linux/install.sh [--system] [--binary <path>] [--uninstall]
 #
 set -euo pipefail
 

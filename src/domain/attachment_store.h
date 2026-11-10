@@ -1,17 +1,17 @@
 /**
- * attachment_store.h - Magasin local des pièces jointes, adressé par contenu.
+ * attachment_store.h - Local, content-addressed store for attachments.
  *
- * Une pièce jointe « fichier » (par opposition à un simple lien http) est copiée
- * ici, dans un fichier nommé par le SHA-256 de son contenu. Le Document n'en
- * garde que le hash : l'identité du contenu est donc stable entre postes, et deux
- * documents au contenu identique partagent un seul fichier (dédoublonnage).
+ * A "file" attachment (as opposed to a plain http link) is copied here,
+ * into a file named after the SHA-256 of its content. The Document only
+ * keeps the hash: the identity of the content is therefore stable across
+ * machines, and two documents with identical content share a single file (deduplication).
  *
- * C'est le pendant local du magasin de blobs de morfSync : mêmes noms (le hash),
- * si bien que synchroniser = transférer les fichiers absents d'un côté ou de
- * l'autre. Voir docs/sync-contract.md §4.5.
+ * This is the local counterpart of the morfSync blob store: same names (the hash),
+ * so synchronizing = transferring the files missing on one side or the
+ * other. See docs/sync-contract.md §4.5.
  *
- * En-tête seul, sans Qt (le cœur en est indépendant) : n'utilise que la
- * bibliothèque standard et chutil::sha256Hex.
+ * Header only, without Qt (the core is independent of it): uses only the
+ * standard library and chutil::sha256Hex.
  */
 
 #pragma once
@@ -48,8 +48,8 @@ public:
         return std::filesystem::exists(path(hash), ec);
     }
 
-    // Chemin du fichier de contenu (nommé par le hash, sans extension). Utile à
-    // l'UI pour ouvrir la pièce jointe.
+    // Path of the content file (named after the hash, no extension). Used by
+    // the UI to open the attachment.
     std::string filePath(const std::string& hash) const {
         return path(hash).string();
     }
@@ -62,9 +62,9 @@ public:
         return true;
     }
 
-    // Écrit un blob reçu (ex. téléchargé du hub) sous son hash. Idempotent,
-    // écriture atomique. N'impose PAS que le hash corresponde au contenu :
-    // l'appelant (la synchro) vérifie l'intégrité en amont.
+    // Writes a received blob (e.g. downloaded from the hub) under its hash. Idempotent,
+    // atomic write. Does NOT enforce that the hash matches the content:
+    // the caller (synchronization) checks integrity beforehand.
     bool put(const std::string& hash, const std::string& bytes) {
         if (!validHash(hash)) return false;
         if (has(hash)) return true;
@@ -86,13 +86,13 @@ public:
 
     struct ImportResult {
         bool         ok = false;
-        std::string  hash;         // SHA-256 du contenu
+        std::string  hash;         // SHA-256 of the content
         std::int64_t sizeBytes = 0;
     };
 
-    // Copie un fichier du disque dans le magasin, sous le hash de son contenu.
-    // Renvoie le hash et la taille ; le contenu vit désormais dans le magasin,
-    // indépendant du fichier d'origine (qui peut être déplacé ou supprimé).
+    // Copies a file from disk into the store, under the hash of its content.
+    // Returns the hash and the size; the content now lives in the store,
+    // independent of the original file (which can be moved or deleted).
     ImportResult importFile(const std::string& srcPath) {
         ImportResult r;
         std::ifstream in(std::filesystem::u8path(srcPath), std::ios::binary);

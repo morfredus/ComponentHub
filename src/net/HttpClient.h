@@ -1,10 +1,10 @@
 /**
- * HttpClient - client HTTP/1.1 minimal, bloquant, sans dépendance externe.
+ * HttpClient - minimal, blocking HTTP/1.1 client with no external dependency.
  *
- * Pendant client du serveur de morfSync : même philosophie (pas de TLS, LAN
- * privé, on écrit les deux bouts). Portable Windows (winsock2) / Linux / ARM64
- * (sockets POSIX). Aucune dépendance à Qt : réutilisable et testable dans le
- * cœur métier (componenthub_core).
+ * Client counterpart of the morfSync server: same philosophy (no TLS, private
+ * LAN, we write both ends). Portable across Windows (winsock2) / Linux / ARM64
+ * (POSIX sockets). No dependency on Qt: reusable and testable in the
+ * business core (componenthub_core).
  */
 
 #pragma once
@@ -15,21 +15,21 @@
 namespace chnet {
 
 struct HttpResult {
-    bool ok = false;          // connexion + échange HTTP menés à bien (statut lu)
-    int status = 0;           // code HTTP (200, 404…) si ok
-    std::string body;         // corps de la réponse
-    std::string error;        // message si !ok (réseau injoignable, URL invalide…)
+    bool ok = false;          // connection + HTTP exchange completed (status read)
+    int status = 0;           // HTTP code (200, 404...) if ok
+    std::string body;         // response body
+    std::string error;        // message if !ok (network unreachable, invalid URL...)
 };
 
-// Associe au THREAD APPELANT un indicateur d'annulation (nullptr = aucun). Quand il passe à
-// vrai, les requêtes en cours de ce thread s'interrompent en quelques centaines de ms avec
-// l'erreur « http.cancelled ». L'indicateur doit survivre au thread ou être retiré avant.
+// Attaches a cancellation flag to the CALLING THREAD (nullptr = none). When it turns
+// true, the requests running in that thread stop within a few hundred ms with
+// the error "http.cancelled". The flag must outlive the thread or be removed beforehand.
 void setThreadCancelFlag(const std::atomic<bool>* flag);
 
-// GET/POST synchrones. `url` de la forme http://hôte:port/chemin (pas de https).
-// `headers` : en-têtes additionnels (ex. Authorization). `timeoutMs` : délai de
-// connexion (0 = 5 s) et par lecture ; un délai TOTAL de 60 s et un plafond de
-// 128 Mio par réponse bornent en plus chaque requête.
+// Synchronous GET/POST. `url` looks like http://host:port/path (no https).
+// `headers`: additional headers (e.g. Authorization). `timeoutMs`: connection
+// timeout (0 = 5 s) and per read; a TOTAL timeout of 60 s and a cap of
+// 128 MiB per response also bound every request.
 HttpResult httpGet(const std::string& url,
                    const std::map<std::string, std::string>& headers = {},
                    int timeoutMs = 0);
@@ -38,22 +38,22 @@ HttpResult httpPost(const std::string& url, const std::string& body,
                     const std::map<std::string, std::string>& headers = {},
                     int timeoutMs = 0);
 
-// PUT avec un corps binaire (Content-Type: application/octet-stream). Sert à
-// téléverser un blob de pièce jointe vers le magasin de morfSync.
+// PUT with a binary body (Content-Type: application/octet-stream). Used to
+// upload an attachment blob to the morfSync store.
 HttpResult httpPut(const std::string& url, const std::string& body,
                    const std::map<std::string, std::string>& headers = {},
                    int timeoutMs = 0);
 
-// HEAD : présence sans corps. Sert à savoir si le hub détient déjà un blob avant
-// de le téléverser.
+// HEAD: presence without a body. Used to know whether the hub already holds a blob before
+// uploading it.
 HttpResult httpHead(const std::string& url,
                     const std::map<std::string, std::string>& headers = {},
                     int timeoutMs = 0);
 
-// Fonctions pures exposées pour les tests (ctest) - non destinées aux appelants.
-// Décode un corps Transfer-Encoding: chunked. Retourne false si le flux est tronqué ou invalide.
+// Pure functions exposed for the tests (ctest) - not meant for callers.
+// Decodes a Transfer-Encoding: chunked body. Returns false if the stream is truncated or invalid.
 bool decodeChunked(const std::string& in, std::string& out);
-// Analyse une réponse HTTP brute (statut, corps, chunked) en complétant `r`.
+// Parses a raw HTTP response (status, body, chunked), completing `r`.
 HttpResult parseResponse(const std::string& raw, HttpResult r = HttpResult());
 
 } // namespace chnet

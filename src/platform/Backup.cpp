@@ -20,9 +20,9 @@ bool endsWith(const std::string& s, const std::string& suf) {
     return s.size() >= suf.size() && s.compare(s.size() - suf.size(), suf.size(), suf) == 0;
 }
 
-// Vérifie une base extraite : ouverture, integrity_check, table components. L'ouverture en
-// lecture/écriture applique au passage un éventuel -wal hérité d'une ancienne sauvegarde
-// (copie brute) ; le checkpoint TRUNCATE le fusionne dans le fichier principal.
+// Checks an extracted database: opening, integrity_check, components table. Opening in
+// read/write applies any -wal inherited from an old backup
+// (raw copy) along the way; the TRUNCATE checkpoint merges it into the main file.
 bool validateDb(const fs::path& dbFile, std::string& error) {
     sqlite3* db = nullptr;
     if (sqlite3_open_v2(dbFile.u8string().c_str(), &db, SQLITE_OPEN_READWRITE, nullptr) != SQLITE_OK) {
@@ -56,12 +56,12 @@ void removeWalFiles(const fs::path& dbFile) {
     fs::remove(fs::path(dbFile.u8string() + "-shm"), ec);
 }
 
-// Pile d'annulations : si une étape du remplacement échoue, les précédentes sont défaites dans
-// l'ordre inverse, pour ne jamais laisser une base neuve avec d'anciennes pièces jointes (ou
+// Undo stack: if a step of the replacement fails, the previous ones are undone in
+// reverse order, so as to never leave a new database with old attachments (or
 // l'inverse).
 class UndoStack {
 public:
-    // Défait l'étape « from a été renommé en to » en remettant `to` sous le nom `from`.
+    // Undoes the step "from was renamed to to" by putting `to` back under the name `from`.
     void push(fs::path from, fs::path to) { steps_.push_back({std::move(from), std::move(to)}); }
     void rollback() {
         for (auto it = steps_.rbegin(); it != steps_.rend(); ++it) {
@@ -83,7 +83,7 @@ bool create(SQLiteDatabase& db, const std::string& dataDir, const std::string& t
     fs::remove_all(staging, ec);
     fs::create_directories(staging, ec);
     if (ec) { error = "backup.staging_failed|" + staging.u8string(); return false; }
-    // Nettoyage garanti, quelle que soit la sortie.
+    // Guaranteed cleanup, whatever the exit path.
     struct Cleanup { fs::path p; ~Cleanup() { std::error_code e; fs::remove_all(p, e); } } cleanup{staging};
 
     try {
@@ -93,10 +93,10 @@ bool create(SQLiteDatabase& db, const std::string& dataDir, const std::string& t
         return false;
     }
 
-    // Autres fichiers : copie simple, SANS la base (remplacée par l'instantané) ni ses
-    // -wal/-shm (état intermédiaire, incohérent hors de la base) ni les .bak (copies de
-    // sécurité d'une restauration précédente, qui doubleraient l'archive). app_config.json
-    // hérité d'une ancienne version (jeton compris) est écarté : la configuration vient de
+    // Other files: plain copy, WITHOUT the database (replaced by the snapshot) nor its
+    // -wal/-shm (intermediate state, inconsistent outside the database) nor the .bak files (safety copies of
+    // a previous restore, which would double the archive size). A legacy app_config.json
+    // (token included) is discarded: the configuration comes from the
     // `extraFiles`.
     for (const auto& entry : fs::directory_iterator(P(dataDir), ec)) {
         if (!entry.is_regular_file()) continue;
@@ -114,8 +114,8 @@ bool create(SQLiteDatabase& db, const std::string& dataDir, const std::string& t
         if (!out) { error = "backup.copy_failed|" + name; return false; }
     }
 
-    // Pièces jointes : archivées en place (pas de copie intermédiaire, elles peuvent être
-    // volumineuses). Un dossier absent est simplement ignoré par pack.
+    // Attachments: archived in place (no intermediate copy, they can be
+    // large). A missing folder is simply ignored by pack.
     std::string tarErr;
     const std::vector<tar::TreeSource> trees{{kAttachmentsDir, (P(dataDir) / kAttachmentsDir).u8string()}};
     if (!tar::pack(tarPath, staging.u8string(), {".tmp"}, &tarErr, trees)) {
@@ -145,7 +145,7 @@ bool stageRestore(const std::string& tarPath, const std::string& dataDir,
     std::vector<std::string> errs;
     tar::extract(tarPath, pending.u8string(), errs);
     for (const auto& e : errs) {
-        // Archive tronquée ou corrompue : fatal. Entrée dangereuse ignorée : simple alerte.
+        // Truncated or corrupted archive: fatal. Dangerous entry skipped: simple warning.
         if (e.rfind("tar.write_failed", 0) == 0 || e.rfind("tar.corrupt", 0) == 0) return fail(e);
         warnings.push_back(e);
     }
@@ -154,11 +154,11 @@ bool stageRestore(const std::string& tarPath, const std::string& dataDir,
     if (!fs::is_regular_file(dbFile, ec)) return fail("backup.no_database");
     std::string vErr;
     if (!validateDb(dbFile, vErr)) return fail(vErr);
-    removeWalFiles(dbFile);   // fusionnés par le checkpoint : ne doivent pas suivre la base
+    removeWalFiles(dbFile);   // merged by the checkpoint: must not follow the database
 
-    // Fichiers à plat qui ne doivent jamais écraser l'existant : les .bak (une archive 1.11 en
-    // contient, et écraser le .bak local détruirait la copie de sécurité qu'on vient de faire),
-    // les -wal/-shm et les temporaires. Un fichier nommé « attachments » ne remplacerait pas le dossier.
+    // Flat files that must never overwrite existing ones: the .bak files (a 1.11 archive
+    // contains some, and overwriting the local .bak would destroy the safety copy just made),
+    // the -wal/-shm files and temporary files. A file named "attachments" would not replace the folder.
     {
         std::vector<fs::path> junk;
         for (const auto& entry : fs::directory_iterator(pending, ec)) {
@@ -175,9 +175,9 @@ bool stageRestore(const std::string& tarPath, const std::string& dataDir,
         }
     }
 
-    // Pièces jointes : ne garder que les fichiers nommés par leur SHA-256 ET dont le contenu
-    // correspond (c'est le contrat du magasin). Un fichier douteux est écarté avec une alerte :
-    // le blob se retélécharge du hub à la prochaine synchro, la référence de hash restant valide.
+    // Attachments: keep only files named after their SHA-256 AND whose content
+    // matches (this is the store contract). A doubtful file is dropped with a warning:
+    // the blob is downloaded again from the hub at the next synchronization, the hash reference staying valid.
     const fs::path att = pending / kAttachmentsDir;
     if (fs::is_directory(att, ec)) {
         std::vector<fs::path> files;
@@ -216,10 +216,10 @@ bool applyPendingRestore(const std::string& dataDir, bool& applied, std::string&
     const bool haveDb = fs::is_regular_file(stagedDb, ec);
     const bool haveAtt = fs::is_directory(stagedAtt, ec);
 
-    // Chaque étape est conditionnée par l'existence de sa source : après un arrêt brutal en
-    // cours de route, le démarrage suivant reprend là où le précédent s'était arrêté. Un .bak
-    // n'est supprimé que si la donnée courante existe encore (donc que ce .bak est un ancien
-    // niveau) : sinon il EST la seule copie de l'ancienne donnée.
+    // Each step depends on its source existing: after an abrupt stop
+    // midway, the next start resumes where the previous one stopped. A .bak
+    // is only deleted if the current data still exists (so that .bak is an old
+    // level): otherwise it IS the only copy of the old data.
     UndoStack undo;
     auto failWith = [&](const fs::path& what) {
         undo.rollback();
@@ -227,21 +227,21 @@ bool applyPendingRestore(const std::string& dataDir, bool& applied, std::string&
         return false;
     };
 
-    // 1) Mise de côté des données courantes (rien n'est supprimé avant le succès).
+    // 1) Set the current data aside (nothing is deleted before success).
     if (haveDb && fs::exists(target, ec)) {
         fs::remove(bak, ec);
-        removeWalFiles(target);   // un -wal orphelin serait rejoué sur la NOUVELLE base
+        removeWalFiles(target);   // an orphan -wal would be replayed on the NEW database
         fs::rename(target, bak, ec);
         if (ec) return failWith(target);
         undo.push(target, bak);
     }
     if (haveAtt && fs::exists(attTarget, ec)) {
-        fs::remove_all(attBak, ec);   // ancien niveau : l'actuel devient le nouveau .bak
+        fs::remove_all(attBak, ec);   // old level: the current one becomes the new .bak
         fs::rename(attTarget, attBak, ec);
         if (ec) return failWith(attTarget);
         undo.push(attTarget, attBak);
     }
-    // 2) Mise en place des données restaurées.
+    // 2) Put the restored data in place.
     if (haveDb) {
         fs::rename(stagedDb, target, ec);
         if (ec) return failWith(target);
@@ -254,7 +254,7 @@ bool applyPendingRestore(const std::string& dataDir, bool& applied, std::string&
     }
     applied = haveDb || haveAtt;
 
-    // Autres fichiers à plat (sync_state.json...) : remplacés un à un.
+    // Other flat files (sync_state.json...): replaced one by one.
     std::vector<fs::path> others;
     for (const auto& entry : fs::directory_iterator(pending, ec))
         if (entry.is_regular_file()) others.push_back(entry.path());

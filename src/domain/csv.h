@@ -1,7 +1,7 @@
 /**
- * Utilitaires CSV génériques (RFC 4180 simplifié) - aucune dépendance
- * plateforme. Gère les champs cités ("...") pouvant contenir le
- * délimiteur, un guillemet (échappé en "") ou un retour à la ligne.
+ * Generic CSV utilities (simplified RFC 4180) - no platform
+ * dependency. Handles quoted fields ("...") that may contain the
+ * delimiter, a quote (escaped as "") or a line break.
  */
 
 #pragma once
@@ -10,9 +10,9 @@
 
 namespace domain {
 
-// BOM UTF-8 : à placer en tête des fichiers CSV exportés pour que les
-// tableurs (Excel/LibreOffice sous Windows notamment) reconnaissent l'UTF-8
-// et affichent correctement « € » et les caractères accentués.
+// UTF-8 BOM: put it at the start of exported CSV files so that
+// spreadsheets (Excel/LibreOffice on Windows in particular) recognize UTF-8
+// and display "€" and accented characters correctly.
 extern const char* const kUtf8Bom;
 
 std::vector<std::vector<std::string>> parseCsv(const std::string& text, char delimiter = ';');

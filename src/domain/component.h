@@ -1,8 +1,8 @@
 /**
- * Component - Fiche complète d'un composant électronique (cœur métier).
+ * Component - Full record of an electronic component (business core).
  *
- * Type de valeur pur : aucune dépendance plateforme. La couche storage/
- * (persistance) se charge de le convertir vers/depuis son format SQLite.
+ * Pure value type: no platform dependency. The storage/ layer
+ * (persistence) converts it to and from its SQLite format.
  */
 
 #pragma once
@@ -12,10 +12,10 @@
 
 namespace domain {
 
-// Grande famille de l'objet - permet de traiter modules, outils et
-// consommables comme des facettes filtrables du même inventaire plutôt que
-// des systèmes séparés (cf. cahier des charges : "Filtres : ESP32, OLED,
-// GPS, Raspberry, Outils, Capteurs, Modules récupérés, Stock faible").
+// Broad family of the object - lets modules, tools and
+// consumables be handled as filterable facets of the same inventory rather than
+// as separate systems (see the specification: "Filters: ESP32, OLED,
+// GPS, Raspberry, Tools, Sensors, Salvaged modules, Low stock").
 enum class ComponentKind { Component, Module, Tool, Consumable };
 
 inline const char* toString(ComponentKind k) {
@@ -38,9 +38,9 @@ inline ComponentKind componentKindFromString(const std::string& s) {
 struct Component {
     Id id = kNoId;
 
-    // Enveloppe de synchronisation (identité permanente + métadonnées).
-    // L'`id` entier ci-dessus reste la clé locale/UI en Phase 1 ; `meta.uuid`
-    // porte l'identité inter-postes. Voir sync_meta.h.
+    // Synchronization envelope (permanent identity + metadata).
+    // The integer `id` above remains the local/UI key in Phase 1; `meta.uuid`
+    // carries the identity across machines. See sync_meta.h.
     SyncMeta meta;
 
     ComponentKind kind = ComponentKind::Component;
@@ -69,7 +69,7 @@ struct Component {
     std::string receptionDate;
     std::string warranty;
 
-    std::string state;              // état physique : neuf, occasion, HS...
+    std::string state;              // physical condition: new, used, broken...
     std::string status = "to_test"; // workflow de validation : to_test, validating, validated, defective, archived
     std::string origin;
     std::string notes;

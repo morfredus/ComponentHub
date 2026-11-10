@@ -1,5 +1,5 @@
 /**
- * Identifiants du domaine - aucune dépendance plateforme ici.
+ * Domain identifiers - no platform dependency here.
  */
 
 #pragma once
@@ -7,11 +7,11 @@
 
 namespace domain {
 
-// Identité permanente d'une entité = UUID (v0.2). Portée par la valeur `id`
-// elle-même : l'identifiant EST l'UUID, il survit à un changement de nom et ne
-// collisionne pas entre postes (cf. morfSync, docs/sync-contract.md).
-// Généré via domain::generateUuid() (sync_meta.h).
+// Permanent identity of an entity = UUID (v0.2). Carried by the `id` value
+// itself: the identifier IS the UUID, it survives a rename and does not
+// collide between machines (see morfSync, docs/sync-contract.md).
+// Generated via domain::generateUuid() (sync_meta.h).
 using Id = std::string;
-inline const Id kNoId{};   // chaîne vide = « pas d'identité »
+inline const Id kNoId{};   // empty string = "no identity"
 
 } // namespace domain

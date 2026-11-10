@@ -37,16 +37,16 @@ using namespace domain;
 
 namespace {
 QString statusLabel(const std::string& s) {
-    if (s == "validated")  return chui::tr("Validé");
-    if (s == "validating") return chui::tr("En validation");
-    if (s == "defective")  return chui::tr("Défectueux");
-    if (s == "archived")   return chui::tr("Archivé");
-    return chui::tr("À tester");
+    if (s == "validated")  return chui::tr("Validated");
+    if (s == "validating") return chui::tr("Validating");
+    if (s == "defective")  return chui::tr("Defective");
+    if (s == "archived")   return chui::tr("Archived");
+    return chui::tr("To test");
 }
 
-// Chemin lisible d'un emplacement : « Atelier › Armoire A › Tiroir 3 ».
+// Readable path of a location: "Workshop › Cabinet A › Drawer 3".
 QString locationPath(const std::map<Id, Location>& byId, Id id) {
-    QString p; int guard = 0;  // garde-fou contre une boucle de parents corrompue
+    QString p; int guard = 0;  // guard against a loop caused by corrupted parents
     while (id != kNoId && guard++ < 64) {
         auto it = byId.find(id); if (it == byId.end()) break;
         const QString n = QString::fromStdString(it->second.name);
@@ -56,8 +56,8 @@ QString locationPath(const std::map<Id, Location>& byId, Id id) {
     return p;
 }
 
-// Cellule triée numériquement (et non alphabétiquement) : « 10 » doit venir
-// après « 9 », et « 6.90 € » se compare sur sa valeur, pas sur son texte.
+// Cell sorted numerically (not alphabetically): "10" must come
+// after "9", and "6.90 €" is compared on its value, not on its text.
 class NumericItem : public QTableWidgetItem {
 public:
     NumericItem(const QString& text, double key) : QTableWidgetItem(text), key_(key) {}
@@ -69,8 +69,8 @@ private:
     double key_;
 };
 
-// Cellule texte triée sans tenir compte de la casse : « abc » se classe avec
-// « ABC » (le tri brut de Qt place toutes les majuscules avant les minuscules).
+// Text cell sorted case-insensitively: "abc" is ranked with
+// "ABC" (Qt's raw sort places all uppercase letters before lowercase ones).
 class TextItem : public QTableWidgetItem {
 public:
     using QTableWidgetItem::QTableWidgetItem;
@@ -87,29 +87,29 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
     v->setSpacing(12);
 
     auto* header = new QHBoxLayout;
-    header->addWidget(uikit::pageTitle(chui::tr("Inventaire")));
+    header->addWidget(uikit::pageTitle(chui::tr("Inventory")));
     header->addStretch(1);
-    auto* add = uikit::button(chui::tr("Ajouter"), icons::Glyph::Add);
-    add->setToolTip(chui::tr("Nouvelle fiche (Ctrl+N)"));
+    auto* add = uikit::button(chui::tr("Add"), icons::Glyph::Add);
+    add->setToolTip(chui::tr("New record (Ctrl+N)"));
     connect(add, &QPushButton::clicked, this, &InventoryPage::addComponent);
     header->addWidget(add);
     v->addLayout(header);
 
     auto* bar = new QHBoxLayout;
     search_ = new QLineEdit; search_->setObjectName("search");
-    search_->setPlaceholderText(chui::tr("Rechercher (nom, référence, fabricant, notes…)"));
+    search_->setPlaceholderText(chui::tr("Search (name, reference, manufacturer, notes...)"));
     search_->setClearButtonEnabled(true);
     kind_ = new QComboBox;
-    kind_->addItem(chui::tr("Tous les objets"), -1);
-    kind_->addItem(chui::tr("Composants"), int(ComponentKind::Component));
+    kind_->addItem(chui::tr("All objects"), -1);
+    kind_->addItem(chui::tr("Components"), int(ComponentKind::Component));
     kind_->addItem(chui::tr("Modules"), int(ComponentKind::Module));
-    kind_->addItem(chui::tr("Outils"), int(ComponentKind::Tool));
-    kind_->addItem(chui::tr("Consommables"), int(ComponentKind::Consumable));
-    lowStock_ = new QCheckBox(chui::tr("Stock faible"));
+    kind_->addItem(chui::tr("Tools"), int(ComponentKind::Tool));
+    kind_->addItem(chui::tr("Consumables"), int(ComponentKind::Consumable));
+    lowStock_ = new QCheckBox(chui::tr("Low stock"));
     location_ = new QComboBox;
     category_ = new QComboBox;
     status_ = new QComboBox;
-    status_->addItem(chui::tr("Tous les statuts"), "");
+    status_->addItem(chui::tr("All statuses"), "");
     for (const char* k : {"to_test", "validating", "validated", "defective", "archived"})
         status_->addItem(statusLabel(k), k);
     location_->setMaximumWidth(260);
@@ -123,16 +123,16 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
     v->addLayout(bar);
 
     table_ = new QTableWidget(0, 8);
-    table_->setHorizontalHeaderLabels({chui::tr("Nom"), chui::tr("Référence"), chui::tr("Type"), chui::tr("Catégorie"), chui::tr("Emplacement"), chui::tr("Qté"), chui::tr("Prix"), chui::tr("Statut")});
+    table_->setHorizontalHeaderLabels({chui::tr("Name"), chui::tr("Reference"), chui::tr("Type"), chui::tr("Category"), chui::tr("Location"), chui::tr("Qty"), chui::tr("Price"), chui::tr("Status")});
     table_->setSelectionBehavior(QAbstractItemView::SelectRows);
     table_->setSelectionMode(QAbstractItemView::ExtendedSelection);
     table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table_->verticalHeader()->setVisible(false);
     table_->horizontalHeader()->setStretchLastSection(true);
     table_->setColumnWidth(0, 220);
-    // Tri par colonne au clic sur l'en-tête (Qté et Prix triés numériquement).
-    // Ordre par défaut : colonne Nom, croissant (chiffres puis A-Z). Sans cela,
-    // Qt démarre en décroissant (Z-A puis chiffres).
+    // Sorting by column when clicking the header (Qty and Price sorted numerically).
+    // Default order: Name column, ascending (digits then A-Z). Without this,
+    // Qt starts in descending order (Z-A then digits).
     table_->horizontalHeader()->setSortIndicator(0, Qt::AscendingOrder);
     table_->setSortingEnabled(true);
     table_->horizontalHeader()->setSortIndicatorShown(true);
@@ -145,11 +145,11 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
     for (auto* cb : {location_, category_, status_})
         connect(cb, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &InventoryPage::refresh);
 
-    // Menu clic droit sur une ligne.
+    // Right-click menu on a row.
     table_->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(table_, &QWidget::customContextMenuRequested, this, &InventoryPage::showContextMenu);
 
-    // Raccourcis clavier : globaux à la page (Ctrl+N, Ctrl+F) ou propres au tableau.
+    // Keyboard shortcuts: page-wide (Ctrl+N, Ctrl+F) or specific to the table.
     auto* newSc = new QShortcut(QKeySequence::New, this);
     newSc->setContext(Qt::WidgetWithChildrenShortcut);
     connect(newSc, &QShortcut::activated, this, &InventoryPage::addComponent);
@@ -168,14 +168,14 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
     onTable(Qt::Key_Minus,  [this] { adjustStock(-1); });
     connect(table_, &QTableWidget::cellDoubleClicked, this, [this](int row, int) { editComponentRow(row); });
 
-    // Filtre d'événements pour détecter le survol de la souris et afficher le tooltip avec photo
+    // Event filter to detect mouse hover and show the tooltip with a photo
     table_->viewport()->installEventFilter(this);
 
-    // Raccourcis d'action via double-clic ; boutons contextuels en bas.
+    // Action shortcuts via double-click; contextual buttons at the bottom.
     auto* actions = new QHBoxLayout;
-    auto* labels = uikit::button(chui::tr("Étiquettes"), icons::Glyph::Categories, "ghost");
-    auto* edit = uikit::button(chui::tr("Modifier"), icons::Glyph::Edit, "ghost");
-    auto* del = uikit::button(chui::tr("Supprimer"), icons::Glyph::Delete, "danger");
+    auto* labels = uikit::button(chui::tr("Labels"), icons::Glyph::Categories, "ghost");
+    auto* edit = uikit::button(chui::tr("Edit"), icons::Glyph::Edit, "ghost");
+    auto* del = uikit::button(chui::tr("Delete"), icons::Glyph::Delete, "danger");
     connect(table_->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, [labels, edit, this] {
                 const int selected = table_->selectionModel()->selectedRows().size();
@@ -208,7 +208,7 @@ InventoryPage::InventoryPage(chdesktop::AppContext& ctx, QWidget* parent)
 void InventoryPage::showEvent(QShowEvent*) { reloadFilters(); refresh(); }
 
 void InventoryPage::reloadFilters() {
-    // Reconstruit les listes (emplacements, catégories) en gardant le choix courant.
+    // Rebuilds the lists (locations, categories) while keeping the current choice.
     std::map<Id, Location> byId;
     for (const auto& l : ctx_.inventory.listLocations()) byId[l.id] = l;
     std::vector<std::pair<QString, Id>> locs;
@@ -220,18 +220,18 @@ void InventoryPage::reloadFilters() {
     const QVariant keepCat = category_->currentData();
     QSignalBlocker b1(location_), b2(category_);
     location_->clear();
-    location_->addItem(chui::tr("Tous les emplacements"), "");
+    location_->addItem(chui::tr("All locations"), "");
     for (const auto& [p, id] : locs) location_->addItem(p, QString::fromStdString(id));
     location_->setCurrentIndex(std::max(0, location_->findData(keepLoc)));
     category_->clear();
-    category_->addItem(chui::tr("Toutes les catégories"), "");
+    category_->addItem(chui::tr("All categories"), "");
     for (const auto& c : ctx_.inventory.listCategories())
         category_->addItem(QString::fromStdString(c.name), QString::fromStdString(c.name));
     category_->setCurrentIndex(std::max(0, category_->findData(keepCat)));
 }
 
 void InventoryPage::refresh() {
-    // Index emplacement -> chemin lisible.
+    // Location index -> readable path.
     std::map<Id, Location> byId;
     for (const auto& l : ctx_.inventory.listLocations()) byId[l.id] = l;
     auto path = [&](Id id) { return locationPath(byId, id); };
@@ -244,13 +244,13 @@ void InventoryPage::refresh() {
     filter.category = category_->currentData().toString().toStdString();
     filter.status = status_->currentData().toString().toStdString();
 
-    // Filtre emplacement : l'emplacement choisi ET tous ses sous-emplacements
-    // (« qu'y a-t-il dans cette armoire ? »), d'où le post-filtrage ici.
+    // Location filter: the chosen location AND all its sub-locations
+    // ("what is in this cabinet?"), hence the post-filtering here.
     std::set<Id> locSet;
     const Id wantLoc = location_->currentData().toString().toStdString();
     if (!wantLoc.empty()) {
         locSet.insert(wantLoc);
-        for (bool grew = true; grew;) {  // point fixe : ajoute les enfants jusqu'à stabilité
+        for (bool grew = true; grew;) {  // fixed point: adds children until nothing changes
             grew = false;
             for (const auto& [id, l] : byId)
                 if (locSet.count(l.parentId) && locSet.insert(id).second) grew = true;
@@ -261,9 +261,9 @@ void InventoryPage::refresh() {
     if (!wantLoc.empty())
         items.erase(std::remove_if(items.begin(), items.end(),
             [&](const Component& c) { return !locSet.count(c.locationId); }), items.end());
-    // On désactive le tri pendant le remplissage (sinon chaque insertion
-    // réordonne la table) ; il est réactivé ensuite, ce qui applique l'ordre
-    // de tri courant choisi par l'utilisateur.
+    // Sorting is disabled while filling (otherwise each insertion
+    // reorders the table); it is re-enabled afterwards, which applies the
+    // current sort order chosen by the user.
     table_->setSortingEnabled(false);
     table_->setRowCount(0);
     for (const auto& c : items) {
@@ -273,8 +273,8 @@ void InventoryPage::refresh() {
         name->setData(Qt::UserRole, QString::fromStdString(c.id));
         table_->setItem(r, 0, name);
         table_->setItem(r, 1, new TextItem(QString::fromStdString(c.reference)));
-        // Colonne « Type » = le champ Type (référentiel : Résistance, Capteur…),
-        // pas le genre kind (celui-ci reste accessible via le filtre déroulant).
+        // "Type" column = the Type field (reference list: Resistor, Sensor...),
+        // not the kind (which stays available through the drop-down filter).
         table_->setItem(r, 2, new TextItem(QString::fromStdString(c.type)));
         table_->setItem(r, 3, new TextItem(QString::fromStdString(c.category)));
         table_->setItem(r, 4, new TextItem(path(c.locationId)));
@@ -317,9 +317,9 @@ void InventoryPage::deleteCurrent() {
     if (ids.empty()) return;
 
     const QString prompt = ids.size() == 1
-        ? chui::tr("Supprimer « ") + names.first() + chui::tr(" » ?")
-        : QString(chui::tr("Supprimer %1 composants sélectionnés ?")).arg(ids.size());
-    if (QMessageBox::question(this, chui::tr("Supprimer"), prompt) != QMessageBox::Yes) return;
+        ? chui::tr("Delete \"%1\"?").arg(names.first())
+        : QString(chui::tr("Delete %1 selected components?")).arg(ids.size());
+    if (QMessageBox::question(this, chui::tr("Delete"), prompt) != QMessageBox::Yes) return;
     for (const auto& id : ids) ctx_.inventory.removeComponent(id);
     refresh();
 }
@@ -343,7 +343,7 @@ std::optional<Component> InventoryPage::findComponent(const Id& id) const {
     return std::nullopt;
 }
 
-// Mouvement de stock : « + / − » d'une unité (delta) ou valeur absolue (setTo >= 0).
+// Stock movement: "+ / −" one unit (delta) or absolute value (setTo >= 0).
 void InventoryPage::adjustStock(int delta, int setTo) {
     const Id id = currentId();
     auto c = id.empty() ? std::nullopt : findComponent(id);
@@ -354,7 +354,7 @@ void InventoryPage::adjustStock(int delta, int setTo) {
     if (setTo >= 0) { m.type = StockMovementType::Correction; m.quantity = setTo; }
     else if (delta > 0) { m.type = StockMovementType::In; m.quantity = delta; }
     else {
-        if (c->quantity <= 0) return;  // jamais de stock négatif
+        if (c->quantity <= 0) return;  // never a negative stock
         m.type = StockMovementType::Out; m.quantity = -delta;
     }
     ctx_.inventory.recordMovement(m);
@@ -366,7 +366,7 @@ void InventoryPage::setQuantityCurrent() {
     auto c = findComponent(currentId());
     if (!c) return;
     bool ok = false;
-    const int q = QInputDialog::getInt(this, chui::tr("Définir la quantité"), chui::tr("Quantité :"),
+    const int q = QInputDialog::getInt(this, chui::tr("Set quantity"), chui::tr("Quantity:"),
                                        c->quantity, 0, 1000000, 1, &ok);
     if (ok && q != c->quantity) adjustStock(0, q);
 }
@@ -375,10 +375,10 @@ void InventoryPage::duplicateCurrent() {
     auto c = findComponent(currentId());
     if (!c) return;
     Component copy = *c;
-    copy.id = kNoId;               // nouvelle identité
+    copy.id = kNoId;               // new identity
     copy.meta = SyncMeta();        // nouvelle enveloppe de synchronisation
-    copy.name += chui::tr(" (copie)").toStdString();
-    // Les documents ne sont pas copiés (ils restent sur la fiche d'origine).
+    copy.name += chui::tr(" (copy)").toStdString();
+    // Documents are not copied (they stay on the original record).
     const Component saved = ctx_.inventory.saveComponent(copy);
     refresh();
     selectById(saved.id);
@@ -388,8 +388,8 @@ void InventoryPage::moveCurrent() {
     const Id id = currentId();
     auto c = id.empty() ? std::nullopt : findComponent(id);
     if (!c) return;
-    // Liste des emplacements déjà construite dans le filtre (entrée 0 = « tous »).
-    QStringList names{chui::tr("(aucun)")};
+    // List of locations already built for the filter (entry 0 = "all").
+    QStringList names{chui::tr("(none)")};
     std::vector<Id> ids{kNoId};
     int cur = 0;
     for (int i = 1; i < location_->count(); ++i) {
@@ -398,8 +398,8 @@ void InventoryPage::moveCurrent() {
         if (ids.back() == c->locationId) cur = i;
     }
     bool ok = false;
-    const QString pick = QInputDialog::getItem(this, chui::tr("Changer d'emplacement"),
-        chui::tr("Nouvel emplacement :"), names, cur, false, &ok);
+    const QString pick = QInputDialog::getItem(this, chui::tr("Change location"),
+        chui::tr("New location:"), names, cur, false, &ok);
     if (!ok) return;
     c->locationId = ids[names.indexOf(pick)];
     ctx_.inventory.saveComponent(*c);
@@ -407,7 +407,7 @@ void InventoryPage::moveCurrent() {
     selectById(id);
 }
 
-// Première fiche « datasheet » de type lien (un fichier importé n'est pas ouvert ici).
+// First "datasheet" record of the link type (an imported file is not opened here).
 static const Document* findDatasheetLink(const std::vector<Document>& docs) {
     for (const auto& d : docs)
         if (!d.isFile() && !d.url.empty() && d.category == "datasheet") return &d;
@@ -430,16 +430,16 @@ void InventoryPage::showContextMenu(const QPoint& pos) {
     const bool hasSheet = findDatasheetLink(docs) != nullptr;
 
     QMenu m(this);
-    m.addAction(chui::tr("Modifier"), this, [this] { editCurrent(); });
-    m.addAction(chui::tr("Dupliquer"), this, [this] { duplicateCurrent(); });
+    m.addAction(chui::tr("Edit"), this, [this] { editCurrent(); });
+    m.addAction(chui::tr("Duplicate"), this, [this] { duplicateCurrent(); });
     m.addSeparator();
-    m.addAction(chui::tr("Ajouter 1 (+)"), this, [this] { adjustStock(+1); });
-    m.addAction(chui::tr("Retirer 1 (−)"), this, [this] { adjustStock(-1); });
-    m.addAction(chui::tr("Définir la quantité…"), this, [this] { setQuantityCurrent(); });
-    m.addAction(chui::tr("Changer d'emplacement…"), this, [this] { moveCurrent(); });
-    m.addAction(chui::tr("Ouvrir la datasheet"), this, [this] { openDatasheet(); })->setEnabled(hasSheet);
+    m.addAction(chui::tr("Add 1 (+)"), this, [this] { adjustStock(+1); });
+    m.addAction(chui::tr("Remove 1 (−)"), this, [this] { adjustStock(-1); });
+    m.addAction(chui::tr("Set quantity..."), this, [this] { setQuantityCurrent(); });
+    m.addAction(chui::tr("Change location..."), this, [this] { moveCurrent(); });
+    m.addAction(chui::tr("Open datasheet"), this, [this] { openDatasheet(); })->setEnabled(hasSheet);
     m.addSeparator();
-    m.addAction(chui::tr("Supprimer"), this, [this] { deleteCurrent(); });
+    m.addAction(chui::tr("Delete"), this, [this] { deleteCurrent(); });
     m.exec(table_->viewport()->mapToGlobal(pos));
 }
 
@@ -463,23 +463,23 @@ QString InventoryPage::buildPhotoTooltip(int row) {
     const Id id = table_->item(row, 0)->data(Qt::UserRole).toString().toStdString();
     if (id.empty()) return QString();
 
-    // Récupérer les documents du composant (photos)
+    // Get the documents of the component (photos)
     const auto documents = ctx_.documents_service.listForOwner(DocumentOwnerKind::Component, id);
 
-    // Chercher la première photo (fichier image)
+    // Look for the first photo (image file)
     for (const auto& doc : documents) {
         if (!doc.isFile()) continue;
 
-        // Vérifier si c'est une image par extension
+        // Check whether it is an image, by extension
         const QString fileName = QString::fromStdString(doc.fileName);
         const QString ext = fileName.section('.', -1).toLower();
         if (ext != "jpg" && ext != "jpeg" && ext != "png" && ext != "gif" && ext != "bmp" && ext != "webp")
             continue;
 
-        // Vérifier si le contenu est disponible
+        // Check whether the content is available
         if (!ctx_.attachments.has(doc.blobHash)) continue;
 
-        // Charger l'image depuis le magasin
+        // Load the image from the store
         std::string bytes;
         if (!ctx_.attachments.get(doc.blobHash, bytes)) continue;
 
@@ -487,18 +487,18 @@ QString InventoryPage::buildPhotoTooltip(int row) {
         if (!pixmap.loadFromData(reinterpret_cast<const unsigned char*>(bytes.data()), static_cast<int>(bytes.size())))
             continue;
 
-        // Redimensionner l'image pour le tooltip (max 400x400)
+        // Resize the image for the tooltip (max 400x400)
         const int maxSize = 400;
         if (pixmap.width() > maxSize || pixmap.height() > maxSize) {
             pixmap = pixmap.scaled(maxSize, maxSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         }
 
-        // Sauvegarder l'image dans un fichier temporaire pour l'afficher dans le tooltip
+        // Save the image to a temporary file to show it in the tooltip
         const QString tmpDir = QDir::tempPath() + "/componenthub-tooltips";
         QDir().mkpath(tmpDir);
         const QString tmpPath = tmpDir + "/" + QString::fromStdString(doc.blobHash) + ".png";
         if (pixmap.save(tmpPath)) {
-            // Afficher le tooltip avec l'image
+            // Show the tooltip with the image
             const QString html = QString("<img src=\"%1\" width=\"%2\" height=\"%3\">")
                 .arg(tmpPath)
                 .arg(pixmap.width())

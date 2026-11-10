@@ -1,7 +1,7 @@
-// ComponentDialog - création/édition d'une fiche composant complète, organisée
-// en onglets (Général, Caractéristiques, Achat & stock, Documents, Notes).
-// Les documents et mouvements de stock ne sont disponibles qu'une fois la
-// fiche enregistrée (ils référencent son id).
+// ComponentDialog - creation/editing of a complete component record, organized
+// in tabs (General, Specifications, Purchase & stock, Documents, Notes).
+// Documents and stock movements are only available once the
+// record is saved (they reference its id).
 #pragma once
 #include <QDialog>
 #include "component.h"
@@ -24,11 +24,11 @@ public:
 private:
     void buildUi();
     void loadToForm();
-    bool saveFromForm();          // valide + persiste ; false si invalide
+    bool saveFromForm();          // validates + persists; false if invalid
     void refreshChildTabs();      // documents + stock (selon existence de l'id)
     void addOrEditDocument(domain::Id docId);
-    void importDocumentFile();    // copie un fichier dans le magasin de pièces jointes
-    void openDocument();          // ouvre le lien, ou la copie locale d'un fichier
+    void importDocumentFile();    // copies a file into the attachment store
+    void openDocument();          // opens the link, or the local copy of a file
     void deleteDocument();
     void doStockMovement();
 
@@ -41,7 +41,7 @@ private:
     QLineEdit*      manufacturer_ = nullptr;
     QComboBox*      category_ = nullptr;
     QLineEdit*      subcategory_ = nullptr;
-    QComboBox*      type_ = nullptr;   // référentiel « Types de composants » (éditable)
+    QComboBox*      type_ = nullptr;   // "Component types" reference list (editable)
     QComboBox*      status_ = nullptr;
     QLineEdit*      state_ = nullptr;
     QLineEdit*      origin_ = nullptr;

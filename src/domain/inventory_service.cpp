@@ -17,11 +17,11 @@ bool InventoryService::_matches(const Component& c, const ComponentFilter& filte
     if (filter.hasKind && c.kind != filter.kind) return false;
 
     if (!filter.query.empty()) {
-        // Recherche « universelle » : l'utilisateur n'a pas à savoir dans quel
-        // champ se trouve l'info. On balaie TOUS les champs texte indexables du
-        // composant (référence, désignation, type, fabricant, catégorie,
-        // caractéristiques, fournisseur, notes...). Chaque mot de la requête
-        // doit être trouvé quelque part (recherche multi-termes, ET logique).
+        // "Universal" search: the user does not have to know which
+        // field holds the information. ALL indexable text fields of the
+        // component are scanned (reference, designation, type, manufacturer, category,
+        // specifications, supplier, notes...). Every word of the query
+        // must be found somewhere (multi-term search, logical AND).
         const std::string haystack = _toLower(
             c.name + " " + c.reference + " " + c.manufacturer + " " + c.description + " " +
             c.category + " " + c.subcategory + " " + c.type + " " + c.voltage + " " +

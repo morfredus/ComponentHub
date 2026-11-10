@@ -1,5 +1,5 @@
-// Petits utilitaires d'interface partagés par les pages : titres, boutons à
-// icône teintée qui se recolorent automatiquement au changement de thème.
+// Small interface utilities shared by the pages: titles, buttons with a
+// tinted icon that recolor automatically when the theme changes.
 #pragma once
 #include <QPushButton>
 #include <QLabel>
@@ -23,7 +23,7 @@ inline QLabel* hint(const QString& text) {
     return l;
 }
 
-// Bouton à icône. `variant` : "" (plein/accent), "ghost" (contour), "danger".
+// Icon button. `variant`: "" (filled/accent), "ghost" (outline), "danger".
 inline QPushButton* button(const QString& text, icons::Glyph g, const QString& variant = QString()) {
     auto* b = new QPushButton(text);
     if (!variant.isEmpty()) b->setProperty("variant", variant);

@@ -6,4 +6,12 @@
     <file>icons/spin-up.png</file>
     <file>icons/spin-down.png</file>
 </qresource>
+<qresource prefix="/doc">
+    <file alias="help.fr.html">doc/help.fr.html</file>
+    <file alias="help.en.html">doc/help.en.html</file>
+    <file alias="help.es.html">doc/help.es.html</file>
+    <file alias="about.fr.html">doc/about.fr.html</file>
+    <file alias="about.en.html">doc/about.en.html</file>
+    <file alias="about.es.html">doc/about.es.html</file>
+</qresource>
 </RCC>

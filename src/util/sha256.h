@@ -1,13 +1,13 @@
 /**
- * sha256.h - SHA-256 autonome (RFC 6234), sans dépendance.
+ * sha256.h - Standalone SHA-256 (RFC 6234), no dependency.
  *
- * Le cœur (componenthub_core) est indépendant de Qt : il ne peut donc pas
- * s'appuyer sur QCryptographicHash. Le magasin de pièces jointes nomme chaque
- * blob par le SHA-256 de son contenu, et la synchro vérifie l'intégrité de ce
- * qu'elle télécharge en recalculant ce hash : une seule implémentation, ici,
- * partagée par l'import et la vérification.
+ * The core (componenthub_core) is independent of Qt: it therefore cannot
+ * rely on QCryptographicHash. The attachment store names each
+ * blob after the SHA-256 of its content, and synchronization checks the integrity of what
+ * it downloads by recomputing this hash: a single implementation, here,
+ * shared by import and verification.
  *
- * En-tête seul (inline) : rien à ajouter au CMake.
+ * Header only (inline): nothing to add to CMake.
  */
 
 #pragma once
@@ -26,7 +26,7 @@ inline std::uint32_t rotr(std::uint32_t x, std::uint32_t n) {
 
 } // namespace detail
 
-// Renvoie le SHA-256 de `data` sous forme hexadécimale minuscule (64 caractères).
+// Returns the SHA-256 of `data` as lowercase hexadecimal (64 characters).
 inline std::string sha256Hex(const std::string& data) {
     static const std::uint32_t K[64] = {
         0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
@@ -41,8 +41,8 @@ inline std::string sha256Hex(const std::string& data) {
     std::uint32_t h[8] = {0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,
                           0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19};
 
-    // Pré-traitement : padding jusqu'à un multiple de 64 octets, longueur en bits
-    // à la fin (big-endian sur 64 bits).
+    // Pre-processing: padding up to a multiple of 64 bytes, bit length
+    // at the end (big-endian, 64 bits).
     std::string msg = data;
     const std::uint64_t bitLen = static_cast<std::uint64_t>(data.size()) * 8u;
     msg.push_back(static_cast<char>(0x80));

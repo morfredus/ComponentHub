@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.18.0] - 2026-11-10
+
+### Changed
+
+- **Translations are easier to write and to add.** The source text of every string is now English (French becomes a catalog like Spanish). A language is added by dropping `translations/componenthub_<code>.ts` in the folder: the build embeds it and the language selector lists it, with no code change. The language name shown in the selector is the translation of the string `English`.
+- Sentences are no longer built from pieces: `"Delete the category \"%1\"?"` with a placeholder replaces `"Delete the category " + name + "?"`, so word order can follow each language. Two meanings of one English word are told apart with a disambiguation comment (`tr("Import", "title")`).
+- Help and About texts moved out of the catalogs into `resources/doc/help.<code>.html` and `about.<code>.html` (English fallback). The help now mentions the right-click menu and the new shortcuts.
+- The default component types of the reference lists are translated through the catalogs (the three hard-coded lists are gone).
+- **Code comments are in English**, factual and written for a contributor (source, tests, CMake and packaging scripts). `CONTRIBUTING.md` states the rule.
+
+### Added
+
+- `scripts/i18n/update-catalogs.py`: adds new strings to every catalog, drops removed ones, refreshes `translations/componenthub_template.ts` and lists what is untranslated (`--check`). `--new de_DE` creates a catalog. Catalogs carry no line numbers, so diffs stay readable.
+- `docs/TRANSLATING.md`: step-by-step guide for translators (Qt Linguist or any text editor).
+
+### Removed
+
+- `translations/componenthub_en.ts`: English is the source language and needs no catalog.
+
 ## [1.17.0] - 2026-11-10
 
 ### Changed

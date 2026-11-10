@@ -1,11 +1,11 @@
 /**
- * ProjectComponent - Ligne de nomenclature : un élément nécessaire à un
- * projet, en une certaine quantité.
+ * ProjectComponent - Bill of materials line: an item needed by a
+ * project, in a given quantity.
  *
  * Deux cas :
- *   - componentId != kNoId : renvoie à un composant de l'inventaire.
- *   - componentId == kNoId : élément *hors inventaire* (pas encore acheté).
- *     `label` porte alors son nom libre ; il est toujours compté « à acheter ».
+ *   - componentId != kNoId : refers to an inventory component.
+ *   - componentId == kNoId : *off-inventory* item (not bought yet).
+ *     `label` then holds its free name; it is always counted as "to buy".
  */
 
 #pragma once
@@ -20,7 +20,7 @@ struct ProjectComponent {
     SyncMeta meta;        // enveloppe de synchronisation
     Id projectId = kNoId;
     Id componentId = kNoId;
-    std::string label;          // utilisé quand componentId == kNoId (élément hors inventaire)
+    std::string label;          // used when componentId == kNoId (off-inventory item)
     int quantityRequired = 1;
 };
 

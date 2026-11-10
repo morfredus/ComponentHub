@@ -1,5 +1,5 @@
-# Resynchronise les copies vendorées de morfBeacon / morfUpdate / morfdeploy
-# dans third_party/morf/ depuis les dépôts sources voisins.
+# Resynchronizes the vendored copies of morfBeacon / morfUpdate / morfdeploy
+# in third_party/morf/ from the neighboring source repositories.
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $srcBase = if ($env:MORF_SRC_BASE) { $env:MORF_SRC_BASE } else { Split-Path -Parent $root }
@@ -18,8 +18,8 @@ $update = if (Test-Path "$srcBase\morfUpdate") { "$srcBase\morfUpdate" } else { 
 Sync-One "morfBeacon" $beacon "$root\third_party\morf\beacon"
 Sync-One "morfUpdate" $update "$root\third_party\morf\update"
 
-# morfdeploy : paquet Python (ni include\ ni src\), copie telle quelle depuis le
-# depot dedie morfDeploy. Sans cette resynchronisation la copie vendoree derive.
+# morfdeploy: Python package (neither include\ nor src\), copied as is from the
+# dedicated morfDeploy repository. Without this resynchronization the vendored copy drifts.
 $deployRoot = if (Test-Path "$srcBase\morfDeploy") { "$srcBase\morfDeploy" } else { "$srcBase\morfDeploy_travail" }
 $deploySrc = "$deployRoot\morfdeploy"
 $deployDst = "$root\third_party\morf\morfdeploy"

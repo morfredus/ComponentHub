@@ -1,8 +1,8 @@
 /**
- * Interfaces de dépôt (Repository) - seule porte d'accès à la persistance
- * vue depuis le domaine. Aucune implémentation ici : voir src/storage/
- * (SQLite aujourd'hui). Changer de moteur de stockage ne demande que
- * de ré-implémenter ces interfaces, sans toucher à InventoryService.
+ * Repository interfaces - the only access door to persistence
+ * as seen from the domain. No implementation here: see src/storage/
+ * (SQLite today). Changing the storage engine only requires
+ * re-implementing these interfaces, without touching InventoryService.
  */
 
 #pragma once
@@ -20,12 +20,12 @@ public:
     virtual ~IComponentRepository() = default;
     virtual std::vector<Component> findAll() const = 0;
     virtual std::optional<Component> findById(Id id) const = 0;
-    virtual Component save(Component component) = 0;  // id==kNoId -> création, sinon mise à jour
-    // Upsert en lot : un seul accès disque pour tout le lot, au lieu d'un par
-    // élément. Essentiel pour les imports en masse (voir ImportExportService) :
-    // appeler save() en boucle relit/réécrit tout le fichier à chaque élément,
-    // un coût qui explose avec le nombre de lignes (déjà observé : reset
-    // watchdog après ~150s pour un import de 39 lignes avant ce correctif).
+    virtual Component save(Component component) = 0;  // id==kNoId -> creation, otherwise update
+    // Batch upsert: a single disk access for the whole batch, instead of one per
+    // item. Essential for bulk imports (see ImportExportService):
+    // calling save() in a loop reads/rewrites the whole file for each item,
+    // a cost that explodes with the number of lines (already observed: watchdog
+    // reset after ~150 s for an import of 39 lines before this fix).
     virtual std::vector<Component> saveAll(const std::vector<Component>& components) = 0;
     virtual bool remove(Id id) = 0;
 };

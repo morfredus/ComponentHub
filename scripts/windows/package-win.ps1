@@ -1,7 +1,7 @@
-# Assemble une distribution Windows autonome de ComponentHub (exe + DLL + plugins Qt)
-# dans dist/ComponentHub-<version>-win64/ et produit le ZIP correspondant.
+# Assembles a self-contained Windows distribution of ComponentHub (exe + DLLs + Qt plugins)
+# in dist/ComponentHub-<version>-win64/ and produces the matching ZIP.
 #
-# Usage (depuis n'importe où) :
+# Usage (from anywhere):
 #   powershell -ExecutionPolicy Bypass -File scripts\windows\package-win.ps1
 param(
     [string]$BuildDir = "build-mingw",
@@ -26,11 +26,11 @@ $dist = Join-Path $root "dist\$name"
 if (Test-Path $dist) { Remove-Item -Recurse -Force $dist }
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
 
-# Exécutable + DLL déployées (Qt via windeployqt + MinGW via deploy-mingw.sh)
+# Executable + deployed DLLs (Qt via windeployqt + MinGW via deploy-mingw.sh)
 Copy-Item (Join-Path $build "ComponentHub.exe") $dist
 Copy-Item (Join-Path $build "*.dll") $dist
 
-# Dossiers de plugins Qt
+# Qt plugin folders
 foreach ($d in 'platforms','styles','imageformats','tls','networkinformation','generic','iconengines') {
     $src = Join-Path $build $d
     if (Test-Path $src) { Copy-Item $src $dist -Recurse }

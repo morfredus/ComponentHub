@@ -46,7 +46,7 @@ function Reset-StaleBuildDir {
 }
 
 $bash = Find-MsysBash
-# Ce script vit dans scripts/windows/ : la racine du projet est deux niveaux plus haut.
+# This script lives in scripts/windows/: the project root is two levels up.
 $root = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $buildDir = Join-Path $root "build-mingw"
 Reset-StaleBuildDir -BuildDir $buildDir -SourceDir $root

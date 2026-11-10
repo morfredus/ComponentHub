@@ -1,6 +1,6 @@
 /**
- * Project - Fiche projet (cf. cahier des charges : nom, description,
- * version, firmware, dépôt Git, documentation, composants utilisés).
+ * Project - Project record (see the specification: name, description,
+ * version, firmware, Git repository, documentation, components used).
  */
 
 #pragma once
@@ -18,7 +18,7 @@ struct Project {
     std::string version;
     std::string firmware;
     std::string gitRepo;
-    std::string status;  // texte libre : en cours, terminé, archivé...
+    std::string status;  // free text: in progress, done, archived...
     std::string notes;
 };
 

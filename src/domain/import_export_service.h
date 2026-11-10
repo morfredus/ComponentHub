@@ -1,19 +1,19 @@
 /**
- * ImportExportService - Export/import CSV de l'inventaire.
+ * ImportExportService - CSV export/import of the inventory.
  *
- * Deux formats :
- *   - Native  : toutes les colonnes de Component, réimportables tel quel
- *     (sauvegarde/restauration, édition tableur). Les lignes sont
- *     rapprochées par `id` si présent, sinon toujours créées.
- *   - Bomist  : compatible avec l'export CSV de Bomist (colonnes Stock,
+ * Two formats:
+ *   - Native  : all Component columns, re-importable as is
+ *     (backup/restore, spreadsheet editing). Lines are
+ *     matched by `id` if present, otherwise always created.
+ *   - Bomist  : compatible with the Bomist CSV export (columns Stock,
  *     Part Number, Manufacturer, Description, Label, Storage, Unit Cost,
- *     Pref. Supplier, Type, Category, Worth). Les lignes sont rapprochées
- *     par référence (Part Number) : une correspondance met à jour le
- *     composant existant (champs Bomist uniquement), sinon un nouveau
- *     composant est créé.
+ *     Pref. Supplier, Type, Category, Worth). Lines are matched
+ *     by reference (Part Number): a match updates the
+ *     existing component (Bomist fields only), otherwise a new
+ *     component is created.
  *
- * `location`/`Storage` est un nom résolu (ou créé) via ILocationRepository :
- * le fichier CSV ne référence jamais un id d'emplacement interne.
+ * `location`/`Storage` is a name resolved (or created) via ILocationRepository:
+ * the CSV file never references an internal location id.
  */
 
 #pragma once
@@ -41,12 +41,12 @@ public:
         : _components(components), _locations(locations),
           _categories(categories), _projects(projects) {}
 
-    // Composants (inventaire) - formats natif ComponentHub et Bomist.
+    // Components (inventory) - native ComponentHub and Bomist formats.
     std::string exportCsv(CsvFormat format) const;
     ImportResult importCsv(const std::string& csv, CsvFormat format);
 
-    // Tables secondaires - un CSV par table, réimportable à l'identique.
-    // Les emplacements exportent leur hiérarchie (parentId + chemin lisible).
+    // Secondary tables - one CSV per table, re-importable identically.
+    // Locations export their hierarchy (parentId + readable path).
     std::string exportCategoriesCsv() const;
     std::string exportLocationsCsv() const;
     std::string exportProjectsCsv() const;
@@ -60,13 +60,13 @@ private:
     ICategoryRepository&  _categories;
     IProjectRepository&   _projects;
 
-    // `cache` est alimenté une seule fois par import (voir _import*) puis
-    // réutilisé pour chaque ligne : évite un ILocationRepository::findAll()
-    // (donc une relecture disque complète) par ligne de CSV.
+    // `cache` is filled once per import (see _import*) then
+    // reused for each line: avoids one ILocationRepository::findAll()
+    // (hence a full disk re-read) per CSV line.
     Id _resolveLocationCached(const std::string& name, std::map<std::string, Id>& cache);
     std::string _locationName(Id id) const;
-    // Chemin hiérarchique lisible « Atelier > Armoire A > Tiroir A12 »,
-    // reconstruit à partir de `parentId` via l'index fourni.
+    // Readable hierarchical path "Workshop > Cabinet A > Drawer A12",
+    // rebuilt from `parentId` using the provided index.
     std::string _locationPath(Id id, const std::map<Id, Location>& byId) const;
 
     std::string _exportNative() const;

@@ -42,22 +42,22 @@ namespace {
 
 using Clock = std::chrono::steady_clock;
 
-// Indicateur d'annulation du thread courant (voir setThreadCancelFlag). thread_local : la
-// synchro tourne dans un thread dédié, et son annulation ne doit pas toucher les requêtes
-// éventuelles d'un autre thread.
+// Cancellation flag of the current thread (see setThreadCancelFlag). thread_local: the
+// synchronization runs in a dedicated thread, and cancelling it must not affect the
+// requests that another thread may be running.
 thread_local const std::atomic<bool>* t_cancel = nullptr;
 bool cancelled() { return t_cancel && t_cancel->load(std::memory_order_relaxed); }
 
-// Tranche d'attente : le temps maximal entre deux vérifications de l'annulation.
+// Wait slice: the maximum time between two checks of the cancellation flag.
 constexpr int kSliceMs = 200;
 
-// Plafonds de sécurité : un hub défaillant (ou autre chose qu'un hub sur le port) ne doit
-// ni figer l'application indéfiniment ni lui faire avaler une réponse sans fin.
-constexpr int kTotalTimeoutMs = 60000;                          // délai TOTAL d'une requête
-constexpr std::size_t kMaxResponseBytes = 128u * 1024u * 1024u; // blobs de pièces jointes inclus
+// Safety caps: a failing hub (or something other than a hub on the port) must
+// neither freeze the application indefinitely nor make it swallow an endless response.
+constexpr int kTotalTimeoutMs = 60000;                          // TOTAL time limit of a request
+constexpr std::size_t kMaxResponseBytes = 128u * 1024u * 1024u; // attachment blobs included
 
-// Connexion avec délai : connect() bloquant peut durer plusieurs dizaines de secondes sur un
-// hôte qui ne répond pas. Passage en non bloquant + select, puis retour en mode bloquant.
+// Connection with timeout: a blocking connect() can take tens of seconds on a
+// host that does not answer. Switch to non-blocking + select, then back to blocking mode.
 bool connectWithTimeout(socket_t fd, const sockaddr* addr, int len, int timeoutMs) {
     if (!setNonBlocking(fd, true)) return ::connect(fd, addr, len) == 0;
     int rc = ::connect(fd, addr, len);
@@ -68,7 +68,7 @@ bool connectWithTimeout(socket_t fd, const sockaddr* addr, int len, int timeoutM
         const bool pending = (errno == EINPROGRESS);
 #endif
         if (!pending) return false;
-        // Attente par tranches : l'annulation est testée entre deux tranches.
+        // Waiting by slices: cancellation is tested between two slices.
         fd_set wr, ex;
         const auto until = Clock::now() + std::chrono::milliseconds(timeoutMs);
         for (;;) {
@@ -108,12 +108,12 @@ struct WsaInit {
 #endif
 void ensureNetwork() {
 #if defined(_WIN32)
-    static WsaInit init; // initialise winsock une fois par process
+    static WsaInit init; // initialize winsock once per process
     (void)init;
 #endif
 }
 
-// Décompose http://hôte:port/chemin. Retourne false si l'URL n'est pas http.
+// Splits http://host:port/path. Returns false if the URL is not http.
 bool parseUrl(const std::string& url, std::string& host, std::string& port, std::string& path) {
     const std::string scheme = "http://";
     if (url.compare(0, scheme.size(), scheme) != 0) return false;
@@ -129,8 +129,8 @@ bool parseUrl(const std::string& url, std::string& host, std::string& port, std:
     return !host.empty();
 }
 
-// Délai d'envoi = `timeoutMs` ; la lecture est découpée en tranches de kSliceMs (le délai
-// d'inactivité total est suivi par request) pour pouvoir réagir vite à une annulation.
+// Send timeout = `timeoutMs`; reading is cut into slices of kSliceMs (the total
+// inactivity timeout is tracked per request) so that a cancellation is noticed quickly.
 void applyTimeout(socket_t fd, int timeoutMs) {
     if (timeoutMs <= 0) timeoutMs = 5000;
 #if defined(_WIN32)
@@ -147,7 +147,7 @@ void applyTimeout(socket_t fd, int timeoutMs) {
 #endif
 }
 
-// Vrai si le dernier recv a échoué pour cause de délai (tranche écoulée), pas de coupure.
+// True if the last recv failed because of a timeout (slice elapsed), not a disconnection.
 bool lastRecvTimedOut() {
 #if defined(_WIN32)
     const int e = WSAGetLastError();
@@ -187,16 +187,16 @@ HttpResult request(const std::string& method, const std::string& url, const std:
     }
     freeaddrinfo(res);
 
-    // Construit la requête. Connection: close -> le serveur ferme après la
-    // réponse, on lit donc jusqu'à la fermeture.
+    // Builds the request. Connection: close -> the server closes after the
+    // response, so we read until the connection is closed.
     std::ostringstream req;
     req << method << ' ' << path << " HTTP/1.1\r\n"
         << "Host: " << host << ':' << port << "\r\n"
         << "Connection: close\r\n";
     for (const auto& [k, v] : headers) req << k << ": " << v << "\r\n";
-    // POST et PUT portent un corps (JSON de synchro pour l'un, binaire d'un blob
-    // pour l'autre). Content-Length dimensionne l'octet près : le corps est écrit
-    // verbatim, sans hypothèse sur son contenu.
+    // POST and PUT carry a body (synchronization JSON for one, the binary of a blob
+    // for the other). Content-Length is exact to the byte: the body is written
+    // verbatim, with no assumption about its content.
     const bool hasBody = (method == "POST" || method == "PUT");
     if (hasBody) {
         req << "Content-Type: " << contentType << "\r\n"
@@ -216,8 +216,8 @@ HttpResult request(const std::string& method, const std::string& url, const std:
         sent += static_cast<std::size_t>(n);
     }
 
-    // Lit toute la réponse. Chaque recv dure au plus une tranche : entre deux, l'annulation et
-    // le délai d'inactivité (`idleMs`, comme avant : SO_RCVTIMEO) sont vérifiés.
+    // Reads the whole response. Each recv lasts at most one slice: between two, cancellation and
+    // the inactivity timeout (`idleMs`, as before: SO_RCVTIMEO) are checked.
     std::string raw;
     char buf[4096];
     const int idleMs = timeoutMs > 0 ? timeoutMs : 5000;
@@ -230,14 +230,14 @@ HttpResult request(const std::string& method, const std::string& url, const std:
                 if (Clock::now() > deadline) { closeSocket(fd); r.error = "http.timeout"; return r; }
                 continue;
             }
-            break;   // inactif trop longtemps : fin de lecture (comportement antérieur)
+            break;   // inactive for too long: end of reading (previous behavior)
         }
         if (n <= 0) break;
         lastData = Clock::now();
         raw.append(buf, static_cast<std::size_t>(n));
         if (raw.size() > kMaxResponseBytes) { closeSocket(fd); r.error = "http.response_too_large"; return r; }
-        // Le délai d'inactivité ne borne qu'UN silence : un serveur qui goutte-à-goutte tiendrait
-        // la requête indéfiniment, d'où ce délai total.
+        // The inactivity timeout only bounds ONE silence: a server dripping data would hold
+        // the request forever, hence this total timeout.
         if (Clock::now() > deadline) { closeSocket(fd); r.error = "http.timeout"; return r; }
     }
     closeSocket(fd);
@@ -250,7 +250,7 @@ HttpResult request(const std::string& method, const std::string& url, const std:
 } // namespace
 
 HttpResult parseResponse(const std::string& raw, HttpResult r) {
-    // Statut : "HTTP/1.1 200 OK".
+    // Status: "HTTP/1.1 200 OK".
     std::size_t sp = raw.find(' ');
     if (sp != std::string::npos) r.status = std::atoi(raw.c_str() + sp + 1);
 
@@ -259,7 +259,7 @@ HttpResult parseResponse(const std::string& raw, HttpResult r) {
         r.body.clear();
     } else {
         r.body = raw.substr(hdrEnd + 4);
-        // Transfer-Encoding: chunked -> le corps brut contient les tailles de blocs, à retirer.
+        // Transfer-Encoding: chunked -> the raw body contains the chunk sizes, to be removed.
         const std::string headers = lowerCopy(raw.substr(0, hdrEnd));
         const std::size_t te = headers.find("\r\ntransfer-encoding:");
         if (te != std::string::npos) {
@@ -286,17 +286,17 @@ bool decodeChunked(const std::string& in, std::string& out) {
     std::size_t pos = 0;
     for (;;) {
         const std::size_t eol = in.find("\r\n", pos);
-        if (eol == std::string::npos) return false;           // taille de bloc tronquée
-        // Extensions de bloc (";ext=...") ignorées ; la taille est en hexadécimal.
+        if (eol == std::string::npos) return false;           // truncated chunk size
+        // Chunk extensions (";ext=...") are ignored; the size is in hexadecimal.
         std::string sizeStr = in.substr(pos, eol - pos);
         sizeStr = sizeStr.substr(0, sizeStr.find(';'));
-        if (sizeStr.empty() || sizeStr.size() > 8) return false;  // vide ou > 4 Gio : invalide
+        if (sizeStr.empty() || sizeStr.size() > 8) return false;  // empty or > 4 GiB: invalid
         char* endp = nullptr;
         const unsigned long size = std::strtoul(sizeStr.c_str(), &endp, 16);
         if (!endp || *endp != '\0') return false;
         pos = eol + 2;
-        if (size == 0) return true;                           // bloc final (trailers ignorés)
-        if (in.size() - pos < size + 2) return false;         // données tronquées
+        if (size == 0) return true;                           // final chunk (trailers ignored)
+        if (in.size() - pos < size + 2) return false;         // truncated data
         if (out.size() + size > kMaxResponseBytes) return false;
         out.append(in, pos, size);
         pos += size;

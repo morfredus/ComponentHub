@@ -1,14 +1,14 @@
-// ComponentHub Desktop - implémentations SQLite des interfaces de dépôt du
+// ComponentHub Desktop - SQLite implementations of the repository interfaces of the
 // domaine (src/domain/repositories.h, project_repositories.h,
-// document_repository.h). Chaque dépôt lit/écrit dans une base SQLite unique
-// pour des performances supérieures et des requêtes complexes.
+// document_repository.h). Each repository reads/writes in a single SQLite database
+// for better performance and complex queries.
 //
-// Chaque table synchronisable implémente aussi domain::ISyncableRepository
-// (sync_record.h) : le SyncService la traite de façon générique. StockMovement
-// (historique append-only) n'est pas synchronisé.
+// Every synchronizable table also implements domain::ISyncableRepository
+// (sync_record.h): SyncService handles it generically. StockMovement
+// (append-only history) is not synchronized.
 //
-// Le reste du cœur (services, CSV, import/export) vit dans src/domain/,
-// indépendant de la plateforme.
+// The rest of the core (services, CSV, import/export) lives in src/domain/,
+// independent of the platform.
 #pragma once
 
 #include <string>
@@ -21,8 +21,8 @@
 
 namespace chdesktop {
 
-// Macro d'aide : les trois méthodes de domain::ISyncableRepository, identiques
-// à déclarer pour chaque dépôt.
+// Helper macro: the three methods of domain::ISyncableRepository, identical
+// to declare for each repository.
 #define CH_SYNCABLE_DECL                                                                  \
     std::string syncType() const override;                                               \
     std::vector<domain::SyncRecord> exportForSync(std::int64_t sinceLocalSeq) const override; \
@@ -154,7 +154,7 @@ private:
     sqlite3* db_;
 };
 
-// Gestionnaire de la base SQLite : ouverture et création du schéma initial.
+// SQLite database manager: opening and creation of the initial schema.
 class SQLiteDatabase {
 public:
     explicit SQLiteDatabase(const std::string& dbPath);
@@ -163,20 +163,20 @@ public:
     bool isOpen() const { return db_ != nullptr; }
     sqlite3* handle() { return db_; }
     
-    // Initialise le schéma de la base vide.
+    // Initializes the schema of the empty database.
     bool initialize();
-    // Prépare une connexion ANNEXE sur une base déjà initialisée par une autre connexion (thread
-    // de synchro) : délai d'attente des verrous, clés étrangères. Ne touche pas au schéma.
+    // Prepares an AUXILIARY connection on a database already initialized by another connection (the
+    // synchronization thread): lock wait timeout, foreign keys. Does not touch the schema.
     bool openExisting();
-    // Attente maximale d'un verrou tenu par une autre connexion.
+    // Maximum wait for a lock held by another connection.
     static constexpr int kBusyTimeoutMs = 5000;
 
-    // Exécute une instruction sans résultat (BEGIN / COMMIT / ROLLBACK…) ; lève en cas d'erreur.
+    // Runs a statement with no result (BEGIN / COMMIT / ROLLBACK...); throws on error.
     void execSql(const std::string& sql);
 
-    // Écrit un instantané COHÉRENT de la base dans `destPath` (VACUUM INTO). La base est en
-    // WAL et ouverte : copier le fichier brut donnerait un état incohérent (pages encore dans
-    // le -wal). Le fichier de destination ne doit pas exister. Lève std::runtime_error.
+    // Writes a CONSISTENT snapshot of the database into `destPath` (VACUUM INTO). The database is in
+    // WAL mode and open: copying the raw file would give an inconsistent state (pages still in
+    // the -wal). The destination file must not exist. Throws std::runtime_error.
     void snapshotTo(const std::string& destPath);
     
 private:

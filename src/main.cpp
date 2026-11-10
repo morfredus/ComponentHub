@@ -1,4 +1,4 @@
-// ComponentHub Desktop - point d'entrée.
+// ComponentHub Desktop - entry point.
 #include <QApplication>
 #include <QStandardPaths>
 #include <QDir>
@@ -28,21 +28,21 @@ int main(int argc, char* argv[]) {
 
     chui::applyLanguage();
 
-    // Dossier de données par utilisateur.
+    // Per-user data folder.
     QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     if (dir.isEmpty()) dir = QDir::homePath() + "/.componenthub";
     QDir().mkpath(dir);
 
     Theme::instance().apply(Theme::savedMode());
 
-    // Restauration validée lors de la session précédente : à appliquer AVANT d'ouvrir la base
-    // (ancienne base conservée en .bak, -wal/-shm supprimés).
+    // Restore validated during the previous session: apply it BEFORE opening the database
+    // (previous database kept as .bak, -wal/-shm removed).
     {
         bool applied = false;
         std::string restoreError;
         if (!chdesktop::backup::applyPendingRestore(dir.toStdString(), applied, restoreError))
-            QMessageBox::warning(nullptr, chui::tr("ComponentHub - restauration"),
-                chui::tr("La restauration en attente n'a pas pu être appliquée ; les données actuelles sont conservées.\n\n")
+            QMessageBox::warning(nullptr, chui::tr("ComponentHub - restore"),
+                chui::tr("The pending restore could not be applied; the current data is kept.\n\n")
                     + chui::archiveError(QString::fromStdString(restoreError)));
     }
 
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
                 ? chui::tr("The local SQLite database could not be initialized.")
                 : chui::tr("The local database could not be opened.");
         QMessageBox::critical(nullptr, chui::tr("ComponentHub - startup failed"),
-            message + (path.isEmpty() ? QString() : "\n\n" + chui::tr("Path: ") + path));
+            message + (path.isEmpty() ? QString() : "\n\n" + chui::tr("Path: %1").arg(path)));
         return 1;
     }
     auto& ctx = *context;
@@ -70,35 +70,35 @@ int main(int argc, char* argv[]) {
     openWindow = [&](bool startup) {
         window = std::make_unique<MainWindow>(ctx, startup);
         window->setWindowIcon(icons::icon(icons::Glyph::Chip, QColor(Theme::instance().color("accent")), 32));
-        // Langue ou devise changée : on reconstruit la fenêtre (tous les textes sont
-        // posés à la construction) à la même place, à la même taille, sur la même page.
-        // Différé d'un tour de boucle : la fenêtre ne doit pas être détruite pendant
-        // l'exécution d'un de ses propres signaux.
+        // Language or currency changed: rebuild the window (all texts are
+        // set at construction) at the same place, with the same size, on the same page.
+        // Deferred by one event loop turn: the window must not be destroyed while
+        // one of its own signals is running.
         QObject::connect(window.get(), &MainWindow::rebuildRequested, &app, [&] {
             QTimer::singleShot(0, [&] {
                 auto old = std::move(window);
                 old->prepareForRebuild();
-                const QByteArray geometry = old->saveGeometry();   // position, taille, état maximisé
+                const QByteArray geometry = old->saveGeometry();   // position, size, maximized state
                 const int page = old->currentPage();
                 openWindow(false);
-                window->restoreGeometry(geometry);                 // avant show() : pas de saut visible
+                window->restoreGeometry(geometry);                 // before show(): no visible jump
                 window->setCurrentPage(page);
                 window->show();
-                old.reset();                                       // après show() : jamais zéro fenêtre
+                old.reset();                                       // after show(): never zero windows
             });
         });
     };
     openWindow(true);
     window->show();
 
-    // --- Supervision LAN : annonce de présence + métriques (morfBeacon) -----
-    // Heartbeat UDP « je suis actif » broadcast, plus un endpoint HTTP /status
-    // interrogé à la demande par le RaspberryDashboard. Les compteurs sont
-    // relus au moment de la requête (fréquence faible), sur le thread Qt.
+    // --- LAN supervision: presence announcement + metrics (morfBeacon) -----
+    // UDP "I am alive" heartbeat broadcast, plus an HTTP /status endpoint
+    // queried on demand by the RaspberryDashboard. The counters are
+    // re-read when the request arrives (low frequency), on the Qt thread.
     morfbeacon::PresenceConfig beaconCfg;
     beaconCfg.appName    = "ComponentHub";
     beaconCfg.version    = CH_APP_VERSION;
-    beaconCfg.statusPort = 8880;                // /status propre à ComponentHub (appRange, cf. morfTools/ecosystem.json)
+    beaconCfg.statusPort = 8880;                // ComponentHub's own /status (appRange, see morfTools/ecosystem.json)
 
     morfbeacon::FunctionMetricsProvider beaconMetrics([&ctx]() {
         QJsonObject m;

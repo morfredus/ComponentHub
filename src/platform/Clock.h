@@ -1,4 +1,4 @@
-// Horodatage ISO 8601 local, utilisé pour dater les mouvements de stock.
+// Local ISO 8601 timestamp, used to date stock movements.
 #pragma once
 
 #include <ctime>

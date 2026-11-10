@@ -11,7 +11,7 @@ using namespace domain;
 namespace chdesktop {
 namespace {
 
-// Helper pour les erreurs SQLite
+// Helper for SQLite errors
 void checkSqlite(int rc, sqlite3* db, const std::string& operation) {
     if (rc != SQLITE_OK && rc != SQLITE_DONE) {
         std::string msg = "SQLite error in " + operation + ": " + sqlite3_errmsg(db);
@@ -19,9 +19,9 @@ void checkSqlite(int rc, sqlite3* db, const std::string& operation) {
     }
 }
 
-// Garde RAII d'un statement : finalise toujours, y compris quand checkSqlite ou une
-// conversion JSON lève une exception au milieu d'une boucle (sinon le statement fuit
-// et peut verrouiller la base).
+// RAII guard of a statement: always finalizes, even when checkSqlite or a
+// JSON conversion throws in the middle of a loop (otherwise the statement leaks
+// and may lock the database).
 class StmtGuard {
 public:
     StmtGuard() = default;
@@ -35,14 +35,14 @@ private:
     sqlite3_stmt* p_ = nullptr;
 };
 
-// Lecture texte tolerante : sqlite3_column_text renvoie nullptr pour une valeur NULL,
-// et construire un std::string depuis nullptr est un comportement indefini.
+// Tolerant text read: sqlite3_column_text returns nullptr for a NULL value,
+// and building a std::string from nullptr is undefined behavior.
 std::string colText(sqlite3_stmt* stmt, int i) {
     const unsigned char* t = sqlite3_column_text(stmt, i);
     return t ? reinterpret_cast<const char*>(t) : std::string();
 }
 
-// Helper pour exécuter une requête sans résultat
+// Helper to run a statement with no result
 void exec(sqlite3* db, const std::string& sql) {
     char* errMsg = nullptr;
     int rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errMsg);
@@ -53,7 +53,7 @@ void exec(sqlite3* db, const std::string& sql) {
     }
 }
 
-// --- Enveloppe de synchronisation (SyncMeta) ------------------------
+// --- Synchronization envelope (SyncMeta) ------------------------
 SyncMeta metaFromSqlite(sqlite3_stmt* stmt, int offset) {
     SyncMeta m;
     m.createdAt = colText(stmt, offset + 0);
@@ -72,9 +72,9 @@ void bindMeta(sqlite3_stmt* stmt, int offset, const SyncMeta& m) {
     sqlite3_bind_int64(stmt, offset + 4, m.localSeq);
 }
 
-// Une séquence est locale à une table et doit avancer à chaque modification
-// locale. Le marqueur négatif est réservé au PULL : il conserve alors la
-// révision distante sans préparer un PUSH de rebond.
+// A sequence is local to a table and must advance at every local
+// change. The negative marker is reserved for PULL: it keeps the
+// remote revision without preparing a bounce-back PUSH.
 constexpr std::int64_t kRemoteSequence = -1;
 
 void prepareMetaForSave(sqlite3* db, const char* table, SyncMeta& meta) {
@@ -94,7 +94,7 @@ void prepareMetaForSave(sqlite3* db, const char* table, SyncMeta& meta) {
     stmt.finalize();
 }
 
-// --- Conversion Component ↔ SQLite ------------------------------------
+// --- Component <-> SQLite conversion ------------------------------------
 json componentToJson(const Component& c) {
     return {
         {"id", c.id},
@@ -163,24 +163,24 @@ SQLiteDatabase::~SQLiteDatabase() {
 }
 
 bool SQLiteDatabase::initialize() {
-    // Activer les clés étrangères et le mode WAL pour de meilleures performances.
-    // Les erreurs remontent au point de démarrage, qui les affiche à l'utilisateur.
+    // Enable foreign keys and WAL mode for better performance.
+    // Errors go up to the startup point, which shows them to the user.
     configureConnection();
-    exec(db_, "PRAGMA journal_mode = WAL;");   // persistant dans le fichier : vaut pour toutes les connexions
+    exec(db_, "PRAGMA journal_mode = WAL;");   // persistent in the file: applies to all connections
     return createSchema();
 }
 
 void SQLiteDatabase::configureConnection() {
-    // busy_timeout : plusieurs connexions (interface + thread de synchro) écrivent la même base.
-    // En WAL un seul écrivain à la fois ; sans délai, le second reçoit SQLITE_BUSY aussitôt au
-    // lieu d'attendre la fin de la transaction courte de l'autre.
+    // busy_timeout: several connections (UI + synchronization thread) write to the same database.
+    // In WAL mode only one writer at a time; without a timeout, the second one gets SQLITE_BUSY at once
+    // instead of waiting for the other's short transaction to end.
     sqlite3_busy_timeout(db_, kBusyTimeoutMs);
     exec(db_, "PRAGMA foreign_keys = ON;");
     exec(db_, "PRAGMA synchronous = NORMAL;");
 }
 
 bool SQLiteDatabase::openExisting() {
-    // Connexion annexe (thread de travail) : le schéma et le mode WAL existent déjà.
+    // Auxiliary connection (worker thread): the schema and WAL mode already exist.
     configureConnection();
     return true;
 }
@@ -188,7 +188,7 @@ bool SQLiteDatabase::openExisting() {
 void SQLiteDatabase::execSql(const std::string& sql) { exec(db_, sql); }
 
 void SQLiteDatabase::snapshotTo(const std::string& destPath) {
-    // Le chemin est passé en paramètre lié : aucune concaténation SQL.
+    // The path is passed as a bound parameter: no SQL concatenation.
     StmtGuard stmt;
     checkSqlite(sqlite3_prepare_v2(db_, "VACUUM INTO ?;", -1, &stmt, nullptr), db_, "prepare snapshot");
     sqlite3_bind_text(stmt, 1, destPath.c_str(), -1, SQLITE_TRANSIENT);
@@ -349,7 +349,7 @@ bool SQLiteDatabase::createSchema() {
         );
     )");
 
-    // Index pour les performances
+    // Indexes for performance
     exec(db_, "CREATE INDEX IF NOT EXISTS idx_components_location ON components(locationId);");
     exec(db_, "CREATE INDEX IF NOT EXISTS idx_components_status ON components(status);");
     exec(db_, "CREATE INDEX IF NOT EXISTS idx_locations_parent ON locations(parentId);");
@@ -533,7 +533,7 @@ std::vector<Component> SQLiteComponentRepository::saveAll(const std::vector<Comp
     std::vector<Component> result;
     result.reserve(cs.size());
     
-    // Démarrer une transaction pour de meilleures performances
+    // Start a transaction for better performance
     exec(db_, "BEGIN TRANSACTION;");
     
     try {
@@ -588,7 +588,7 @@ std::vector<SyncRecord> SQLiteComponentRepository::exportForSync(std::int64_t si
         rec.type = "component";
         rec.meta = metaFromSqlite(stmt, 30);
         
-        // Construire l'objet JSON complet
+        // Build the complete JSON object
         Component c;
         c.id = rec.id;
         c.kind = componentKindFromString(colText(stmt, 1));
@@ -647,7 +647,7 @@ std::int64_t SQLiteComponentRepository::maxLocalSeq() const {
 bool SQLiteComponentRepository::applyRemote(const SyncRecord& rec) {
     if (rec.id == kNoId) return false;
     
-    // Vérifier si l'entité existe et comparer les versions
+    // Check whether the entity exists and compare versions
     const char* checkSql = "SELECT rev, updatedAt FROM components WHERE id = ?;";
     StmtGuard checkStmt;
     int rc = sqlite3_prepare_v2(db_, checkSql, -1, &checkStmt, nullptr);
@@ -667,7 +667,7 @@ bool SQLiteComponentRepository::applyRemote(const SyncRecord& rec) {
     
     if (!shouldApply) return false;
     
-    // Appliquer les données distantes
+    // Apply the remote data
     Component c = componentFromJson(rec.data);
     c.id = rec.id;
     c.meta = rec.meta;

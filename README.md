@@ -2,7 +2,7 @@
 
 *Read in another language: **English** (this document) · [Français](README.fr.md).*
 
-[![Version](https://img.shields.io/badge/version-1.17.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.18.0-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -180,6 +180,7 @@ ComponentHub/
 | [docs/fr/SUPERVISION_ET_MAJ.md](docs/fr/SUPERVISION_ET_MAJ.md) *(FR)* | LAN supervision (presence + metrics) and update checking |
 | [docs/fr/SYNCHRONISATION.md](docs/fr/SYNCHRONISATION.md) *(FR)* | LAN synchronization with morfSync (offline-first) |
 | [docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md) *(FR)* | Historical record of the former ESP32 satellite path |
+| [docs/TRANSLATING.md](docs/TRANSLATING.md) | Add or update a language (no code needed) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, portability rules |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 | [docs/en/README.md](docs/en/README.md) | English documentation index |

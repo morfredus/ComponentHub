@@ -1,11 +1,11 @@
 /**
- * sync_record.h - Abstraction générique de synchronisation d'une table.
+ * sync_record.h - Generic abstraction for synchronizing a table.
  *
- * Pour synchroniser TOUTES les entités (composants, emplacements, catégories,
- * projets, nomenclatures, référentiels, documents) sans dupliquer la logique,
- * chaque dépôt expose ses lignes sous une forme neutre : un `SyncRecord`
- * (identité + enveloppe + JSON brut de l'entité). Le SyncService ne connaît que
- * cette interface ; il ignore le métier de chaque table.
+ * To synchronize ALL entities (components, locations, categories,
+ * projects, bills of materials, reference lists, documents) without duplicating the logic,
+ * each repository exposes its rows in a neutral form: a `SyncRecord`
+ * (identity + envelope + raw JSON of the entity). SyncService only knows
+ * this interface; it ignores the business meaning of each table.
  */
 
 #pragma once
@@ -21,27 +21,27 @@ struct SyncRecord {
     Id id;
     std::string type;        // "component", "location", "category"…
     SyncMeta meta;           // enveloppe (rev, horodatage, tombstone)
-    nlohmann::json data;     // objet JSON complet de l'entité (tel que stocké)
+    nlohmann::json data;     // complete JSON object of the entity (as stored)
 };
 
-// Un dépôt synchronisable : expose ses lignes (tombstones inclus) et sait
-// appliquer une ligne reçue du hub (highest-rev, verbatim).
+// A synchronizable repository: exposes its rows (tombstones included) and knows how to
+// apply a row received from the hub (highest-rev, verbatim).
 class ISyncableRepository {
 public:
     virtual ~ISyncableRepository() = default;
-    virtual std::string syncType() const = 0;                 // discriminant de la table
-    // Lignes modifiées localement depuis `sinceLocalSeq` (tombstones inclus).
-    // sinceLocalSeq = 0 -> tout (première synchro).
+    virtual std::string syncType() const = 0;                 // table discriminator
+    // Rows changed locally since `sinceLocalSeq` (tombstones included).
+    // sinceLocalSeq = 0 -> everything (first synchronization).
     virtual std::vector<SyncRecord> exportForSync(std::int64_t sinceLocalSeq) const = 0;
-    // Plus haute séquence locale attribuée (nouveau repère de push après envoi).
+    // Highest local sequence assigned (new push marker after sending).
     virtual std::int64_t maxLocalSeq() const = 0;
-    virtual bool applyRemote(const SyncRecord& record) = 0;    // true si le stockage a changé
+    virtual bool applyRemote(const SyncRecord& record) = 0;    // true if the storage changed
 
-    // Hashes des blobs (pièces jointes) que cette table référence et dont le
-    // BINAIRE doit voyager à part (magasin de blobs, cf. sync_record côté
-    // document). Par défaut aucune table n'en référence : seul le dépôt des
-    // documents redéfinit cette méthode. Générique : le SyncService transfère les
-    // blobs sans connaître quelle table les porte.
+    // Hashes of the blobs (attachments) that this table references and whose
+    // BINARY must travel separately (blob store, see sync_record on the
+    // document side). By default no table references any: only the documents
+    // repository overrides this method. Generic: SyncService transfers the
+    // blobs without knowing which table carries them.
     virtual std::vector<std::string> referencedBlobs() const { return {}; }
 };
 

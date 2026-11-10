@@ -11,7 +11,7 @@ std::vector<ProjectComponentView> ProjectService::bom(Id projectId) const {
         view.quantityRequired = link.quantityRequired;
 
         if (link.componentId == kNoId) {
-            // Élément hors inventaire : rien en stock, tout est à acheter.
+            // Off-inventory item: nothing in stock, everything is to be bought.
             view.componentName = link.label.empty() ? "(élément sans nom)" : link.label;
             view.inInventory = false;
             view.quantityAvailable = 0;
@@ -22,7 +22,7 @@ std::vector<ProjectComponentView> ProjectService::bom(Id projectId) const {
             view.unitPrice = comp->price;
             view.quantityAvailable = comp->quantity;
         } else {
-            // Le composant a été supprimé de l'inventaire depuis son ajout.
+            // The component was removed from the inventory after it was added.
             view.componentName = "(composant supprimé)";
             view.inInventory = false;
             view.quantityAvailable = 0;

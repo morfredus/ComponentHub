@@ -8,7 +8,7 @@ class SettingsPage : public QWidget {
 public:
     SettingsPage(chdesktop::AppContext& ctx, chui::SyncRunner* runner, QWidget* parent = nullptr);
 signals:
-    // Langue ou devise modifiée : la fenêtre doit être reconstruite pour tout retraduire.
+    // Language or currency changed: the window must be rebuilt to translate everything again.
     void localeChanged();
 private:
     chdesktop::AppContext& ctx_;

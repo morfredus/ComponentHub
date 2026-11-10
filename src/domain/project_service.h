@@ -1,10 +1,10 @@
 /**
- * ProjectService - Logique métier des projets : nomenclature (BOM) et
- * calcul des composants manquants par rapport au stock courant.
+ * ProjectService - Business logic of projects: bill of materials (BOM) and
+ * computation of the missing components compared with the current stock.
  *
- * Dépend d'IComponentRepository (lecture seule) pour connaître les
- * quantités disponibles, mais ne modifie jamais l'inventaire - la
- * responsabilité des mouvements de stock reste à InventoryService.
+ * Depends on IComponentRepository (read only) to know the available
+ * quantities, but never modifies the inventory - the
+ * responsibility for stock movements stays with InventoryService.
  */
 
 #pragma once
@@ -16,13 +16,13 @@
 
 namespace domain {
 
-// Vue jointe (BOM + disponibilité) : pas une entité persistée.
+// Joined view (BOM + availability): not a persisted entity.
 struct ProjectComponentView {
-    Id id = kNoId;              // id de la ligne ProjectComponent
-    Id componentId = kNoId;     // kNoId = élément hors inventaire
-    std::string componentName;  // nom du composant, ou libellé libre si hors inventaire
-    std::string reference;      // référence si en inventaire, sinon vide
-    bool inInventory = false;   // false = élément hors inventaire (toujours « à acheter »)
+    Id id = kNoId;              // id of the ProjectComponent line
+    Id componentId = kNoId;     // kNoId = off-inventory item
+    std::string componentName;  // component name, or free label if off-inventory
+    std::string reference;      // reference if in inventory, otherwise empty
+    bool inInventory = false;   // false = off-inventory item (always "to buy")
     double unitPrice = 0.0;     // prix unitaire connu (inventaire), sinon 0
     int quantityRequired = 0;
     int quantityAvailable = 0;
@@ -45,7 +45,7 @@ public:
         return _projects.remove(id);
     }
 
-    // componentId == kNoId + label non vide : élément hors inventaire (à acheter).
+    // componentId == kNoId + non-empty label: off-inventory item (to buy).
     ProjectComponent addComponent(Id projectId, Id componentId, const std::string& label, int quantityRequired) {
         ProjectComponent link;
         link.projectId = projectId;
