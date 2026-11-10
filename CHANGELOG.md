@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.19.1] - 2026-11-10
+
+### Added
+
+- `.github/FUNDING.yml` (GitHub Sponsors button).
+
+## [1.19.0] - 2026-11-10
+
+### Added
+
+- **Windows installer** (`ComponentHub-<version>-win64-setup.exe`, Inno Setup 6, English and French). Per-user install by default (no administrator rights), Start menu entry, optional desktop shortcut, entry in "Installed apps" and an uninstaller. A running ComponentHub is closed during an upgrade. On uninstall the user's data (database and settings) is kept unless the question is answered with Yes. The ZIP is still published.
+- `windows-x86_64-installer` packaging target in `morfproject.json`.
+
+### Changed
+
+- Vendored morfUpdate resynchronised to 0.9.2: on Windows the update dialog now offers the installer (`*-setup.exe`) before the portable ZIP.
+
 ## [1.18.1] - 2026-11-10
 
 ### Fixed

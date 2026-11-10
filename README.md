@@ -2,7 +2,7 @@
 
 *Read in another language: **English** (this document) · [Français](README.fr.md).*
 
-[![Version](https://img.shields.io/badge/version-1.18.1-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.19.1-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -130,7 +130,8 @@ cmake --build --preset linux
 Packaging scripts live in `scripts/`:
 
 ```sh
-# Windows: self-contained ZIP (exe + DLLs + Qt plugins)
+# Windows: self-contained ZIP (exe + DLLs + Qt plugins) and, if Inno Setup 6 is installed,
+# the ...-win64-setup.exe installer
 powershell -ExecutionPolicy Bypass -File scripts\windows\package-win.ps1
 
 # Linux: Debian package (.deb, linked to the system Qt)

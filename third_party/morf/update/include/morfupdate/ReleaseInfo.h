@@ -38,7 +38,7 @@ inline bool isAuxiliaryReleaseAsset(const QString& lowerName) {
 
 // Choisit, parmi les binaires d'une release GitHub, celui qui correspond au
 // systeme courant (OS + architecture). Ecarte les fichiers annexes et prefere
-// le format natif : .zip/.exe/.msi sous Windows, .deb (bonne architecture) puis
+// le format natif : .exe (installeur)/.zip/.msi sous Windows, .deb (bonne architecture) puis
 // .AppImage/.tar.gz sous Linux, .dmg/.pkg sous macOS. Le tri par score evite de
 // tomber sur le premier asset venu (souvent checksums.sha256, en tete de liste).
 // Retourne nullptr si aucun binaire exploitable : l'appelant retombe alors sur
@@ -67,8 +67,10 @@ inline const ReleaseAsset* selectAssetForCurrentPlatform(
         int score = 0;
         // Format natif attendu pour l'OS courant.
         if (os == QLatin1String("windows")) {
-            if (lower.endsWith(QLatin1String(".zip")))      score += 50;
-            else if (lower.endsWith(QLatin1String(".exe"))) score += 45;
+            // L'installeur (-setup.exe) passe avant le .zip portable ; le .zip reste
+            // le repli quand une release n'a pas d'installeur.
+            if (lower.endsWith(QLatin1String(".exe")))      score += 50;
+            else if (lower.endsWith(QLatin1String(".zip"))) score += 45;
             else if (lower.endsWith(QLatin1String(".msi"))) score += 40;
             if (lower.contains(QLatin1String("win")))       score += 20;
             if (lower.contains(QLatin1String("mingw")))     score += 10;
