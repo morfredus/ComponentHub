@@ -1,6 +1,6 @@
-// Tests ctest de la synchronisation (sans Qt) : faux hub HTTP injecté dans SyncService, deux
-// connexions SQLite sur la même base WAL (interface + thread de travail), annulation, enregistrement
-// poison. Le thread Qt lui-même (SyncRunner) n'est pas couvert ici : il ne contient pas de logique.
+// ctest tests of synchronization (no Qt): fake HTTP hub injected into SyncService, two
+// SQLite connections on the same WAL database (interface + worker thread), cancellation, poison
+// record. The Qt thread itself (SyncRunner) is not covered here: it contains no logic.
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
@@ -30,15 +30,15 @@ json envelope(const std::string& type, const std::string& id, int rev, const jso
                 {"createdAt", "2026-01-01T00:00:00Z"}, {"updatedAt", "2026-01-01T00:00:00Z"}, {"data", data}};
 }
 
-// Faux serveur morfSync : journal paginé, enregistrement des envois, magasin de blobs.
+// Fake morfSync server: paginated journal, recording of uploads, blob store.
 struct FakeHub {
     std::vector<json> journal;     // servi au PULL ; seq = index + 1
-    std::vector<json> received;    // enregistrements poussés par le client
+    std::vector<json> received;    // records pushed by the client
     std::map<std::string, std::string> blobs;
     int pageSize = 2;
     int requests = 0;
     int pullPages = 0;
-    // Appelé AVANT de répondre ; permet de simuler une action de l'utilisateur ou une annulation.
+    // Called BEFORE answering; lets a test simulate a user action or a cancellation.
     std::function<void(const std::string& method, const std::string& url)> onRequest;
 
     chsync::HttpFn fn() {
@@ -68,7 +68,7 @@ struct FakeHub {
             r.body = R"({"conflicts":[]})";
             return r;
         }
-        // PULL : GET ...changes?since=N&limit=L
+        // PULL: GET ...changes?since=N&limit=L
         pullPages++;
         const long since = std::strtol(path.c_str() + path.find("since=") + 6, nullptr, 10);
         json page = json::array();
@@ -83,7 +83,7 @@ struct FakeHub {
     }
 };
 
-// Dépôt factice : lève sur un identifiant « poison », compte le reste.
+// Fake repository: throws on a "poison" identifier, counts the rest.
 struct ThrowingRepo : domain::ISyncableRepository {
     std::vector<std::string> applied;
     std::string syncType() const override { return "component"; }
@@ -96,8 +96,8 @@ struct ThrowingRepo : domain::ISyncableRepository {
     }
 };
 
-// Décorateur : exécute une action de l'utilisateur juste APRÈS l'export de la table, c'est-à-dire
-// pile dans la fenêtre où une modification concurrente risquait d'être perdue.
+// Decorator: runs a user action right AFTER the table export, that is exactly
+// in the window where a concurrent modification used to risk being lost.
 struct HookRepo : domain::ISyncableRepository {
     explicit HookRepo(domain::ISyncableRepository* r) : inner(r) {}
     domain::ISyncableRepository* inner;
@@ -125,7 +125,7 @@ domain::Component saveNamed(chdesktop::AppContext& ctx, const std::string& name)
     return ctx.inventory.saveComponent(c);
 }
 
-// --- 1) Pull paginé, enregistrements poison (JSON mal formé) sur vraies tables --------------
+// --- 1) Paginated pull, poison records (malformed JSON) on real tables --------------
 void testPullWithPoison() {
     const fs::path dir = freshDir("ch_test_sync_poison");
     chdesktop::AppContext ctx(dir.string());
@@ -135,12 +135,12 @@ void testPullWithPoison() {
         envelope("component", "c1", 1, {{"name", "Un"}}),
         json(nullptr),                                          // null
         json(42),                                               // scalaire
-        json("texte"),                                          // chaîne
+        json("texte"),                                          // string
         json::array({1, 2}),                                    // tableau
-        json{{"type", "component"}},                            // sans identifiant
+        json{{"type", "component"}},                            // without identifier
         json{{"id", "c2"}, {"type", "component"}, {"rev", "abc"}, {"data", "pas un objet"}},
         envelope("component", "c3", 1, {{"name", nullptr}, {"notes", nullptr}, {"quantity", "beaucoup"}}),
-        envelope("table_inconnue", "x1", 1, json::object()),    // type inconnu : ignoré
+        envelope("table_inconnue", "x1", 1, json::object()),    // unknown type: ignored
         envelope("location", "l1", 1, {{"name", "Tiroir"}}),
     };
     chsync::SyncService svc(ctx.syncables(), (dir / "sync_state.json").string(), &ctx.attachments);
@@ -148,18 +148,18 @@ void testPullWithPoison() {
     svc.setHttp(hub.fn());
     const auto out = svc.sync(kCfg);
     CHECK(out.ok && out.error.empty());
-    CHECK(out.lastSeq == (long)hub.journal.size());           // le curseur a traversé tous les poisons
-    CHECK(hub.pullPages >= 5);                                 // pagination réellement exercée
+    CHECK(out.lastSeq == (long)hub.journal.size());           // the cursor went through all the poisons
+    CHECK(hub.pullPages >= 5);                                 // pagination really exercised
     CHECK(ctx.components.findById("c1").has_value());
     CHECK(ctx.components.findById("c3").has_value());
     CHECK(ctx.locations.findById("l1").has_value());
-    // Une seconde synchro ne rejoue rien et n'est pas bloquée.
+    // A second synchronization replays nothing and is not blocked.
     hub.requests = 0;
     const auto again = svc.sync(kCfg);
     CHECK(again.ok && again.applied == 0);
 }
 
-// --- 2) Un dépôt qui LÈVE sur un enregistrement : compté, signalé, sans blocage -------------
+// --- 2) A repository that THROWS on a record: counted, reported, no blocking -------------
 void testThrowingRecord() {
     const fs::path dir = freshDir("ch_test_sync_throw");
     ThrowingRepo repo;
@@ -177,13 +177,13 @@ void testThrowingRecord() {
     const auto out = svc.sync(kCfg);
     CHECK(out.ok);
     CHECK(out.rejected == 1 && rejectedIds == std::vector<std::string>{"poison"});
-    CHECK(repo.applied == (std::vector<std::string>{"a", "b"}));      // les voisins sont appliqués
-    CHECK(out.lastSeq == 3);                                          // le curseur a avancé malgré le poison
-    CHECK(begins == commits && begins >= 2);                          // une transaction par page, toutes validées
-    CHECK(svc.sync(kCfg).ok);                                         // et la synchro suivante n'est pas bloquée
+    CHECK(repo.applied == (std::vector<std::string>{"a", "b"}));      // the neighbors are applied
+    CHECK(out.lastSeq == 3);                                          // the cursor advanced despite the poison
+    CHECK(begins == commits && begins >= 2);                          // one transaction per page, all committed
+    CHECK(svc.sync(kCfg).ok);                                         // and the next synchronization is not blocked
 }
 
-// --- 3) Écriture concurrente de l'utilisateur : jamais perdue, jamais corruptrice --------------
+// --- 3) Concurrent user write: never lost, never corrupting --------------
 void testConcurrentUserWriteDuringPush() {
     const fs::path dir = freshDir("ch_test_sync_concurrent");
     chdesktop::AppContext ctx(dir.string());               // connexion de l'interface
@@ -191,7 +191,7 @@ void testConcurrentUserWriteDuringPush() {
 
     FakeHub hub;
     domain::Component late;
-    chsync::SyncSession session(dir.string());             // connexion du thread de travail
+    chsync::SyncSession session(dir.string());             // connection of the worker thread
     auto repos = session.syncables();
     HookRepo hook(repos[0]);                               // repos[0] = composants
     hook.afterExport = [&] { late = saveNamed(ctx, "Pendant la synchro"); };
@@ -201,17 +201,17 @@ void testConcurrentUserWriteDuringPush() {
     svc.setHttp(hub.fn());
 
     CHECK(svc.sync(kCfg).ok);
-    CHECK(hub.received.size() == 1);                       // seule la ligne d'avant est partie
+    CHECK(hub.received.size() == 1);                       // only the earlier row was sent
     CHECK(!late.id.empty() && !receivedIds(hub).count(late.id));
-    CHECK(svc.sync(kCfg).ok);                              // la ligne de « pendant » est visible au push suivant
+    CHECK(svc.sync(kCfg).ok);                              // the "during" row is visible at the next push
     CHECK(receivedIds(hub).count(late.id) == 1);
-    CHECK(hub.received.size() == 2);                       // et rien n'est renvoyé en double
+    CHECK(hub.received.size() == 2);                       // and nothing is sent twice
     CHECK(svc.sync(kCfg).ok && hub.received.size() == 2);
-    // La base est saine après coup.
+    // The database is healthy afterwards.
     CHECK(ctx.components.findAll().size() == 2);
 }
 
-// Vrai parallélisme : l'interface écrit en continu pendant que le thread de travail tire 400 lignes.
+// True parallelism: the interface writes continuously while the worker thread pulls 400 rows.
 void testConcurrentThreads() {
     const fs::path dir = freshDir("ch_test_sync_threads");
     chdesktop::AppContext ctx(dir.string());
@@ -222,7 +222,7 @@ void testConcurrentThreads() {
 
     chsync::SyncOutcome out;
     std::thread worker([&] {
-        chsync::SyncSession session(dir.string());         // fabrique PAR thread
+        chsync::SyncSession session(dir.string());         // factory PER thread
         chsync::SyncService svc(session.syncables(), session.statePath(), &session.attachments());
         svc.setSqlExec([&session](const char* sql) { session.database().execSql(sql); });
         svc.setHttp(hub.fn());
@@ -238,11 +238,11 @@ void testConcurrentThreads() {
     worker.join();
     CHECK(out.ok);
     CHECK(out.applied == 400);
-    CHECK(writeErrors == 0);                               // busy_timeout : l'UI n'échoue jamais sur un verrou
+    CHECK(writeErrors == 0);                               // busy_timeout: the UI never fails on a lock
     CHECK(ctx.components.findAll().size() == 550);
 
-    // Toutes les écritures de l'utilisateur partent au plus tard au push suivant (aucune perdue) ;
-    // `received` cumule les envois des deux synchros.
+    // All user writes go out at the latest at the next push (none lost);
+    // `received` accumulates the uploads of both synchronizations.
     {
         chsync::SyncSession session(dir.string());
         chsync::SyncService svc(session.syncables(), session.statePath(), &session.attachments());
@@ -252,10 +252,10 @@ void testConcurrentThreads() {
     }
     const auto ids = receivedIds(hub);
     for (const auto& id : localIds) CHECK(ids.count(id) == 1);
-    for (const auto& id : ids) CHECK(id.rfind("remote-", 0) != 0);   // les lignes distantes ne repartent pas
+    for (const auto& id : ids) CHECK(id.rfind("remote-", 0) != 0);   // remote rows are not sent back
 }
 
-// --- 4) Annulation coopérative -----------------------------------------------------------------
+// --- 4) Cooperative cancellation -----------------------------------------------------------------
 void testCancel() {
     const fs::path dir = freshDir("ch_test_sync_cancel");
     chdesktop::AppContext ctx(dir.string());
@@ -273,8 +273,8 @@ void testCancel() {
     };
     const auto out = svc.sync(kCfg);
     CHECK(!out.ok && out.cancelled && out.error == "sync.cancelled");
-    CHECK(hub.pullPages == 2);                              // arrêtée entre deux pages
-    CHECK(svc.lastSeq() == 4);                              // les pages reçues sont acquises, reprise possible
+    CHECK(hub.pullPages == 2);                              // stopped between two pages
+    CHECK(svc.lastSeq() == 4);                              // pages already received are kept, resuming is possible
     CHECK(ctx.components.findAll().size() == 4);
 
     cancel = false;
@@ -283,14 +283,14 @@ void testCancel() {
     CHECK(resumed.ok && !resumed.cancelled && svc.lastSeq() == 6);
     CHECK(ctx.components.findAll().size() == 6);
 
-    // Annulée avant de commencer : aucune requête au-delà de la sonde, pas d'erreur trompeuse.
+    // Cancelled before starting: no request beyond the probe, no misleading error.
     cancel = true;
     hub.requests = 0;
     const auto early = svc.sync(kCfg);
     CHECK(!early.ok && early.cancelled && hub.requests <= 1);
 }
 
-// Pièces jointes : l'annulation interrompt le transfert entre deux blobs.
+// Attachments: cancellation interrupts the transfer between two blobs.
 void testCancelBetweenBlobs() {
     const fs::path dir = freshDir("ch_test_sync_blobs");
     chdesktop::AppContext ctx(dir.string());
@@ -315,7 +315,7 @@ void testCancelBetweenBlobs() {
     };
     const auto out = svc.sync(kCfg);
     if (ctx.documents.findByOwner(domain::DocumentOwnerKind::Component, "c").empty()) {
-        // Le format de document ne porte pas le hash sous ce nom : le test des blobs est alors sans objet.
+        // The document format does not carry the hash under this name: the blob test is then pointless.
         std::printf("(info) documents sans hash lisible : test d'annulation des blobs ignoré\n");
         return;
     }
@@ -323,9 +323,9 @@ void testCancelBetweenBlobs() {
     CHECK(out.blobsDownloaded < 5);
 }
 
-// --- 5) Annulation d'une vraie requête HTTP bloquée --------------------------------------------
+// --- 5) Cancellation of a real blocked HTTP request --------------------------------------------
 void testRealHttpCancel() {
-    // Serveur qui accepte les connexions mais ne répond jamais.
+    // Server that accepts connections but never answers.
     SilentServer srv;
     CHECK(srv.ok());
     const std::string url = srv.url() + "/muet";
@@ -334,7 +334,7 @@ void testRealHttpCancel() {
     std::thread canceller([&] { std::this_thread::sleep_for(std::chrono::milliseconds(400)); cancel = true; });
     chnet::setThreadCancelFlag(&cancel);
     const auto t0 = std::chrono::steady_clock::now();
-    const auto r = chnet::httpGet(url, {}, 20000);          // sans annulation : 20 s d'attente
+    const auto r = chnet::httpGet(url, {}, 20000);          // without cancellation: 20 s of waiting
     const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
     chnet::setThreadCancelFlag(nullptr);
     canceller.join();
@@ -342,7 +342,7 @@ void testRealHttpCancel() {
     CHECK(ms < 3000);
 }
 
-// --- 6) Test de connexion et état persistant atomique ------------------------------------------
+// --- 6) Connection test and atomic persistent state ------------------------------------------
 void testConnectionAndState() {
     const fs::path dir = freshDir("ch_test_sync_state");
     chdesktop::AppContext ctx(dir.string());
@@ -354,7 +354,7 @@ void testConnectionAndState() {
     CHECK(!svc.deviceId().empty());
     CHECK(fs::exists(dir / "sync_state.json") && !fs::exists(dir / "sync_state.json.tmp"));
     chsync::SyncService again(ctx.syncables(), (dir / "sync_state.json").string(), &ctx.attachments);
-    CHECK(again.deviceId() == svc.deviceId());              // l'identité de l'appareil survit
+    CHECK(again.deviceId() == svc.deviceId());              // the device identity survives
 }
 
 } // namespace

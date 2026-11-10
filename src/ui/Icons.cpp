@@ -6,8 +6,8 @@
 namespace icons {
 namespace {
 
-// Chaque glyphe est décrit dans un repère 24×24, tracé au trait (style « ligne »
-// façon Feather) avec le stylo courant. Le painter est déjà mis à l'échelle.
+// Each glyph is described in a 24x24 frame, drawn as strokes ("line" style
+// like Feather) with the current pen. The painter is already scaled.
 void draw(QPainter& p, Glyph g) {
     auto line = [&](qreal x1, qreal y1, qreal x2, qreal y2) { p.drawLine(QPointF(x1, y1), QPointF(x2, y2)); };
     auto rect = [&](qreal x, qreal y, qreal w, qreal h, qreal r) { p.drawRoundedRect(QRectF(x, y, w, h), r, r); };
@@ -29,7 +29,7 @@ void draw(QPainter& p, Glyph g) {
         for (qreal x : {9.0, 12.0, 15.0}) { line(x, 3, x, 6); line(x, 18, x, 21); }
         break;
     }
-    case Glyph::Categories: { // étiquette + œillet
+    case Glyph::Categories: { // tag + eyelet
         QPainterPath tag;
         tag.moveTo(11, 3); tag.lineTo(21, 3); tag.lineTo(21, 13);
         tag.lineTo(12, 22); tag.lineTo(2, 12); tag.lineTo(11, 3); tag.closeSubpath();
@@ -37,7 +37,7 @@ void draw(QPainter& p, Glyph g) {
         p.drawEllipse(QPointF(16.5, 7.5), 1.4, 1.4);
         break;
     }
-    case Glyph::Locations: { // épingle de carte
+    case Glyph::Locations: { // map pin
         QPainterPath pin;
         pin.moveTo(12, 21);
         pin.cubicTo(6, 14, 5, 11, 5, 9);
@@ -47,10 +47,10 @@ void draw(QPainter& p, Glyph g) {
         p.drawEllipse(QPointF(12, 9), 2.4, 2.4);
         break;
     }
-    case Glyph::Projects: // dossier
+    case Glyph::Projects: // folder
         poly({{3, 7}, {9, 7}, {11, 9.5}, {21, 9.5}, {21, 19}, {3, 19}, {3, 7}});
         break;
-    case Glyph::ImportExport: // flèches haut/bas
+    case Glyph::ImportExport: // up/down arrows
         poly({{8, 8}, {8, 20}}); poly({{5, 11}, {8, 8}, {11, 11}});
         poly({{16, 16}, {16, 4}}); poly({{13, 13}, {16, 16}, {19, 13}});
         break;
@@ -63,14 +63,14 @@ void draw(QPainter& p, Glyph g) {
         }
         break;
     }
-    case Glyph::Documents: // fiche avec coin plié
+    case Glyph::Documents: // sheet with a folded corner
         poly({{6, 3}, {14, 3}, {19, 8}, {19, 21}, {6, 21}, {6, 3}});
         poly({{14, 3}, {14, 8}, {19, 8}});
         break;
-    case Glyph::Referentials: // liste normalisée : puces + lignes
+    case Glyph::Referentials: // standardized list: bullets + lines
         for (qreal y : {6.0, 12.0, 18.0}) { p.drawEllipse(QPointF(5, y), 1.4, 1.4); line(9, y, 20, y); }
         break;
-    case Glyph::Merge: // deux branches qui se rejoignent
+    case Glyph::Merge: // two branches that join
         poly({{5, 4}, {5, 9}}); poly({{19, 4}, {19, 9}});
         poly({{5, 9}, {12, 15}, {19, 9}}); line(12, 15, 12, 20);
         break;
@@ -87,15 +87,15 @@ void draw(QPainter& p, Glyph g) {
         line(10, 10, 10, 17); line(14, 10, 14, 17);
         break;
     case Glyph::Search: p.drawEllipse(QPointF(10.5, 10.5), 6.0, 6.0); line(15, 15, 20, 20); break;
-    case Glyph::Backup: // télécharger (sauvegarde)
+    case Glyph::Backup: // download (backup)
         line(12, 3, 12, 15); poly({{7, 10}, {12, 15}, {17, 10}});
         poly({{4, 17}, {4, 21}, {20, 21}, {20, 17}});
         break;
-    case Glyph::Restore: // téléverser (restaurer)
+    case Glyph::Restore: // upload (restore)
         line(12, 21, 12, 9); poly({{7, 14}, {12, 9}, {17, 14}});
         poly({{4, 7}, {4, 3}, {20, 3}, {20, 7}});
         break;
-    case Glyph::StockIn: // entrée de stock
+    case Glyph::StockIn: // stock entry
         poly({{4, 20}, {20, 20}}); line(12, 4, 12, 15); poly({{7, 10}, {12, 15}, {17, 10}});
         break;
     case Glyph::StockOut: // sortie de stock
@@ -119,7 +119,7 @@ void draw(QPainter& p, Glyph g) {
 } // namespace
 
 QPixmap pixmap(Glyph g, const QColor& color, int px) {
-    const qreal dpr = 2.0;  // rendu 2× pour rester net sur écrans haute densité
+    const qreal dpr = 2.0;  // 2x rendering to stay sharp on high-density screens
     QPixmap pm(int(px * dpr), int(px * dpr));
     pm.setDevicePixelRatio(dpr);
     pm.fill(Qt::transparent);

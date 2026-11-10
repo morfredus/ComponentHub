@@ -1,9 +1,9 @@
 /**
- * Document - Pièce jointe "documentation" (datasheet, manuel, schéma,
- * pinout, lien utile...) rattachée à un composant ou à un projet.
+ * Document - "Documentation" attachment (datasheet, manual, schematic,
+ * pinout, useful link...) attached to a component or a project.
  *
- * `url` pointe soit vers un lien externe (http...), soit vers un fichier local
- * (chemin sur le disque) : aucun pipeline d'upload dédié n'est dupliqué ici.
+ * `url` points either to an external link (http...) or to a local file
+ * (path on disk): no dedicated upload pipeline is duplicated here.
  */
 
 #pragma once
@@ -39,17 +39,17 @@ struct Document {
     std::string url;
     std::string notes;
 
-    // --- Pièce jointe « fichier » (facultatif) ------------------------------
-    // Un document est soit un LIEN (url http... renseignée, blobHash vide), soit
-    // un FICHIER importé, dont le contenu vit dans le magasin de pièces jointes
-    // sous ce hash. `blobHash` non vide DISTINGUE les deux : un lien externe se
-    // synchronise déjà tel quel, un fichier a besoin que son binaire voyage
-    // (magasin de blobs morfSync). Rétrocompatible : les documents créés avant
-    // cette version n'ont pas de blobHash et restent des liens.
-    std::string  blobHash;      // SHA-256 du contenu ; vide => document = lien
-    std::string  fileName;      // nom d'origine (affichage + extension à l'ouverture)
-    std::int64_t sizeBytes = 0; // taille du contenu
-    std::string  mime;          // type, facultatif (déduit de l'extension au besoin)
+    // --- "File" attachment (optional) ------------------------------
+    // A document is either a LINK (http... url set, empty blobHash) or an
+    // imported FILE, whose content lives in the attachment store
+    // under this hash. A non-empty `blobHash` TELLS THEM APART: an external link is
+    // already synchronized as is, a file needs its binary to travel too
+    // (morfSync blob store). Backward compatible: documents created before
+    // this version have no blobHash and remain links.
+    std::string  blobHash;      // SHA-256 of the content; empty => the document is a link
+    std::string  fileName;      // original name (display + extension when opening)
+    std::int64_t sizeBytes = 0; // size of the content
+    std::string  mime;          // type, optional (deduced from the extension when needed)
 
     bool isFile() const { return !blobHash.empty(); }
 };

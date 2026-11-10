@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Copie a cote de l'executable toutes les DLL non-Qt de /mingw64/bin dont
-# depend l'application (runtime gcc, freetype, harfbuzz, zlib, pcre2...).
-# windeployqt ne s'occupe que des DLL Qt ; ce script complete pour rendre l'exe
-# lançable hors du shell MSYS2 (double-clic).
+# Copies next to the executable every non-Qt DLL of /mingw64/bin that
+# the application depends on (gcc runtime, freetype, harfbuzz, zlib, pcre2...).
+# windeployqt only handles the Qt DLLs; this script completes the job to make the exe
+# launchable outside the MSYS2 shell (double-click).
 #
-# Usage : deploy-mingw.sh <dossier_de_l_executable>
+# Usage: deploy-mingw.sh <executable_folder>
 set -e
-# CMake peut lancer ce script depuis PowerShell, hors du shell MSYS2 habituel.
-# Retrouver les outils Unix et la toolchain avant d'appeler ldd/grep/awk.
+# CMake may launch this script from PowerShell, outside the usual MSYS2 shell.
+# Find the Unix tools and the toolchain again before calling ldd/grep/awk.
 export PATH="/mingw64/bin:/usr/bin:$PATH"
 cd "$1" 2>/dev/null || exit 0
 for f in *.exe *.dll */*.dll; do

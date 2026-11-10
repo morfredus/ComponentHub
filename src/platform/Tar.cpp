@@ -29,14 +29,14 @@ std::uint64_t parseOctal(const char* p, size_t width) {
     return v;
 }
 
-// Somme de contrôle ustar : octets de l'en-tête, champ de somme compté comme des espaces.
+// ustar checksum: bytes of the header, with the checksum field counted as spaces.
 std::uint64_t headerChecksum(const char h[512]) {
     std::uint64_t sum = 0;
     for (int i = 0; i < 512; i++) sum += (i >= 148 && i < 156) ? (unsigned char)' ' : (unsigned char)h[i];
     return sum;
 }
 
-// En-tête ustar. `name` est déjà relatif (sans « / » initial), avec « / » final pour un dossier.
+// ustar header. `name` is already relative (no leading "/"), with a trailing "/" for a folder.
 void buildHeader(char h[512], const std::string& name, std::uint64_t size, char type) {
     std::memset(h, 0, 512);
     std::memcpy(h, name.data(), std::min<size_t>(name.size(), 100));
@@ -52,9 +52,9 @@ void buildHeader(char h[512], const std::string& name, std::uint64_t size, char 
     h[155] = ' ';
 }
 
-// Nom d'une composante utilisable comme fichier Windows ET Linux : refuse « : » (flux de données
-// alternatif NTFS, lettre de lecteur), les caractères interdits, les noms réservés (CON, NUL,
-// COM1...) avec ou sans extension, et les noms finissant par un point ou un espace.
+// Name of a component usable as a Windows AND Linux file: rejects ":" (NTFS alternate data
+// stream, drive letter), forbidden characters, reserved names (CON, NUL,
+// COM1...) with or without an extension, and names ending with a dot or a space.
 bool portableName(const std::string& name) {
     if (name.empty() || name.back() == '.' || name.back() == ' ') return false;
     for (unsigned char ch : name)
@@ -69,8 +69,8 @@ bool portableName(const std::string& name) {
     return true;
 }
 
-// Chemin d'archive sûr : relatif, séparé par « / », sans composante vide, « . » ni « .. »,
-// chaque composante portable, profondeur bornée. Un « / » final (dossier) est toléré.
+// Safe archive path: relative, separated by "/", no empty component, "." or "..",
+// every component portable, bounded depth. A trailing "/" (folder) is tolerated.
 bool safeArchivePath(std::string name, int* depth = nullptr) {
     if (!name.empty() && name.back() == '/') name.pop_back();
     if (name.empty() || name.find('\\') != std::string::npos) return false;
@@ -89,7 +89,7 @@ bool safeArchivePath(std::string name, int* depth = nullptr) {
 }
 
 bool excluded(const std::string& name, const std::vector<std::string>& suffixes) {
-    // « .tmp. » : fichier temporaire d'une écriture atomique en cours (magasin de pièces jointes).
+    // ".tmp.": temporary file of an atomic write in progress (attachment store).
     if (name.find(".tmp.") != std::string::npos) return true;
     for (const auto& s : suffixes)
         if (name.size() >= s.size() && name.compare(name.size() - s.size(), s.size(), s) == 0) return true;
@@ -97,8 +97,8 @@ bool excluded(const std::string& name, const std::vector<std::string>& suffixes)
 }
 
 struct PackEntry {
-    fs::path source;      // chemin disque (vide pour un dossier synthétique)
-    std::string name;     // nom dans l'archive
+    fs::path source;      // disk path (empty for a synthetic folder)
+    std::string name;     // name in the archive
     bool isDir = false;
     std::uint64_t size = 0;
 };
@@ -108,19 +108,19 @@ struct PackEntry {
 bool pack(const std::string& tarPath, const std::string& dir,
           const std::vector<std::string>& excludeSuffixes, std::string* error,
           const std::vector<TreeSource>& extraTrees, std::uint64_t maxTotalBytes) {
-    // Un échec en cours de route ne doit pas laisser une archive tronquée qui aurait l'air
-    // valide : le fichier partiel est supprimé.
+    // A failure midway must not leave a truncated archive that would look
+    // valid: the partial file is deleted.
     std::ofstream out;
     auto fail = [&](const std::string& why) {
         if (error) *error = why;
-        out.close();   // Windows refuse de supprimer un fichier encore ouvert
+        out.close();   // Windows refuses to delete a file that is still open
         std::error_code rmEc;
         fs::remove(fsPath(tarPath), rmEc);
         return false;
     };
 
-    // 1) Inventaire et validation AVANT d'écrire quoi que ce soit : un nom ou une taille
-    //    inacceptable est signalé tout de suite, sans archive à moitié écrite.
+    // 1) Inventory and validation BEFORE writing anything: an unacceptable name or size
+    //    is reported right away, with no half-written archive.
     std::vector<PackEntry> entries;
     std::uint64_t total = 0;
     const std::string selfName = fs::u8path(tarPath).filename().u8string();
@@ -138,18 +138,18 @@ bool pack(const std::string& tarPath, const std::string& dir,
             const auto& e = *it;
             const fs::file_status st = e.symlink_status(ec);
             if (ec) return "tar.read_failed|" + e.path().u8string();
-            if (fs::is_symlink(st)) { it.disable_recursion_pending(); continue; }   // jamais de lien
+            if (fs::is_symlink(st)) { it.disable_recursion_pending(); continue; }   // never a link
             const bool isDir = fs::is_directory(st);
             if (!isDir && !fs::is_regular_file(st)) continue;
             const std::string fname = e.path().filename().u8string();
             if (!isDir && excluded(fname, excludeSuffixes)) continue;
-            if (isMain && !isDir && it.depth() == 0 && fname == selfName) continue;  // jamais s'inclure soi-même
+            if (isMain && !isDir && it.depth() == 0 && fname == selfName) continue;  // never include itself
 
             const std::string rel = e.path().lexically_relative(rootPath).generic_u8string();
             const std::string name = (prefix.empty() ? rel : prefix + "/" + rel) + (isDir ? "/" : "");
             int depth = 0;
             if (!safeArchivePath(name, &depth)) {
-                // Distingue les causes pour un message utile.
+                // Tells the causes apart to give a useful message.
                 return std::string(depth > kMaxDepth ? "tar.too_deep|" : "tar.invalid_name|") + name;
             }
             if (name.size() > 99) return "tar.name_too_long|" + name;
@@ -170,15 +170,15 @@ bool pack(const std::string& tarPath, const std::string& dir,
     for (const auto& t : extraTrees) {
         if (!err.empty()) break;
         std::error_code ec;
-        if (!fs::is_directory(fsPath(t.dir), ec)) continue;   // arbre absent : rien à archiver
+        if (!fs::is_directory(fsPath(t.dir), ec)) continue;   // tree missing: nothing to archive
         err = walk(t.archiveName, t.dir, false);
     }
     if (!err.empty()) { if (error) *error = err; return false; }
-    // Ordre stable : un dossier précède toujours son contenu et l'archive est reproductible.
+    // Stable order: a folder always precedes its content and the archive is reproducible.
     std::sort(entries.begin(), entries.end(),
               [](const PackEntry& a, const PackEntry& b) { return a.name < b.name; });
 
-    // 2) Écriture.
+    // 2) Writing.
     out.open(fsPath(tarPath), std::ios::binary | std::ios::trunc);
     if (!out) return fail("tar.write_failed|" + tarPath);
     char buf[4096];
@@ -198,8 +198,8 @@ bool pack(const std::string& tarPath, const std::string& dir,
                 out.write(buf, got);
                 remaining -= (std::uint64_t)got;
             }
-            // Fichier plus court que prévu (modifié pendant la lecture) : l'en-tête annonce une
-            // taille que les données ne tiennent pas, l'archive serait corrompue.
+            // File shorter than expected (modified while being read): the header announces a
+            // size that the data does not match, the archive would be corrupted.
             if (remaining != 0) return fail("tar.read_failed|" + pe.name);
             const size_t pad = (512 - (size_t)(pe.size % 512)) % 512;
             if (pad) { std::memset(buf, 0, pad); out.write(buf, (std::streamsize)pad); }
@@ -233,13 +233,13 @@ int extract(const std::string& tarPath, const std::string& dir, std::vector<std:
     for (;;) {
         in.read(header, 512);
         const std::streamsize got = in.gcount();
-        if (got == 0) break;                                         // fin de fichier sans marque de fin
-        if (got != 512) { errors.push_back("tar.corrupt"); return restored; }  // en-tête tronqué
+        if (got == 0) break;                                         // end of file without an end marker
+        if (got != 512) { errors.push_back("tar.corrupt"); return restored; }  // truncated header
         bool allZero = true;
         for (int i = 0; i < 512; i++) if (header[i]) { allZero = false; break; }
         if (allZero) { sawEnd = true; break; }
 
-        // Somme de contrôle : écarte un fichier qui n'est pas (ou plus) un tar valide.
+        // Checksum: rejects a file that is not (or no longer) a valid tar.
         const std::uint64_t stored = parseOctal(header + 148, 8);
         std::uint64_t signedSum = 0;
         for (int i = 0; i < 512; i++)
@@ -255,8 +255,8 @@ int extract(const std::string& tarPath, const std::string& dir, std::vector<std:
         const bool isDir = (type == '5');
         const bool isFile = (type == '0' || type == '\0');
         const std::uint64_t pad = (512 - (size % 512)) % 512;
-        // Un nom de 100 octets occupe tout le champ : un préfixe ustar non vide (chemin long)
-        // n'est pas géré, donc refusé plutôt que restauré sous un autre nom.
+        // A 100-byte name fills the whole field: a non-empty ustar prefix (long path)
+        // is not handled, hence refused rather than restored under another name.
         const bool hasPrefix = header[345] != '\0';
 
         const bool safe = (isFile || isDir) && !hasPrefix && safeArchivePath(name);
@@ -285,7 +285,7 @@ int extract(const std::string& tarPath, const std::string& dir, std::vector<std:
             const std::streamsize chunk = (std::streamsize)std::min<std::uint64_t>(remaining, sizeof(buf));
             in.read(buf, chunk);
             const std::streamsize n = in.gcount();
-            // Taille réellement lue : une archive tronquée ne doit pas passer pour complète.
+            // Size actually read: a truncated archive must not pass for a complete one.
             if (n != chunk) { ok = false; truncated = true; break; }
             if (out) out.write(buf, n);
             remaining -= (std::uint64_t)n;
@@ -295,14 +295,14 @@ int extract(const std::string& tarPath, const std::string& dir, std::vector<std:
         if (pad && in && !truncated) in.seekg((std::streamoff)pad, std::ios::cur);
         if (ok) restored++;
         else {
-            // Fichier partiel supprimé, et lecture arrêtée si le flux est déjà fini.
+            // Partial file deleted, and reading stopped if the stream is already finished.
             std::error_code rmEc;
             fs::remove(target, rmEc);
             errors.push_back("tar.write_failed|" + name);
             if (truncated || !in) return restored;
         }
     }
-    // Sans les deux blocs nuls de fin, l'archive a été coupée entre deux entrées.
+    // Without the two final null blocks, the archive was cut between two entries.
     if (!sawEnd) errors.push_back("tar.corrupt");
     return restored;
 }

@@ -1,9 +1,9 @@
 /**
- * DocumentService - Façade métier au-dessus d'IDocumentRepository.
+ * DocumentService - Business facade on top of IDocumentRepository.
  *
- * Volontairement fine (aucune règle métier au-delà du CRUD) : conservée pour
- * rester cohérent avec le reste du domaine (le module n'appelle jamais un
- * dépôt directement) et pour absorber une future règle sans casser l'API.
+ * Deliberately thin (no business rule beyond CRUD): kept to
+ * stay consistent with the rest of the domain (the module never calls a
+ * repository directly) and to absorb a future rule without breaking the API.
  */
 
 #pragma once

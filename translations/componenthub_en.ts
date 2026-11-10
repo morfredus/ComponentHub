@@ -1524,58 +1524,231 @@ Workshop technical memory. © morfredus.</translation>
     <message><source>This label format no longer exists.</source><translation>This label format no longer exists.</translation></message>
     <message><source>Unable to start printing.</source><translation>Unable to start printing.</translation></message>
     <message><source>Unable to write the PDF file.</source><translation>Unable to write the PDF file.</translation></message>
-    <message><source>
+    <message>
+        <source>Glisser-déposer : déposer un emplacement sur un autre pour en faire un enfant, ou dans le vide pour en faire une racine.</source>
+        <translation>Drag and drop: drop a location onto another to make it a child, or onto empty space to make it a root.</translation>
+    </message>
+    <message>
+        <source>
 
-REDÉMARREZ l&apos;application pour terminer la restauration : les données ne seront remplacées qu&apos;à ce moment-là.</source><translation>
+REDÉMARREZ l'application pour terminer la restauration : les données ne seront remplacées qu'à ce moment-là.</source>
+        <translation>
 
-RESTART the application to finish the restoration: the data will only be replaced at that point.</translation></message>
-    <message><source> %1 enregistrement(s) distant(s) illisible(s) ignoré(s).</source><translation> %1 unreadable remote record(s) ignored.</translation></message>
-    <message><source>Annuler la synchronisation</source><translation>Cancel synchronization</translation></message>
-    <message><source>ComponentHub - restauration</source><translation>ComponentHub - restore</translation></message>
-    <message><source>Inclure le jeton de synchronisation dans le fichier ?
-(Il sera lisible en clair.)</source><translation>Include the synchronization token in the file?
-(It will be readable in clear text.)</translation></message>
-    <message><source>La restauration en attente n&apos;a pas pu être appliquée ; les données actuelles sont conservées.
+RESTART the application to finish the restoration: the data will only be replaced at that point.</translation>
+    </message>
+    <message>
+        <source> %1 enregistrement(s) distant(s) illisible(s) ignoré(s).</source>
+        <translation> %1 unreadable remote record(s) ignored.</translation>
+    </message>
+    <message>
+        <source>Annuler la synchronisation</source>
+        <translation>Cancel synchronization</translation>
+    </message>
+    <message>
+        <source>ComponentHub - restauration</source>
+        <translation>ComponentHub - restore</translation>
+    </message>
+    <message>
+        <source>Inclure le jeton de synchronisation dans le fichier ?
+(Il sera lisible en clair.)</source>
+        <translation>Include the synchronization token in the file?
+(It will be readable in clear text.)</translation>
+    </message>
+    <message>
+        <source>La restauration en attente n'a pas pu être appliquée ; les données actuelles sont conservées.
 
-</source><translation>The pending restore could not be applied; the current data is kept.
+</source>
+        <translation>The pending restore could not be applied; the current data is kept.
 
-</translation></message>
-    <message><source>Restauration prête</source><translation>Restore ready</translation></message>
-    <message><source>Sauvegarde complète créée (données, pièces jointes et configuration, sans le jeton de synchro) :
-</source><translation>Full backup created (data, attachments and configuration, without the sync token):
-</translation></message>
-    <message><source>Sauvegarde invalide, rien n&apos;a été modifié :
-</source><translation>Invalid backup, nothing was changed:
-</translation></message>
-    <message><source>Sauvegarde vérifiée et mise en attente.</source><translation>Backup verified and queued.</translation></message>
-    <message><source>Synchronisation : envoi de %1 modification(s)…</source><translation>Synchronization: sending %1 change(s)...</translation></message>
-    <message><source>Synchronisation : pièces jointes %1/%2…</source><translation>Synchronization: attachments %1/%2...</translation></message>
-    <message><source>Synchronisation : réception des modifications…</source><translation>Synchronization: receiving changes...</translation></message>
-    <message><source>Synchronisation annulée.</source><translation>Synchronization cancelled.</translation></message>
-    <message><source>Synchronisation avant la fermeture… (fermer à nouveau pour annuler)</source><translation>Synchronizing before closing... (close again to cancel)</translation></message>
-    <message><source>Test de la connexion…</source><translation>Testing the connection...</translation></message>
-    <message><source>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront REMPLACÉES par la sauvegarde au prochain démarrage.
+</translation>
+    </message>
+    <message>
+        <source>Restauration prête</source>
+        <translation>Restore ready</translation>
+    </message>
+    <message>
+        <source>Sauvegarde complète créée (données, pièces jointes et configuration, sans le jeton de synchro) :
+</source>
+        <translation>Full backup created (data, attachments and configuration, without the sync token):
+</translation>
+    </message>
+    <message>
+        <source>Sauvegarde invalide, rien n'a été modifié :
+</source>
+        <translation>Invalid backup, nothing was changed:
+</translation>
+    </message>
+    <message>
+        <source>Sauvegarde vérifiée et mise en attente.</source>
+        <translation>Backup verified and queued.</translation>
+    </message>
+    <message>
+        <source>Synchronisation : envoi de %1 modification(s)…</source>
+        <translation>Synchronization: sending %1 change(s)...</translation>
+    </message>
+    <message>
+        <source>Synchronisation : pièces jointes %1/%2…</source>
+        <translation>Synchronization: attachments %1/%2...</translation>
+    </message>
+    <message>
+        <source>Synchronisation : réception des modifications…</source>
+        <translation>Synchronization: receiving changes...</translation>
+    </message>
+    <message>
+        <source>Synchronisation annulée.</source>
+        <translation>Synchronization cancelled.</translation>
+    </message>
+    <message>
+        <source>Synchronisation avant la fermeture… (fermer à nouveau pour annuler)</source>
+        <translation>Synchronizing before closing... (close again to cancel)</translation>
+    </message>
+    <message>
+        <source>Test de la connexion…</source>
+        <translation>Testing the connection...</translation>
+    </message>
+    <message>
+        <source>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront REMPLACÉES par la sauvegarde au prochain démarrage.
 
-L&apos;ancienne base (componenthub.sqlite.bak) et les anciennes pièces jointes (dossier attachments.bak) seront conservées à côté. Continuer ?</source><translation>All current data (components, categories, locations, stock movements, documents, projects) will be REPLACED by the backup at the next start.
+L'ancienne base (componenthub.sqlite.bak) et les anciennes pièces jointes (dossier attachments.bak) seront conservées à côté. Continuer ?</source>
+        <translation>All current data (components, categories, locations, stock movements, documents, projects) will be REPLACED by the backup at the next start.
 
-The previous database (componenthub.sqlite.bak) and the previous attachments (attachments.bak folder) will be kept alongside. Continue?</translation></message>
-    <message><source>Une synchronisation est déjà en cours.</source><translation>A synchronization is already running.</translation></message>
-    <message><source>✅ Connecté - </source><translation>✅ Connected - </translation></message>
-    <message><source>✅ Synchronisé - %1 envoyé(s), %2 reçu(s), %3 conflit(s).</source><translation>✅ Synchronized - %1 sent, %2 received, %3 conflict(s).</translation></message>
-    <message><source>❌ Échec - </source><translation>❌ Failed - </translation></message>
-    <message><source>Backup preparation failed: </source><translation>Backup preparation failed: </translation></message>
-    <message><source>Cancelled.</source><translation>Cancelled.</translation></message>
-    <message><source>Could not read file: </source><translation>Could not read file: </translation></message>
-    <message><source>Could not replace the data: </source><translation>Could not replace the data: </translation></message>
-    <message><source>Data too large for a single archive: </source><translation>Data too large for a single archive: </translation></message>
-    <message><source>File name not allowed in the archive: </source><translation>File name not allowed in the archive: </translation></message>
-    <message><source>File name too long for the archive: </source><translation>File name too long for the archive: </translation></message>
-    <message><source>Folder tree too deep for the archive: </source><translation>Folder tree too deep for the archive: </translation></message>
-    <message><source>Local database error: </source><translation>Local database error: </translation></message>
-    <message><source>Skipped damaged attachment (it will be downloaded again from the hub): </source><translation>Skipped damaged attachment (it will be downloaded again from the hub): </translation></message>
-    <message><source>Synchronization cancelled.</source><translation>Synchronization cancelled.</translation></message>
-    <message><source>The archive does not contain a valid ComponentHub database.</source><translation>The archive does not contain a valid ComponentHub database.</translation></message>
-    <message><source>The archive is damaged or incomplete.</source><translation>The archive is damaged or incomplete.</translation></message>
-    <message><source>The hub took too long to answer.</source><translation>The hub took too long to answer.</translation></message>
+The previous database (componenthub.sqlite.bak) and the previous attachments (attachments.bak folder) will be kept alongside. Continue?</translation>
+    </message>
+    <message>
+        <source>Une synchronisation est déjà en cours.</source>
+        <translation>A synchronization is already running.</translation>
+    </message>
+    <message>
+        <source>✅ Connecté - </source>
+        <translation>✅ Connected - </translation>
+    </message>
+    <message>
+        <source>✅ Synchronisé - %1 envoyé(s), %2 reçu(s), %3 conflit(s).</source>
+        <translation>✅ Synchronized - %1 sent, %2 received, %3 conflict(s).</translation>
+    </message>
+    <message>
+        <source>❌ Échec - </source>
+        <translation>❌ Failed - </translation>
+    </message>
+    <message>
+        <source>Backup preparation failed: </source>
+        <translation>Backup preparation failed: </translation>
+    </message>
+    <message>
+        <source>Cancelled.</source>
+        <translation>Cancelled.</translation>
+    </message>
+    <message>
+        <source>Could not read file: </source>
+        <translation>Could not read file: </translation>
+    </message>
+    <message>
+        <source>Could not replace the data: </source>
+        <translation>Could not replace the data: </translation>
+    </message>
+    <message>
+        <source>Data too large for a single archive: </source>
+        <translation>Data too large for a single archive: </translation>
+    </message>
+    <message>
+        <source>File name not allowed in the archive: </source>
+        <translation>File name not allowed in the archive: </translation>
+    </message>
+    <message>
+        <source>File name too long for the archive: </source>
+        <translation>File name too long for the archive: </translation>
+    </message>
+    <message>
+        <source>Folder tree too deep for the archive: </source>
+        <translation>Folder tree too deep for the archive: </translation>
+    </message>
+    <message>
+        <source>Local database error: </source>
+        <translation>Local database error: </translation>
+    </message>
+    <message>
+        <source>Skipped damaged attachment (it will be downloaded again from the hub): </source>
+        <translation>Skipped damaged attachment (it will be downloaded again from the hub): </translation>
+    </message>
+    <message>
+        <source>Synchronization cancelled.</source>
+        <translation>Synchronization cancelled.</translation>
+    </message>
+    <message>
+        <source>The archive does not contain a valid ComponentHub database.</source>
+        <translation>The archive does not contain a valid ComponentHub database.</translation>
+    </message>
+    <message>
+        <source>The archive is damaged or incomplete.</source>
+        <translation>The archive is damaged or incomplete.</translation>
+    </message>
+    <message>
+        <source>The hub took too long to answer.</source>
+        <translation>The hub took too long to answer.</translation>
+    </message>
+    <message>
+        <source>Nouvelle fiche (Ctrl+N)</source>
+        <translation>New record (Ctrl+N)</translation>
+    </message>
+    <message>
+        <source>Tous les statuts</source>
+        <translation>All statuses</translation>
+    </message>
+    <message>
+        <source>Tous les emplacements</source>
+        <translation>All locations</translation>
+    </message>
+    <message>
+        <source>Toutes les catégories</source>
+        <translation>All categories</translation>
+    </message>
+    <message>
+        <source>Définir la quantité</source>
+        <translation>Set quantity</translation>
+    </message>
+    <message>
+        <source>Quantité :</source>
+        <translation>Quantity:</translation>
+    </message>
+    <message>
+        <source> (copie)</source>
+        <translation> (copy)</translation>
+    </message>
+    <message>
+        <source>Changer d'emplacement</source>
+        <translation>Change location</translation>
+    </message>
+    <message>
+        <source>Nouvel emplacement :</source>
+        <translation>New location:</translation>
+    </message>
+    <message>
+        <source>Dupliquer</source>
+        <translation>Duplicate</translation>
+    </message>
+    <message>
+        <source>Ajouter 1 (+)</source>
+        <translation>Add 1 (+)</translation>
+    </message>
+    <message>
+        <source>Retirer 1 (−)</source>
+        <translation>Remove 1 (−)</translation>
+    </message>
+    <message>
+        <source>Définir la quantité…</source>
+        <translation>Set quantity...</translation>
+    </message>
+    <message>
+        <source>Changer d'emplacement…</source>
+        <translation>Change location...</translation>
+    </message>
+    <message>
+        <source>Ouvrir la datasheet</source>
+        <translation>Open datasheet</translation>
+    </message>
+    <message>
+        <source>Rechercher un composant (nom, référence, type, catégorie, emplacement)</source>
+        <translation>Search for a component (name, reference, type, category, location)</translation>
+    </message>
 </context>
 </TS>

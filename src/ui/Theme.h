@@ -1,8 +1,8 @@
-// Theme - apparence centralisée (repris de la mécanique éprouvée de SiteWatch).
+// Theme - centralized appearance (taken from the proven mechanism of SiteWatch).
 //
-// Charge app.qss, y injecte les couleurs du thème choisi (light/dark.theme) et
-// l'applique. En mode « Système », suit le thème clair/sombre de l'OS (Windows
-// et Linux, Qt 6.5+) et réagit à ses changements à chaud.
+// Loads app.qss, injects the colors of the chosen theme (light/dark.theme) into it and
+// applies it. In "System" mode, follows the OS light/dark theme (Windows
+// and Linux, Qt 6.5+) and reacts to its changes at runtime.
 #pragma once
 #include <QObject>
 #include <QString>
@@ -15,11 +15,11 @@ public:
 
     static Theme& instance();
 
-    void apply(Mode mode);           // applique + mémorise (QSettings)
+    void apply(Mode mode);           // applies + stores (QSettings)
     Mode mode() const { return mode_; }
-    static Mode savedMode();         // défaut : Système
+    static Mode savedMode();         // default: System
     bool isDark() const { return dark_; }
-    QString color(const QString& token) const;  // couleur du thème actif
+    QString color(const QString& token) const;  // color of the active theme
 
 signals:
     void changed();

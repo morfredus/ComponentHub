@@ -1,13 +1,13 @@
 /**
- * RefItem - une valeur d'un référentiel administrable.
+ * RefItem - one value of an administrable reference list.
  *
- * Un référentiel est une liste de valeurs normalisées proposée à la saisie
- * (types de composants, fabricants, boîtiers, fournisseurs...). Toutes les
- * listes partagent le même mécanisme : `list` identifie le référentiel
- * (« component_types », « manufacturers »...), `value` est la valeur affichée,
- * `position` son ordre dans la liste.
+ * A reference list is a list of standardized values offered during data entry
+ * (component types, manufacturers, packages, suppliers...). All
+ * lists share the same mechanism: `list` identifies the reference list
+ * ("component_types", "manufacturers"...), `value` is the displayed value,
+ * `position` its order in the list.
  *
- * Type de valeur pur, sans dépendance plateforme.
+ * Pure value type, no platform dependency.
  */
 #pragma once
 #include <string>
@@ -19,8 +19,8 @@ namespace domain {
 struct RefItem {
     Id id = kNoId;
     SyncMeta meta;         // enveloppe de synchronisation
-    std::string list;      // clé du référentiel
-    std::string value;     // valeur normalisée
+    std::string list;      // key of the reference list
+    std::string value;     // normalized value
     int position = 0;      // ordre d'affichage
 };
 

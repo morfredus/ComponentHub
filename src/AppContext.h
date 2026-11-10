@@ -1,6 +1,6 @@
 // ComponentHub Desktop - AppContext SQLite.
-// Le stockage est uniquement SQLite : componenthub.sqlite dans le dossier de données.
-// Le schéma est créé automatiquement au premier lancement.
+// Storage is SQLite only: componenthub.sqlite in the data folder.
+// The schema is created automatically on first launch.
 #pragma once
 
 #include <string>
@@ -19,9 +19,9 @@ namespace chdesktop {
 
 class AppContext {
 private:
-    // Ces deux membres doivent être déclarés avant les dépôts : C++ construit
-    // les membres dans leur ordre de déclaration, pas dans celui de la liste
-    // d'initialisation du constructeur.
+    // These two members must be declared before the repositories: C++ constructs
+    // members in declaration order, not in the order of the constructor
+    // initializer list.
     std::string _dir;
     std::unique_ptr<SQLiteDatabase> _db;
 
@@ -68,8 +68,8 @@ public:
     domain::ImportExportService importExport;
 
 private:
-    // Ouvre (ou crée) la base et initialise le schéma. Lance une exception si
-    // la base ne peut pas être ouverte.
+    // Opens (or creates) the database and initializes the schema. Throws if
+    // the database cannot be opened.
     static std::unique_ptr<SQLiteDatabase> _openDb(const std::string& dir) {
         auto db = std::make_unique<SQLiteDatabase>(dir + "/componenthub.sqlite");
         if (!db->isOpen()) {

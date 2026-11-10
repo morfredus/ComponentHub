@@ -1,15 +1,15 @@
 /**
- * SyncRunner - exécute la synchronisation (et le test de connexion) dans un thread de travail
- * dédié, hors du thread de l'interface.
+ * SyncRunner - runs the synchronization (and the connection test) in a dedicated
+ * worker thread, outside the interface thread.
  *
- * Règles de conception :
- *  - le thread de travail ouvre SA connexion SQLite et ses propres dépôts (SyncSession) : aucun
- *    objet partagé avec l'interface ;
- *  - rien de l'interface n'est touché depuis ce thread : il ne fait qu'émettre des signaux,
- *    reçus dans le thread GUI par des connexions en file ;
- *  - une seule tâche à la fois (start() refuse si busy()) ;
- *  - annulation coopérative (indicateur atomique) ; à la fermeture, shutdown() annule puis
- *    attend un temps borné, et ne détruit JAMAIS un QThread encore en cours d'exécution.
+ * Design rules:
+ *  - the worker thread opens ITS OWN SQLite connection and its own repositories (SyncSession): no
+ *    object is shared with the interface;
+ *  - nothing of the interface is touched from this thread: it only emits signals,
+ *    received in the GUI thread through queued connections;
+ *  - one task at a time (start() refuses if busy());
+ *  - cooperative cancellation (atomic flag); on close, shutdown() cancels then
+ *    waits for a bounded time, and NEVER destroys a QThread that is still running.
  */
 #pragma once
 #include <QObject>
@@ -25,19 +25,19 @@ class QThread;
 
 namespace chui {
 
-// Origine de la tâche : pilote les messages affichés par l'interface.
+// Origin of the task: drives the messages shown by the interface.
 enum class SyncReason { Startup, Manual, Quit, Test };
 
 struct SyncJobResult {
     SyncReason reason = SyncReason::Manual;
     bool ok = false;
     bool cancelled = false;
-    bool hubUnavailable = false;   // sonde de démarrage restée sans réponse (pas une erreur)
-    std::string info;              // test de connexion : résumé du hub ou code d'erreur
-    chsync::SyncOutcome outcome;   // synchro : compteurs et code d'erreur
+    bool hubUnavailable = false;   // startup probe left unanswered (not an error)
+    std::string info;              // connection test: hub summary or error code
+    chsync::SyncOutcome outcome;   // synchronization: counters and error code
 };
 
-// Objet qui VIT dans le thread de travail. Son unique slot, run(), exécute la tâche.
+// Object that LIVES in the worker thread. Its only slot, run(), executes the task.
 class SyncWorker : public QObject {
     Q_OBJECT
 public:
@@ -56,7 +56,7 @@ private:
     std::shared_ptr<std::atomic<bool>> cancel_;
 };
 
-// Côté interface : gère le cycle de vie du thread et réémet les signaux du worker.
+// UI side: manages the thread lifecycle and re-emits the worker's signals.
 class SyncRunner : public QObject {
     Q_OBJECT
 public:
@@ -64,19 +64,19 @@ public:
     ~SyncRunner() override;
 
     bool busy() const { return thread_ != nullptr; }
-    // Lance une tâche. Faux (et rien ne démarre) si une autre est déjà en cours.
+    // Starts a task. False (and nothing starts) if another one is already running.
     bool start(SyncReason reason, const chsync::SyncConfig& cfg);
-    // Demande l'arrêt de la tâche en cours (sans attendre).
+    // Requests the current task to stop (without waiting).
     void cancel();
-    // Annule puis attend au plus `waitMs`. Vrai si plus rien ne tourne. Sur échec le thread est
-    // laissé finir seul (jamais détruit en cours d'exécution).
+    // Cancels then waits at most `waitMs`. True if nothing runs anymore. On failure the thread is
+    // left to finish on its own (never destroyed while running).
     bool shutdown(int waitMs);
 
 signals:
     void busyChanged(bool busy);
     void progress(int phase, int done, int total);
     void recordRejected(const QString& id, const QString& reason);
-    // Émis dans le thread GUI, APRÈS busyChanged(false) : le récepteur peut relancer une tâche.
+    // Emitted in the GUI thread, AFTER busyChanged(false): the receiver may start a new task.
     void finished(const chui::SyncJobResult& result);
 
 private slots:

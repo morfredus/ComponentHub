@@ -21,7 +21,7 @@ public:
     virtual std::vector<ProjectComponent> findByProject(Id projectId) const = 0;
     virtual ProjectComponent save(ProjectComponent link) = 0;
     virtual bool remove(Id id) = 0;
-    virtual bool removeByProject(Id projectId) = 0;  // nettoyage en cascade à la suppression d'un projet
+    virtual bool removeByProject(Id projectId) = 0;  // cascade cleanup when a project is deleted
 };
 
 } // namespace domain

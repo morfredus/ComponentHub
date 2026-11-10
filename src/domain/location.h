@@ -1,6 +1,6 @@
 /**
- * Location - Emplacement physique, arbitrairement hiérarchisable via
- * parentId (ex: Atelier > Armoire A > Tiroir A12 > Boîte ESD > Sachet 3).
+ * Location - Physical location, arbitrarily hierarchical via
+ * parentId (e.g. Workshop > Cabinet A > Drawer A12 > ESD box > Bag 3).
  */
 
 #pragma once

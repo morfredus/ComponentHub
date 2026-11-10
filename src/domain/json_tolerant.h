@@ -1,10 +1,10 @@
 /**
- * json_tolerant.h - lecture JSON qui ne lève jamais sur un champ mal typé.
+ * json_tolerant.h - JSON reading that never throws on a badly typed field.
  *
- * Pourquoi : json::value("notes", "") lève type_error si le hub envoie "notes": null
- * (ou un nombre à la place d'un texte). Dans le PULL, une seule exception de ce genre
- * bloquait la synchronisation pour toujours. Ici, champ absent, null ou de mauvais type
- * -> valeur par défaut.
+ * Why: json::value("notes", "") throws type_error if the hub sends "notes": null
+ * (or a number instead of a text). In PULL, a single exception of this kind
+ * blocked synchronization forever. Here, an absent, null or wrongly typed field
+ * -> default value.
  */
 #pragma once
 #include <string>
@@ -21,7 +21,7 @@ T jget(const nlohmann::json& j, const char* key, T def) {
     catch (const nlohmann::json::exception&) { return def; }
 }
 
-// Surcharge pour les littéraux : jget(j, "k", "") renvoie un std::string.
+// Overload for literals: jget(j, "k", "") returns a std::string.
 inline std::string jget(const nlohmann::json& j, const char* key, const char* def) {
     return jget<std::string>(j, key, std::string(def));
 }

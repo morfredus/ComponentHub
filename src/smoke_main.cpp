@@ -1,6 +1,6 @@
-// Test de fumée (headless) : vérifie que le domaine compile et tourne sur PC,
-// et que le stockage SQLite conserve correctement les données (accents + €).
-// Non inclus dans l'application finale.
+// Smoke test (headless): checks that the domain compiles and runs on a PC,
+// and that SQLite storage keeps the data correctly (accents + €).
+// Not part of the final application.
 #include <cstdio>
 #include <filesystem>
 
@@ -24,11 +24,11 @@ int main() {
     c.category = "Passifs";
     c.price = 0.05;
     c.quantity = 3;
-    c.minStock = 5;  // sous le seuil -> doit apparaître en stock faible
+    c.minStock = 5;  // below the threshold -> must show up in low stock
     c = ctx.inventory.saveComponent(c);
     std::printf("saved id=%s name=%s\n", c.id.c_str(), c.name.c_str());
 
-    // Mouvement de stock daté.
+    // Dated stock movement.
     StockMovement mv;
     mv.componentId = c.id;
     mv.type = StockMovementType::In;
@@ -36,8 +36,8 @@ int main() {
     mv.timestamp = chdesktop::nowIso();
     ctx.inventory.recordMovement(mv);
 
-    // Les autres tables doivent elles aussi traverser une fermeture/réouverture
-    // de base : c'est le minimum pour détecter une colonne ou un dépôt oublié.
+    // The other tables must also survive closing and reopening
+    // the database: this is the minimum to detect a forgotten column or repository.
     Location location;
     location.name = "Étagère A";
     location = ctx.inventory.saveLocation(location);
@@ -63,12 +63,12 @@ int main() {
     reference.value = "morfredus";
     ctx.referentials.save(reference);
 
-    // Chaque écriture locale doit être visible pour le PUSH incrémental.
+    // Every local write must be visible to the incremental PUSH.
     bool allPendingForSync = true;
     for (auto* repository : ctx.syncables())
         allPendingForSync = allPendingForSync && !repository->exportForSync(0).empty();
 
-    // Relecture depuis le disque via une nouvelle instance.
+    // Reading back from disk through a new instance.
     chdesktop::AppContext reloaded(dir.string());
     auto all = reloaded.inventory.listComponents();
     std::printf("reloaded %zu component(s)\n", all.size());
@@ -76,8 +76,8 @@ int main() {
         std::printf("  #%s %-20s qty=%d cat=%s notes=\"%s\"\n",
                     x.id.c_str(), x.name.c_str(), x.quantity, x.category.c_str(), x.notes.c_str());
 
-    // La catégorie doit avoir été créée automatiquement par saveComponent et
-    // toutes les tables doivent être relues depuis SQLite.
+    // The category must have been created automatically by saveComponent and
+    // all tables must be read back from SQLite.
     const bool complete = all.size() == 1 &&
         reloaded.inventory.listCategories().size() == 1 &&
         reloaded.inventory.listLocations().size() == 1 &&

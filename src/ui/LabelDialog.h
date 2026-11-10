@@ -11,6 +11,6 @@ public:
     explicit LabelDialog(const std::vector<domain::Component>& components, QWidget* parent = nullptr);
 
 private:
-    // Copie possedee par le dialogue : l'apercu et les boutons en gardent des pointeurs.
+    // Copy owned by the dialog: the preview and the buttons keep pointers to it.
     std::vector<domain::Component> components_;
 };

@@ -1,20 +1,20 @@
 /**
- * SyncService - client de synchronisation de ComponentHub vers morfSync.
+ * SyncService - synchronization client from ComponentHub to morfSync.
  *
- * Générique : opère sur une liste de dépôts synchronisables
- * (domain::ISyncableRepository), donc sur TOUTES les tables (composants,
- * emplacements, catégories, projets, nomenclatures, référentiels, documents)
- * sans connaître leur métier. PUSH de l'état local, puis PULL depuis un curseur
- * (lastSeq) avec dispatch par type. Respecte docs/sync-contract.md.
+ * Generic: operates on a list of synchronizable repositories
+ * (domain::ISyncableRepository), hence on ALL tables (components,
+ * locations, categories, projects, bills of materials, reference lists, documents)
+ * without knowing their business meaning. PUSH of the local state, then PULL from a cursor
+ * (lastSeq) with dispatch by type. Follows docs/sync-contract.md.
  *
- * Base locale souveraine : la synchro n'est jamais obligatoire ; en cas de hub
- * injoignable, l'application continue sur sa copie locale.
+ * Sovereign local database: synchronization is never mandatory; if the hub is
+ * unreachable, the application continues on its local copy.
  *
- * THREADS : une instance (et ses dépôts / son magasin) appartient à UN seul thread, celui qui
- * appelle sync(). L'application la fait tourner dans un thread de travail dédié avec sa propre
- * connexion SQLite (voir SyncSession). Le service ne touche à aucun objet d'interface : il
- * notifie via SyncObserver, appelé dans le thread de travail (à l'appelant de le ponter vers
- * le thread GUI), et s'arrête proprement quand l'indicateur d'annulation passe à vrai.
+ * THREADS: an instance (and its repositories / store) belongs to ONE thread only, the one that
+ * calls sync(). The application runs it in a dedicated worker thread with its own
+ * SQLite connection (see SyncSession). The service touches no interface object: it
+ * notifies through SyncObserver, called in the worker thread (the caller bridges it to
+ * the GUI thread), and stops cleanly when the cancellation flag turns true.
  */
 
 #pragma once
@@ -33,24 +33,24 @@ namespace chsync {
 
 struct SyncConfig {
     std::string serverUrl;               // ex. http://morfsync.local:8080
-    std::string token;                   // optionnel (Bearer) ; vide = pas d'auth
-    std::string domain = "componenthub"; // journal côté hub (toutes les tables)
+    std::string token;                   // optional (Bearer); empty = no auth
+    std::string domain = "componenthub"; // journal on the hub side (all tables)
 };
 
 struct SyncOutcome {
     bool ok = false;
     std::string error;
-    int accepted = 0;         // changements locaux acceptés par le hub (PUSH)
-    int conflicts = 0;        // versions refusées par le hub (plus anciennes)
-    int applied = 0;          // changements distants appliqués localement (PULL)
-    int rejected = 0;         // enregistrements distants illisibles, ignorés (PULL)
-    int blobsUploaded = 0;    // binaires de pièces jointes envoyés au hub
-    int blobsDownloaded = 0;  // binaires de pièces jointes récupérés du hub
-    std::int64_t lastSeq = 0; // curseur après synchro
-    bool cancelled = false;   // arrêtée sur demande (error = "sync.cancelled")
+    int accepted = 0;         // local changes accepted by the hub (PUSH)
+    int conflicts = 0;        // versions refused by the hub (older)
+    int applied = 0;          // remote changes applied locally (PULL)
+    int rejected = 0;         // unreadable remote records, ignored (PULL)
+    int blobsUploaded = 0;    // attachment binaries sent to the hub
+    int blobsDownloaded = 0;  // attachment binaries fetched from the hub
+    std::int64_t lastSeq = 0; // cursor after synchronization
+    bool cancelled = false;   // stopped on request (error = "sync.cancelled")
 };
 
-// Avancement, pour l'affichage. `done`/`total` valent 0 quand la phase n'a pas de dénominateur.
+// Progress, for display. `done`/`total` are 0 when the phase has no denominator.
 struct SyncProgress {
     enum class Phase { Connect, Push, Pull, Blobs };
     Phase phase = Phase::Connect;
@@ -58,50 +58,50 @@ struct SyncProgress {
     int total = 0;
 };
 
-// Rappels appelés dans le thread qui exécute sync(). Tous facultatifs.
+// Callbacks invoked in the thread that runs sync(). All optional.
 struct SyncObserver {
     std::function<void(const SyncProgress&)> onProgress;
-    // Enregistrement distant illisible, ignoré : identifiant (s'il existe) et motif.
+    // Unreadable remote record, ignored: identifier (if any) and reason.
     std::function<void(const std::string& id, const std::string& reason)> onReject;
 };
 
-// Transport HTTP injectable (tests : faux serveur). Par défaut, le client réel chnet::http*.
+// Injectable HTTP transport (tests: fake server). By default, the real chnet::http* client.
 using HttpFn = std::function<chnet::HttpResult(
     const std::string& method, const std::string& url, const std::string& body,
     const std::map<std::string, std::string>& headers, int timeoutMs)>;
 
 class SyncService {
 public:
-    // `repos` : tous les dépôts à synchroniser (leur durée de vie doit couvrir
-    // celle du SyncService). `statePath` : fichier local deviceId + curseur.
-    // `attachments` (facultatif) : magasin local des pièces jointes ; s'il est
-    // fourni, la synchro transfère aussi le BINAIRE des blobs référencés. Nul =
-    // synchro des métadonnées uniquement (comportement antérieur).
+    // `repos`: all the repositories to synchronize (their lifetime must cover
+    // that of the SyncService). `statePath`: local file with deviceId + cursor.
+    // `attachments` (optional): local attachment store; if
+    // provided, synchronization also transfers the BINARY of the referenced blobs. Null =
+    // metadata-only synchronization (previous behavior).
     SyncService(std::vector<domain::ISyncableRepository*> repos, std::string statePath,
                 domain::AttachmentStore* attachments = nullptr);
 
-    // Teste la joignabilité du hub via GET /healthz. `info` reçoit un résumé
-    // lisible en cas de succès, le message d'erreur sinon.
+    // Tests reachability of the hub through GET /healthz. `info` receives a readable
+    // summary on success, the error message otherwise.
     bool testConnection(const SyncConfig& cfg, std::string& info, int timeoutMs = 0);
 
-    // Cycle complet : PUSH de l'état local puis PULL depuis le curseur.
-    // Détecte un changement d'« époque » du journal du hub (dossier déplacé /
-    // réinitialisé) et remet le curseur à zéro automatiquement le cas échéant.
+    // Full cycle: PUSH of the local state then PULL from the cursor.
+    // Detects a change of the hub journal "epoch" (folder moved /
+    // reset) and automatically resets the cursor to zero when needed.
     SyncOutcome sync(const SyncConfig& cfg);
 
-    // Réinitialise le seul domaine ComponentHub sur le hub, oublie les repères
-    // locaux puis republie intégralement cette copie locale. Action destructive
-    // à réserver à une confirmation explicite dans l'interface.
+    // Resets only the ComponentHub domain on the hub, forgets the local
+    // markers then republishes this local copy in full. Destructive action,
+    // to be reserved for an explicit confirmation in the interface.
     SyncOutcome resetHubAndRepublish(const SyncConfig& cfg);
 
-    // Exécuteur SQL (BEGIN IMMEDIATE / COMMIT / ROLLBACK) pour appliquer chaque page du PULL dans
-    // une transaction. Facultatif : sans lui, chaque enregistrement est appliqué isolément.
-    // BEGIN IMMEDIATE prend le verrou d'écriture d'emblée : la vérification « révision distante
-    // plus récente ? » et l'écriture sont alors atomiques face aux écritures de l'utilisateur.
+    // SQL executor (BEGIN IMMEDIATE / COMMIT / ROLLBACK) to apply each PULL page in
+    // one transaction. Optional: without it, each record is applied on its own.
+    // BEGIN IMMEDIATE takes the write lock right away: the check "is the remote revision
+    // newer?" and the write are then atomic against user writes.
     void setSqlExec(std::function<void(const char*)> fn) { sqlExec_ = std::move(fn); }
 
-    // Annulation coopérative : testée entre les pages, les blobs et pendant les requêtes HTTP
-    // (par le thread appelant). L'indicateur doit survivre au service. nullptr = jamais annulée.
+    // Cooperative cancellation: tested between pages, blobs and during HTTP requests
+    // (by the calling thread). The flag must outlive the service. nullptr = never cancelled.
     void setCancelFlag(const std::atomic<bool>* flag) { cancel_ = flag; }
     void setObserver(SyncObserver obs) { observer_ = std::move(obs); }
     void setHttp(HttpFn fn) { http_ = std::move(fn); }
@@ -118,9 +118,9 @@ private:
     void loadState();
     void saveState() const;
     SyncOutcome syncOnce(const SyncConfig& cfg, bool mayReset);
-    // Transfère le binaire des blobs référencés (best-effort, après la synchro
-    // des métadonnées) : téléverse ceux que le hub n'a pas, télécharge ceux qui
-    // manquent localement (intégrité vérifiée). Sans effet si aucun magasin.
+    // Transfers the binary of the referenced blobs (best-effort, after the
+    // metadata synchronization): uploads those the hub lacks, downloads those
+    // missing locally (integrity checked). No effect without a store.
     void transferBlobs(const SyncConfig& cfg, SyncOutcome& out);
 
     std::function<void(const char*)> sqlExec_;
@@ -133,8 +133,8 @@ private:
     std::string statePath_;
     std::string deviceId_;
     std::int64_t lastSeq_ = 0;                                   // curseur de PULL
-    std::map<std::string, std::int64_t> pushWatermarks_;         // repère de PUSH par table
-    std::string journalId_;                                      // époque du journal hub connue
+    std::map<std::string, std::int64_t> pushWatermarks_;         // PUSH marker per table
+    std::string journalId_;                                      // known epoch of the hub journal
 };
 
 } // namespace chsync

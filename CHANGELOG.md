@@ -6,32 +6,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
-## [1.13.0] - 2026-11-07
-
-### Added
-
-- **Label printing.** New labels dialog (Avery 8728/8790 and custom formats) with a live
-  preview, printing and PDF export. The inventory table supports extended selection, used for
-  labels and for bulk delete. Text is clipped to each label and fonts shrink to fit; the
-  preview and the print share one line builder. The dialog works on its own copy of the
-  selected components, reports formats that no longer exist, and custom format storage is
-  fixed (stale entries, corrupted values, preview refresh after an edit).
-- **Spanish translation.** New `componenthub_es.ts` catalog (336 strings), "Español"
-  entry in the language selector, Spanish system locale detection and Spanish default
-  component types.
-- `.editorconfig` and `.clang-format`, with a pointer in CONTRIBUTING.md.
-
-### Changed
-
-- Language and currency changes now apply immediately: the main window is rebuilt in place
-  (same page, same geometry) instead of asking for a restart.
+## [1.18.1] - 2026-11-10
 
 ### Fixed
 
-- French catalog: filled 53 entries left "unfinished" and added 12 missing ones, so the
-  French UI no longer depends on source-text fallback.
-- English catalog: translated 10 empty entries and repaired 2 misaligned ones (duplicate-name
-  message, quit-time synchronization prompt).
+- **"Check for updates" is translated.** The update dialog and its messages came from the vendored morfUpdate library with hard-coded French text. morfUpdate 0.9.1 now uses English sources in its own `morfupdate` context; `scripts/i18n/update-catalogs.py` collects them into the same catalogs (French and Spanish are filled in), so the dialog follows the selected language.
+
+## [1.18.0] - 2026-11-10
+
+### Changed
+
+- **Translations are easier to write and to add.** The source text of every string is now English (French becomes a catalog like Spanish). A language is added by dropping `translations/componenthub_<code>.ts` in the folder: the build embeds it and the language selector lists it, with no code change. The language name shown in the selector is the translation of the string `English`.
+- Sentences are no longer built from pieces: `"Delete the category \"%1\"?"` with a placeholder replaces `"Delete the category " + name + "?"`, so word order can follow each language. Two meanings of one English word are told apart with a disambiguation comment (`tr("Import", "title")`).
+- Help and About texts moved out of the catalogs into `resources/doc/help.<code>.html` and `about.<code>.html` (English fallback). The help now mentions the right-click menu and the new shortcuts.
+- The default component types of the reference lists are translated through the catalogs (the three hard-coded lists are gone).
+- **Code comments are in English**, factual and written for a contributor (source, tests, CMake and packaging scripts). `CONTRIBUTING.md` states the rule.
+
+### Added
+
+- `scripts/i18n/update-catalogs.py`: adds new strings to every catalog, drops removed ones, refreshes `translations/componenthub_template.ts` and lists what is untranslated (`--check`). `--new de_DE` creates a catalog. Catalogs carry no line numbers, so diffs stay readable.
+- `docs/TRANSLATING.md`: step-by-step guide for translators (Qt Linguist or any text editor).
+
+### Removed
+
+- `translations/componenthub_en.ts`: English is the source language and needs no catalog.
+
+## [1.17.0] - 2026-11-10
+
+### Changed
+
+- **`dev-i18n-es` branch merged.** Its Spanish catalog (reviewed, 336 strings) is the base; the strings added since on `main` were completed in English, French and Spanish. The French and English catalog fixes of that branch are kept (no more empty or misaligned entries). `.editorconfig`, `.clang-format` and the CONTRIBUTING rules for live language and currency changes are now on `main`.
+
+## [1.16.0] - 2026-11-10
+
+### Added
+
+- **Label printing restored.** The Labels dialog (Avery 8728 / 8790 and custom formats, live preview, print and PDF export) lived only on the unmerged `dev-i18n-es` branch and was missing from `main`. It is now on `main`. The inventory table accepts multiple selection (labels, bulk delete).
+
+## [1.15.0] - 2026-11-10
+
+### Changed
+
+- **Language and currency apply immediately, no restart.** The window is rebuilt with the new translation at the same position, the same size (maximized state included) and on the same page. A synchronization in progress is cancelled cleanly first; the startup update check and sync are not replayed.
+
+## [1.14.0] - 2026-11-10
+
+### Added
+
+- **Spanish interface** (Settings → Language: Français, English, Español). The system language is picked automatically for fr, en and es. The default component types of the reference lists are also provided in Spanish.
+- **Inventory quick actions.** Right-click on a row: edit, duplicate, add or remove 1 unit of stock, set the quantity, change location, open the datasheet link, delete. Stock changes are recorded as regular stock movements (never below zero).
+- **Inventory filters** by location (including all its sub-locations), category and status, next to the existing search, kind and low-stock filters.
+- **Inventory keyboard shortcuts:** `Ctrl+N` new record, `Ctrl+F` search, `Enter` edit, `Delete` delete, `+` / `-` adjust stock by one.
+
+### Changed
+
+- **Projects → Add an item:** the search is now a strict filter. Every word typed must appear (anywhere, ignoring case and accents) in the name, reference, type, category or location of the component; descriptions and notes no longer match. Results show type, category and location path.
+
+## [1.13.0] - 2026-11-10
+
+### Added
+
+- **Drag and drop in the Locations tab.** An existing location can be dropped onto another one to become its child, or onto empty space to become a root; a whole subtree moves with it. Dropping onto itself or one of its descendants is refused (no cycles), and moving to the root keeps the root-name uniqueness rule. The tree never moves items by itself: the page writes the new parent to the database, then rebuilds the tree.
 
 ## [1.12.0] - 2026-11-07
 

@@ -15,8 +15,8 @@ std::string toLowerStr(std::string s) {
     return s;
 }
 
-// Tolère "11,00 €", "1234.56", "" ... : ne garde que chiffres/séparateurs,
-// traite le dernier séparateur rencontré comme le point décimal.
+// Tolerates "11,00 €", "1234.56", "" ...: keeps only digits/separators,
+// treats the last separator found as the decimal point.
 double parsePriceFr(const std::string& raw) {
     std::string cleaned;
     for (char c : raw) {
@@ -92,7 +92,7 @@ std::string ImportExportService::_locationName(Id id) const {
 
 std::string ImportExportService::_locationPath(Id id, const std::map<Id, Location>& byId) const {
     std::string path;
-    int guard = 0;  // borne anti-boucle si un parentId corrompu formait un cycle
+    int guard = 0;  // guard against a loop if a corrupted parentId formed a cycle
     while (id != kNoId && guard++ < 64) {
         auto it = byId.find(id);
         if (it == byId.end()) break;
@@ -111,9 +111,9 @@ ImportResult ImportExportService::importCsv(const std::string& csv, CsvFormat fo
 }
 
 std::string ImportExportService::_exportNative() const {
-    // Colonnes d'enveloppe (uuid/createdAt/updatedAt/rev) ajoutées après `id`
-    // pour un round-trip fidèle (sauvegarde/restauration + identité de synchro).
-    // Un ancien CSV sans ces colonnes reste importable (voir _importNative).
+    // Envelope columns (uuid/createdAt/updatedAt/rev) added after `id`
+    // for a faithful round trip (backup/restore + synchronization identity).
+    // An old CSV without these columns can still be imported (see _importNative).
     std::string out = joinCsvRow({
         "id", "createdAt", "updatedAt", "rev",
         "kind", "name", "reference", "manufacturer", "description", "category", "subcategory", "type",
@@ -158,15 +158,15 @@ ImportResult ImportExportService::_importNative(const std::string& csv) {
 
     auto idx = headerIndex(rows[0]);
 
-    // Tout le rapprochement se fait en mémoire à partir d'un seul instantané
-    // disque (findAll), et l'écriture se fait en un seul lot (saveAll) à la
-    // fin : un appel save()/findAll() par ligne de CSV relit et réécrit tout
-    // le fichier à chaque itération, un coût qui explose avec le nombre de
-    // lignes (déjà observé en usage réel : reset watchdog après ~150s pour
-    // un import de 39 lignes).
-    // Appariement par `id` = UUID (identité permanente). Un `id` connu met à
-    // jour en place (réimport idempotent) ; un `id` absent ou hérité (entier de
-    // l'ancien format) donne une création avec UUID neuf attribué au save().
+    // All matching is done in memory from a single disk snapshot
+    // (findAll), and the write happens as a single batch (saveAll) at the
+    // end: one save()/findAll() call per CSV line reads and rewrites the whole
+    // file at every iteration, a cost that explodes with the number of
+    // lines (already observed in real use: watchdog reset after ~150 s for
+    // an import of 39 lines).
+    // Matching by `id` = UUID (permanent identity). A known `id` updates
+    // in place (idempotent re-import); a missing or legacy `id` (integer from
+    // the old format) creates a new entry with a fresh UUID assigned at save().
     std::map<Id, bool> existingIds;
     for (auto& existing : _components.findAll()) existingIds[existing.id] = true;
 
@@ -188,12 +188,12 @@ ImportResult ImportExportService::_importNative(const std::string& csv) {
         }
 
         Component c;
-        // Un vrai UUID contient des tirets ; un id numérique hérité de l'ancien
-        // format est ignoré (-> "" -> UUID neuf), pour ne jamais promouvoir un
-        // entier en identité permanente de synchronisation.
+        // A real UUID contains dashes; a numeric id inherited from the old
+        // format is ignored (-> "" -> fresh UUID), so that an integer is never
+        // promoted to a permanent synchronization identity.
         std::string rawId = cell(row, idx, "id");
         c.id = (rawId.find('-') != std::string::npos) ? rawId : kNoId;
-        // Enveloppe (colonnes absentes dans un ancien CSV -> valeurs vides).
+        // Envelope (columns missing in an old CSV -> empty values).
         c.meta.createdAt = cell(row, idx, "createdAt");
         c.meta.updatedAt = cell(row, idx, "updatedAt");
         c.meta.rev = (std::int64_t)strtoll(cell(row, idx, "rev").c_str(), nullptr, 10);
@@ -237,11 +237,11 @@ ImportResult ImportExportService::_importNative(const std::string& csv) {
 }
 
 // ---------------------------------------------------------------------------
-// Tables secondaires : catégories, emplacements (hiérarchie), projets.
-// Chaque CSV porte l'`id` interne : au réimport, une ligne dont l'id existe
-// déjà met à jour l'entrée correspondante, sinon elle est (re)créée avec cet
-// id - ce qui préserve les références croisées (composant -> emplacement,
-// nomenclature -> composant/projet) lors d'une restauration table par table.
+// Secondary tables: categories, locations (hierarchy), projects.
+// Each CSV carries the internal `id`: on re-import, a line whose id already
+// exists updates the matching entry, otherwise it is (re)created with that
+// id - which preserves cross references (component -> location,
+// bill of materials -> component/project) when restoring table by table.
 // ---------------------------------------------------------------------------
 
 std::string ImportExportService::exportCategoriesCsv() const {
@@ -296,7 +296,7 @@ ImportResult ImportExportService::importCategoriesCsv(const std::string& csv) {
             continue;
         }
         Category c;
-        c.id = cell(row, idx, "id");   // id = UUID (ou vide -> généré au save)
+        c.id = cell(row, idx, "id");   // id = UUID (or empty -> generated at save)
         c.name = name;
         if (c.id != kNoId && existingIds.count(c.id)) result.updated++; else result.created++;
         _categories.save(c);
@@ -324,9 +324,9 @@ ImportResult ImportExportService::importLocationsCsv(const std::string& csv) {
             continue;
         }
         Location l;
-        l.id = cell(row, idx, "id");                 // id = UUID (ou vide -> généré)
+        l.id = cell(row, idx, "id");                 // id = UUID (or empty -> generated)
         l.name = name;
-        l.parentId = cell(row, idx, "parentId");     // colonne « path » ignorée (dérivée)
+        l.parentId = cell(row, idx, "parentId");     // "path" column ignored (derived)
         if (l.id != kNoId && existingIds.count(l.id)) result.updated++; else result.created++;
         _locations.save(l);
     }
@@ -353,7 +353,7 @@ ImportResult ImportExportService::importProjectsCsv(const std::string& csv) {
             continue;
         }
         Project p;
-        p.id = cell(row, idx, "id");   // id = UUID (ou vide -> généré au save)
+        p.id = cell(row, idx, "id");   // id = UUID (or empty -> generated at save)
         p.name = name;
         p.description = cell(row, idx, "description");
         p.version = cell(row, idx, "version");
@@ -374,8 +374,8 @@ ImportResult ImportExportService::_importBomist(const std::string& csv) {
 
     auto idx = headerIndex(rows[0]);
 
-    // Même principe que _importNative : un seul instantané disque, tout le
-    // rapprochement (par référence) en mémoire, une seule écriture en lot.
+    // Same principle as _importNative: a single disk snapshot, all the
+    // matching (by reference) in memory, a single batch write.
     std::map<std::string, Component> byReference;
     for (auto& existing : _components.findAll()) byReference[toLowerStr(existing.reference)] = existing;
 
@@ -384,10 +384,10 @@ ImportResult ImportExportService::_importBomist(const std::string& csv) {
 
     std::vector<Component> toSave;
     toSave.reserve(rows.size());
-    // Index des lignes déjà ajoutées à toSave pour CE lot, par référence :
-    // si le fichier contient deux fois le même Part Number (export mal
-    // formé), la seconde occurrence met à jour la même entrée en attente
-    // plutôt que de créer un second composant.
+    // Index of the lines already added to toSave for THIS batch, by reference:
+    // if the file contains the same Part Number twice (malformed
+    // export), the second occurrence updates the same pending entry
+    // instead of creating a second component.
     std::map<std::string, size_t> pendingIndexByReference;
 
     for (size_t r = 1; r < rows.size(); r++) {

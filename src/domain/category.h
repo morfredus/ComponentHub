@@ -1,7 +1,7 @@
 /**
- * Category - Catégorie de composant, gérée comme une petite liste plate
- * (contrairement à Location, aucune hiérarchie n'est demandée par le cahier
- * des charges pour les catégories).
+ * Category - Component category, managed as a small flat list
+ * (unlike Location, the specification asks for no hierarchy
+ * for categories).
  */
 
 #pragma once

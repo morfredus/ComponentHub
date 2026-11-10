@@ -1,9 +1,9 @@
 /**
- * InventoryService - Logique métier de l'inventaire.
+ * InventoryService - Business logic of the inventory.
  *
- * Ne connaît que les interfaces de dépôt (IComponentRepository,
- * ILocationRepository, IStockMovementRepository), jamais leur implémentation
- * (SQLite). Indépendant de la plateforme (Windows, Linux,
+ * Only knows the repository interfaces (IComponentRepository,
+ * ILocationRepository, IStockMovementRepository), never their implementation
+ * (SQLite). Independent of the platform (Windows, Linux,
  * Raspberry Pi).
  */
 
@@ -16,12 +16,12 @@
 namespace domain {
 
 struct ComponentFilter {
-    std::string query;      // recherche texte libre (nom, référence, fabricant, catégorie, fournisseur, notes)
+    std::string query;      // free text search (name, reference, manufacturer, category, supplier, notes)
     std::string category;
-    std::string status;     // vide = ne filtre pas (to_test, validating, validated, defective, archived)
-    Id locationId = kNoId;  // kNoId = ne filtre pas
+    std::string status;     // empty = no filter (to_test, validating, validated, defective, archived)
+    Id locationId = kNoId;  // kNoId = no filter
     bool onlyLowStock = false;
-    bool hasKind = false;    // false = ne filtre pas sur `kind`
+    bool hasKind = false;    // false = no filter on `kind`
     ComponentKind kind = ComponentKind::Component;
 };
 
@@ -34,10 +34,10 @@ public:
         : _components(components), _locations(locations), _categories(categories), _movements(movements) {}
 
     std::vector<Component> listComponents(const ComponentFilter& filter = {}) const;
-    // Enregistre le composant ; si son champ `category` est renseigné et ne
-    // correspond à aucune Category existante, elle est créée à la volée
-    // (voir _ensureCategoryExists) - la fiche composant garde un champ texte
-    // libre, la liste des catégories gérées reste cependant toujours à jour.
+    // Saves the component; if its `category` field is set and matches
+    // no existing Category, one is created on the fly
+    // (see _ensureCategoryExists) - the component record keeps a free text field,
+    // while the list of managed categories always stays up to date.
     Component saveComponent(Component component);
     bool removeComponent(Id id);
 
@@ -49,13 +49,13 @@ public:
     Category saveCategory(Category category);
     bool removeCategory(Id id);
 
-    // Enregistre un mouvement de stock et met à jour la quantité du composant
-    // concerné. Retourne le composant après application, ou nullopt si
-    // le composant référencé n'existe pas.
+    // Records a stock movement and updates the quantity of the component
+    // concerned. Returns the component after the change, or nullopt if
+    // the referenced component does not exist.
     std::optional<Component> recordMovement(StockMovement movement);
     std::vector<StockMovement> history(Id componentId) const;
 
-    // Composants sous leur seuil minimum - base de la liste d'achats automatique.
+    // Components under their minimum threshold - basis of the automatic shopping list.
     std::vector<Component> lowStock() const;
 
 private:

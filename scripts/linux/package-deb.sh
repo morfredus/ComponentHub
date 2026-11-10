@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
 #
-# ComponentHub - construction d'un paquet Debian (.deb).
+# ComponentHub - building a Debian package (.deb).
 #
 # Produit dist/componenthub_<version>_<arch>.deb, installable via
 #   sudo apt install ./componenthub_<version>_<arch>.deb
-# Le binaire est lié dynamiquement au Qt du système : le paquet DÉCLARE ses
-# dépendances (Qt6…) pour qu'apt les installe automatiquement.
+# The binary is dynamically linked to the system Qt: the package DECLARES its
+# dependencies (Qt6...) so that apt installs them automatically.
 #
-# À utiliser sur Debian / Ubuntu / Raspberry Pi OS, après une compilation
-# NATIVE sur la même famille de distribution :
+# To be used on Debian / Ubuntu / Raspberry Pi OS, after a NATIVE
+# build on the same distribution family:
 #   cmake --preset linux        (x86_64)   ->  build/ComponentHub
 #   cmake --preset linux-arm64  (ARM64)    ->  build-arm64/ComponentHub
 #
 # Usage :
-#   scripts/linux/package-deb.sh [--build <dossier>] [--maintainer "Nom <email>"] [--depends "pkg, …"]
+#   scripts/linux/package-deb.sh [--build <folder>] [--maintainer "Name <email>"] [--depends "pkg, ..."]
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-APP_NAME="ComponentHub"   # nom du binaire compilé
-CMD="componenthub"        # nom du paquet / commande / .desktop / icône
+APP_NAME="ComponentHub"   # name of the compiled binary
+CMD="componenthub"        # name of the package / command / .desktop / icon
 BUILD_DIR=""
 MAINTAINER="${DEB_MAINTAINER:-morfredus <morfredus@users.noreply.github.com>}"
 DEPENDS_OVERRIDE=""
@@ -30,10 +30,10 @@ BUILD_CANDIDATES=("$ROOT/build" "$ROOT/build-arm64" "$ROOT/build-arm64-cross")
 
 die() { printf 'Erreur : %s\n' "$1" >&2; exit 1; }
 
-# Architecture reelle d'un ELF, lue dans l'entete (e_machine, offset 18, little-endian).
-# 0xb7 = aarch64, 0x3e = x86-64. Sert a reconnaitre un binaire croise sans se fier a
-# l'hote : sous WSL x86_64, un binaire arm64 (build-arm64-cross/) doit etre empaquete
-# en arm64, pas en amd64.
+# Real architecture of an ELF, read from the header (e_machine, offset 18, little-endian).
+# 0xb7 = aarch64, 0x3e = x86-64. Used to recognize a cross-built binary without trusting
+# the host: under x86_64 WSL, an arm64 binary (build-arm64-cross/) must be packaged
+# as arm64, not amd64.
 _elf_arch() {
     case "$(od -An -tx1 -j18 -N2 "$1" 2>/dev/null | tr -d ' ')" in
         b700) echo arm64 ;;
@@ -81,9 +81,9 @@ echo "Binaire : $BINARY"
 VERSION="$(head -n1 "$ROOT/VERSION" | tr -d '[:space:]')"
 [ -n "$VERSION" ] || die "fichier VERSION vide ou absent."
 
-# Build croise : un binaire aarch64 sur un hote qui n'est pas aarch64 (WSL x86_64).
-# L'arch du paquet et ses Depends ne peuvent alors PAS venir de l'hote -- `dpkg
-# --print-architecture` renvoie amd64, et `ldd`/`dpkg -S` sont aveugles a un ELF arm64.
+# Cross build: an aarch64 binary on a host that is not aarch64 (x86_64 WSL).
+# The package arch and its Depends then CANNOT come from the host -- `dpkg
+# --print-architecture` returns amd64, and `ldd`/`dpkg -S` are blind to an arm64 ELF.
 CROSS_ARM64=0
 if [ "$(_elf_arch "$BINARY")" = "arm64" ] && [ "$(uname -m)" != "aarch64" ]; then
     CROSS_ARM64=1
@@ -103,9 +103,9 @@ detect_depends() {
         | sort -u | paste -sd, - | sed 's/,/, /g'
 }
 
-# Depends d'un binaire croise : sonames NEEDED lus avec l'objdump de la cible, puis
-# resolus dans les .shlibs du sysroot -- la logique eprouvee de morfdeploy
-# (cross_depends), reutilisee depuis la copie vendoree plutot que reecrite.
+# Depends of a cross-built binary: NEEDED sonames read with the target's objdump, then
+# resolved in the sysroot's .shlibs -- the proven logic of morfdeploy
+# (cross_depends), reused from the vendored copy rather than rewritten.
 cross_depends() {
     ROOT="$ROOT" python3 - "$BINARY" "$MORF_SYSROOT" "aarch64-linux-gnu-objdump" <<'PY'
 import os, sys
@@ -125,32 +125,32 @@ elif [ "$CROSS_ARM64" = "1" ]; then
         || die "MORF_SYSROOT absent : sysroot arm64 requis pour les Depends croises."
     DEPENDS="$(cross_depends)"
     [ -n "$DEPENDS" ] || die "Depends croises vides (sysroot sans .shlibs ?)."
-    # Le plugin xcb (chargé par dlopen) exige libxcb-cursor0 depuis Qt 6.5.
+    # The xcb plugin (loaded through dlopen) requires libxcb-cursor0 since Qt 6.5.
     case ", $DEPENDS," in
         *", libxcb-cursor0,"*) : ;;
         *) DEPENDS="$DEPENDS, libxcb-cursor0" ;;
     esac
 else
     DEPENDS="$(detect_depends || true)"
-    [ -n "$DEPENDS" ] || DEPENDS="libc6, libqt6core6, libqt6gui6, libqt6widgets6, libqt6printsupport6"
-    # Le plugin xcb (chargé par dlopen) exige libxcb-cursor0 depuis Qt 6.5.
+    [ -n "$DEPENDS" ] || DEPENDS="libc6, libqt6core6, libqt6gui6, libqt6widgets6"
+    # The xcb plugin (loaded through dlopen) requires libxcb-cursor0 since Qt 6.5.
     case ", $DEPENDS," in
         *", libxcb-cursor0,"*) : ;;
         *) DEPENDS="$DEPENDS, libxcb-cursor0" ;;
     esac
 fi
 
-# Preparer l'arborescence du paquet dans le systeme de fichiers NATIF (ext4 sous
-# WSL, ou le disque du Pi), JAMAIS sur /mnt/c : DrvFs force le mode 777 sur les
-# fichiers du lecteur Windows et y ignore chmod, or dpkg-deb refuse un dossier de
-# controle DEBIAN/ en 777 (il exige <= 0775). Seul le .deb final ira dans dist/.
+# Prepare the package tree in the NATIVE file system (ext4 under
+# WSL, or the Pi's disk), NEVER on /mnt/c: DrvFs forces mode 777 on the
+# files of the Windows drive and ignores chmod there, yet dpkg-deb refuses a
+# DEBIAN/ control folder in 777 (it requires <= 0775). Only the final .deb goes to dist/.
 STAGE_ROOT="$(mktemp -d)"
 trap 'rm -rf "$STAGE_ROOT"' EXIT
 PKGDIR="$STAGE_ROOT/${CMD}_${VERSION}_${ARCH}"
 install -Dm755 "$BINARY" "$PKGDIR/usr/bin/$CMD"
 
-# La redirection `>` ne crée pas les dossiers parents : on prépare le dossier
-# des raccourcis .desktop avant d'y écrire (sans quoi « No such file or directory »).
+# The `>` redirection does not create parent folders: the .desktop shortcuts
+# folder is prepared before writing into it (otherwise "No such file or directory").
 install -d "$PKGDIR/usr/share/applications"
 sed "s|^Exec=.*|Exec=/usr/bin/$CMD|" "$SCRIPT_DIR/componenthub.desktop" \
     > "$PKGDIR/usr/share/applications/$CMD.desktop"
@@ -208,7 +208,7 @@ Description: Workshop electronics inventory (technical memory)
 EOF
 
 OUT="$ROOT/dist/${CMD}_${VERSION}_${ARCH}.deb"
-install -d "$ROOT/dist"   # le staging n'est plus sous dist/ : creer la cible du .deb
+install -d "$ROOT/dist"   # staging is no longer under dist/: create the target of the .deb
 if dpkg-deb --help 2>&1 | grep -q -- '--root-owner-group'; then
     dpkg-deb --build --root-owner-group "$PKGDIR" "$OUT"
 else

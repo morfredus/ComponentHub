@@ -143,23 +143,26 @@ Windows, often faster). Per-OS branches quietly break that promise.
   lines you change, not to whole existing files.
 - **UTF-8 everywhere.** Source files are UTF-8; accented characters and `€` must
   render correctly. On MSVC builds the `/utf-8` flag is already set.
-- **Comments and source UI strings** are currently written in **French** (the
-  app's reference language). Every user-facing string must go through the Qt
-  translation helper (`chui::tr(...)`), even when the French source text is
-  the default. Keep the French source text in the code, then add its English
-  translation to `translations/componenthub_en.ts` and keep the French catalog
-  in sync in `translations/componenthub_fr.ts` (and the Spanish one in
-  `translations/componenthub_es.ts`).
+- **Comments and source strings are written in English.** Comments state facts and
+  explain *why* (a constraint, a trap, a decision), for a contributor who has never seen
+  the code. Every user-facing string goes through `chui::tr("English text")`; static
+  tables use `CHUI_NOOP("English text")` and translate later with `chui::tr(variable)`.
+- **One sentence, one string.** Never build a sentence by concatenating translated pieces
+  (`tr("File ") + name + tr(" not found")`): word order differs between languages. Use a
+  placeholder: `tr("File \"%1\" not found").arg(name)`. When the same English word has two
+  meanings (noun or verb, title or button), add a disambiguation comment as the second
+  argument: `tr("Import", "title")`.
 - **Language and currency apply live.** Changing them in Settings rebuilds the main
-  window (see `showWindow` in `main.cpp`), so every widget re-reads its texts when it is
+  window (see `openWindow` in `main.cpp`), so every widget re-reads its texts when it is
   constructed. Never keep a translated string or the currency in a `static`/global
   variable or compute it once at startup: call `chui::tr(...)` and `chui::currency()`
   where the widget is built or refreshed.
-- **Translation catalogs:** do not edit generated `.qm` files. They are built
-  from the `.ts` catalogs by `lrelease` during the CMake build. When adding or
-  changing UI strings, update the catalogs deliberately and verify both
-  languages before opening a PR. Do not run `lupdate` and overwrite reviewed
-  translations without checking its result.
+- **Translation catalogs** live in `translations/componenthub_<code>.ts`; do not edit
+  generated `.qm` files (built by `lrelease` during the CMake build). After adding or
+  changing a string, run `python scripts/i18n/update-catalogs.py`: it adds the new
+  strings (empty), drops the removed ones and refreshes the template. Keep every
+  catalog complete (`--check` lists what is missing). Adding a language needs no code
+  change: see [docs/TRANSLATING.md](docs/TRANSLATING.md).
 - **No hard-coded version.** The version comes from the `VERSION` file via CMake
   (`CH_APP_VERSION`). Never type a version number into the code.
 - **Theme-aware UI.** Colors come from the theme tokens (`*.theme` + `app.qss`),

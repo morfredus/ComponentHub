@@ -2,7 +2,7 @@
 
 *Lire dans une autre langue : [English](README.md) · **Français** (ce document).*
 
-[![Version](https://img.shields.io/badge/version-1.13.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.18.1-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -157,13 +157,14 @@ ComponentHub/
 | [docs/fr/BUILD_DESKTOP.md](docs/fr/BUILD_DESKTOP.md) | Référence de compilation multi-plateforme |
 | [docs/fr/ARCHITECTURE.md](docs/fr/ARCHITECTURE.md) | Architecture en couches (domaine / stockage / interface) |
 | [docs/fr/ADR-0001](docs/fr/ADR-0001-desktop-maitre-esp32-satellite.md) | Historique de l'ancienne piste maître/satellite ESP32 |
+| [docs/TRANSLATING.md](docs/TRANSLATING.md) *(EN)* | Ajouter ou mettre à jour une langue (aucun code à écrire) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Comment contribuer, règles de portabilité |
 | [CHANGELOG.md](CHANGELOG.md) | Historique des versions |
 
 
 ## Remerciements
 
-L'internationalisation de l'interface (français, anglais et espagnol) et le choix de la devise
+L'internationalisation de l'interface (français et anglais) et le choix de la devise
 (EUR / USD / GBP) sont une contribution de
 [Nacho Garcia (@nachogarglez)](https://github.com/nachogarglez)
 ([pull request #11](https://github.com/morfredus/ComponentHub/pull/11)). Merci.

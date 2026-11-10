@@ -1,8 +1,8 @@
 /**
- * IReferentialRepository - accès aux valeurs des référentiels.
+ * IReferentialRepository - access to the values of reference lists.
  *
- * Une seule interface pour TOUTES les listes (mécanisme générique) : le
- * paramètre `list` sélectionne le référentiel concerné.
+ * A single interface for ALL lists (generic mechanism): the
+ * `list` parameter selects the reference list concerned.
  */
 #pragma once
 #include <vector>
@@ -14,10 +14,10 @@ class IReferentialRepository {
 public:
     virtual ~IReferentialRepository() = default;
     virtual std::vector<RefItem> findAll() const = 0;
-    // Valeurs d'un référentiel, triées par `position` puis alphabétiquement.
+    // Values of a reference list, sorted by `position` then alphabetically.
     virtual std::vector<RefItem> findByList(const std::string& list) const = 0;
     virtual RefItem save(RefItem item) = 0;
-    virtual std::vector<RefItem> saveAll(const std::vector<RefItem>& items) = 0;  // upsert en lot (réordonnancement)
+    virtual std::vector<RefItem> saveAll(const std::vector<RefItem>& items) = 0;  // batch upsert (reordering)
     virtual bool remove(Id id) = 0;
 };
 

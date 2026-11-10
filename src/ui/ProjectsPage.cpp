@@ -15,6 +15,9 @@
 #include <QDialogButtonBox>
 #include <QMessageBox>
 
+#include <memory>
+#include <map>
+#include <vector>
 #include "AppContext.h"
 #include "ui/UiKit.h"
 #include "ui/Language.h"
@@ -26,41 +29,41 @@ ProjectsPage::ProjectsPage(chdesktop::AppContext& ctx, QWidget* parent)
     auto* v = new QVBoxLayout(this);
     v->setContentsMargins(20, 20, 20, 20);
     v->setSpacing(12);
-    v->addWidget(uikit::pageTitle(chui::tr("Projets")));
+    v->addWidget(uikit::pageTitle(chui::tr("Projects")));
 
     auto* split = new QHBoxLayout;
     v->addLayout(split, 1);
 
-    // Colonne gauche : liste + actions.
+    // Left column: list + actions.
     auto* left = new QVBoxLayout;
     projects_ = new QListWidget;
     projects_->setFixedWidth(260);
     left->addWidget(projects_, 1);
-    auto* pAdd = uikit::button(chui::tr("Nouveau"), icons::Glyph::Add);
-    auto* pEdit = uikit::button(chui::tr("Modifier"), icons::Glyph::Edit, "ghost");
-    auto* pDel = uikit::button(chui::tr("Supprimer"), icons::Glyph::Delete, "danger");
+    auto* pAdd = uikit::button(chui::tr("New"), icons::Glyph::Add);
+    auto* pEdit = uikit::button(chui::tr("Edit"), icons::Glyph::Edit, "ghost");
+    auto* pDel = uikit::button(chui::tr("Delete"), icons::Glyph::Delete, "danger");
     auto* pbar = new QHBoxLayout; pbar->addWidget(pAdd); pbar->addWidget(pEdit); pbar->addWidget(pDel);
     left->addLayout(pbar);
     split->addLayout(left);
 
-    // Colonne droite : détail + nomenclature.
+    // Right column: detail + bill of materials.
     auto* right = new QVBoxLayout;
-    detailHeader_ = new QLabel(chui::tr("Sélectionnez un projet"));
+    detailHeader_ = new QLabel(chui::tr("Select a project"));
     detailHeader_->setObjectName("pageTitle");
     detailMeta_ = uikit::hint("");
     right->addWidget(detailHeader_);
     right->addWidget(detailMeta_);
 
     auto* bomBar = new QHBoxLayout;
-    bomBar->addWidget(new QLabel(chui::tr("Nomenclature (BOM)")));
+    bomBar->addWidget(new QLabel(chui::tr("Bill of materials (BOM)")));
     bomBar->addStretch(1);
-    auto* bAdd = uikit::button(chui::tr("Ajouter un élément"), icons::Glyph::Add, "ghost");
-    auto* bDel = uikit::button(chui::tr("Retirer"), icons::Glyph::Delete, "danger");
+    auto* bAdd = uikit::button(chui::tr("Add item"), icons::Glyph::Add, "ghost");
+    auto* bDel = uikit::button(chui::tr("Remove"), icons::Glyph::Delete, "danger");
     bomBar->addWidget(bAdd); bomBar->addWidget(bDel);
     right->addLayout(bomBar);
 
     bom_ = new QTableWidget(0, 5);
-    bom_->setHorizontalHeaderLabels({chui::tr("Élément"), chui::tr("Référence"), chui::tr("Requis"), chui::tr("Dispo"), chui::tr("Manque")});
+    bom_->setHorizontalHeaderLabels({chui::tr("Item"), chui::tr("Reference"), chui::tr("Required"), chui::tr("Available"), chui::tr("Missing")});
     bom_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     bom_->setSelectionBehavior(QAbstractItemView::SelectRows);
     bom_->verticalHeader()->setVisible(false);
@@ -103,7 +106,7 @@ void ProjectsPage::refreshProjects() {
 void ProjectsPage::showDetail() {
     const Id id = currentProjectId();
     if (id == kNoId) {
-        detailHeader_->setText(chui::tr("Aucun projet"));
+        detailHeader_->setText(chui::tr("No project"));
         detailMeta_->setText("");
         bom_->setRowCount(0);
         missing_->setText("");
@@ -127,7 +130,7 @@ void ProjectsPage::showDetail() {
         int r = bom_->rowCount();
         bom_->insertRow(r);
         QString label = QString::fromStdString(line.componentName);
-        if (!line.inInventory) label += chui::tr("  (hors inventaire)");
+        if (!line.inInventory) label += chui::tr("  (outside inventory)");
         auto* first = new QTableWidgetItem(label);
         first->setData(Qt::UserRole, QString::fromStdString(line.id));
         bom_->setItem(r, 0, first);
@@ -140,14 +143,14 @@ void ProjectsPage::showDetail() {
         totalMissing += line.quantityMissing;
     }
     missing_->setText(totalMissing == 0
-        ? chui::tr("✓ Tous les composants nécessaires sont disponibles.")
-        : QString(chui::tr("⚠ %1 élément(s) manquant(s) au total.")).arg(totalMissing));
+        ? chui::tr("✓ All required components are available.")
+        : QString(chui::tr("⚠ %1 item(s) missing in total.")).arg(totalMissing));
 }
 
-// Boîte d'édition d'un projet (champs texte).
+// Edit dialog of a project (text fields).
 static bool editProjectDialog(QWidget* parent, Project& p) {
     QDialog dlg(parent);
-    dlg.setWindowTitle(p.id == kNoId ? chui::tr("Nouveau projet") : chui::tr("Modifier le projet"));
+    dlg.setWindowTitle(p.id == kNoId ? chui::tr("New project") : chui::tr("Edit project"));
     dlg.resize(460, 420);
     auto* f = new QFormLayout(&dlg);
     auto* name = new QLineEdit(QString::fromStdString(p.name));
@@ -157,11 +160,11 @@ static bool editProjectDialog(QWidget* parent, Project& p) {
     auto* status = new QLineEdit(QString::fromStdString(p.status));
     auto* desc = new QPlainTextEdit(QString::fromStdString(p.description));
     auto* notes = new QPlainTextEdit(QString::fromStdString(p.notes));
-    f->addRow(chui::tr("Nom *"), name);
+    f->addRow(chui::tr("Name *"), name);
     f->addRow(chui::tr("Version"), version);
     f->addRow(chui::tr("Firmware"), firmware);
-    f->addRow(chui::tr("Dépôt Git"), git);
-    f->addRow(chui::tr("Statut"), status);
+    f->addRow(chui::tr("Git repository"), git);
+    f->addRow(chui::tr("Status"), status);
     f->addRow(chui::tr("Description"), desc);
     f->addRow(chui::tr("Notes"), notes);
     auto* bb = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel);
@@ -201,7 +204,7 @@ void ProjectsPage::editProject() {
 void ProjectsPage::deleteProject() {
     const Id id = currentProjectId();
     if (id == kNoId) return;
-    if (QMessageBox::question(this, chui::tr("Supprimer"), chui::tr("Supprimer ce projet et sa nomenclature ?")) != QMessageBox::Yes)
+    if (QMessageBox::question(this, chui::tr("Delete"), chui::tr("Delete this project and its bill of materials?")) != QMessageBox::Yes)
         return;
     ctx_.projects_service.removeProject(id);
     refreshProjects();
@@ -209,37 +212,72 @@ void ProjectsPage::deleteProject() {
 
 void ProjectsPage::addBomLine() {
     const Id projectId = currentProjectId();
-    if (projectId == kNoId) { QMessageBox::information(this, chui::tr("Projet"), chui::tr("Créez ou sélectionnez d'abord un projet.")); return; }
+    if (projectId == kNoId) { QMessageBox::information(this, chui::tr("Project"), chui::tr("Create or select a project first.")); return; }
 
     QDialog dlg(this);
-    dlg.setWindowTitle(chui::tr("Ajouter un élément à la nomenclature"));
+    dlg.setWindowTitle(chui::tr("Add an item to the bill of materials"));
     dlg.resize(520, 480);
     auto* v = new QVBoxLayout(&dlg);
 
     auto* search = new QLineEdit;
     search->setObjectName("search");
-    search->setPlaceholderText(chui::tr("Rechercher un composant (nom, référence, type, marque, fournisseur…)"));
+    search->setPlaceholderText(chui::tr("Search for a component (name, reference, type, category, location)"));
     search->setClearButtonEnabled(true);
-    v->addWidget(new QLabel(chui::tr("Composant de l'inventaire :")));
+    v->addWidget(new QLabel(chui::tr("Inventory component:")));
     v->addWidget(search);
 
     auto* results = new QListWidget;
     v->addWidget(results, 1);
 
-    // Remplissage/filtrage via la recherche globale (tous les champs).
-    auto repopulate = [this, results](const QString& q) {
-        results->clear();
-        domain::ComponentFilter filter;
-        filter.query = q.trimmed().toStdString();
-        for (const auto& c : ctx_.inventory.listComponents(filter)) {
-            QString label = QString::fromStdString(c.name);
-            if (!c.reference.empty()) label += "  (" + QString::fromStdString(c.reference) + ")";
+    // Strict filter: every typed word must appear in the name, the reference,
+    // the type, the category or the location (anywhere in the text, ignoring
+    // case and accents). Descriptions and notes do not count: they made
+    // unrelated results show up.
+    struct Entry { QString label, haystack; QString id; };
+    auto fold = [](const QString& t) {
+        QString d = t.normalized(QString::NormalizationForm_D);
+        QString out;
+        for (QChar ch : d) if (ch.category() != QChar::Mark_NonSpacing) out += ch;
+        return out.toLower();
+    };
+    auto entries = std::make_shared<std::vector<Entry>>();
+    {
+        std::map<Id, domain::Location> locs;
+        for (const auto& l : ctx_.inventory.listLocations()) locs[l.id] = l;
+        auto locPath = [&](Id id) {
+            QString p; int guard = 0;
+            while (id != kNoId && guard++ < 64) {
+                auto it = locs.find(id); if (it == locs.end()) break;
+                const QString n = QString::fromStdString(it->second.name);
+                p = p.isEmpty() ? n : n + " › " + p;
+                id = it->second.parentId;
+            }
+            return p;
+        };
+        for (const auto& c : ctx_.inventory.listComponents()) {
+            const QString name = QString::fromStdString(c.name), ref = QString::fromStdString(c.reference),
+                          type = QString::fromStdString(c.type), cat = QString::fromStdString(c.category),
+                          loc = locPath(c.locationId);
+            QString label = name;
+            if (!ref.isEmpty()) label += "  (" + ref + ")";
             QStringList meta;
-            if (!c.type.empty())         meta << QString::fromStdString(c.type);
-            if (!c.manufacturer.empty()) meta << QString::fromStdString(c.manufacturer);
+            if (!type.isEmpty()) meta << type;
+            if (!cat.isEmpty())  meta << cat;
+            if (!loc.isEmpty())  meta << loc;
             if (!meta.isEmpty()) label += "  -  " + meta.join(" · ");
-            auto* it = new QListWidgetItem(label);
-            it->setData(Qt::UserRole, QString::fromStdString(c.id));
+            entries->push_back({label, fold(name + " " + ref + " " + type + " " + cat + " " + loc),
+                                QString::fromStdString(c.id)});
+        }
+    }
+    auto repopulate = [results, entries, fold](const QString& q) {
+        results->clear();
+        const QStringList terms = fold(q).split(' ', Qt::SkipEmptyParts);
+        for (const auto& e : *entries) {
+            bool ok = true;
+            for (const auto& t : terms) if (!e.haystack.contains(t)) { ok = false; break; }
+            if (!ok) continue;
+            auto* it = new QListWidgetItem(e.label);
+            it->setData(Qt::UserRole, e.id);
             results->addItem(it);
         }
     };
@@ -247,12 +285,12 @@ void ProjectsPage::addBomLine() {
     connect(search, &QLineEdit::textChanged, &dlg, [repopulate](const QString& q){ repopulate(q); });
 
     auto* freeLabel = new QLineEdit;
-    freeLabel->setPlaceholderText(chui::tr("… ou libellé d'un élément hors inventaire (pas encore acheté)"));
-    v->addWidget(new QLabel(chui::tr("Ou élément hors inventaire :")));
+    freeLabel->setPlaceholderText(chui::tr("... or label for an item outside inventory (not purchased yet)"));
+    v->addWidget(new QLabel(chui::tr("Or item outside inventory:")));
     v->addWidget(freeLabel);
 
     auto* qtyRow = new QHBoxLayout;
-    qtyRow->addWidget(new QLabel(chui::tr("Quantité requise :")));
+    qtyRow->addWidget(new QLabel(chui::tr("Required quantity:")));
     auto* qty = new QSpinBox; qty->setRange(1, 1000000); qty->setValue(1);
     qtyRow->addWidget(qty); qtyRow->addStretch(1);
     v->addLayout(qtyRow);
@@ -261,7 +299,7 @@ void ProjectsPage::addBomLine() {
     v->addWidget(bb);
     QObject::connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
     QObject::connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-    // Double-clic sur un résultat = validation directe.
+    // Double-click on a result = direct confirmation.
     connect(results, &QListWidget::itemDoubleClicked, &dlg, [&dlg](QListWidgetItem*){ dlg.accept(); });
     if (dlg.exec() != QDialog::Accepted) return;
 
@@ -270,7 +308,7 @@ void ProjectsPage::addBomLine() {
     const QString freeText = freeLabel->text().trimmed();
 
     if (componentId == kNoId && freeText.isEmpty()) {
-        QMessageBox::warning(this, chui::tr("Élément"), chui::tr("Sélectionnez un composant dans la liste ou saisissez un libellé libre."));
+        QMessageBox::warning(this, chui::tr("Item"), chui::tr("Select a component from the list or enter a free label."));
         return;
     }
     ctx_.projects_service.addComponent(projectId, componentId, freeText.toStdString(), qty->value());

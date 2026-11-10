@@ -71,7 +71,7 @@ QVector<LabelFormat> customFormats() {
         f.marginTopMm = settings.value("marginTopMm", 13.3).toDouble();
         f.pitchXmm = settings.value("pitchXmm", f.labelWidthMm).toDouble();
         f.pitchYmm = settings.value("pitchYmm", f.labelHeightMm).toDouble();
-        // Une entree corrompue (dimension nulle, grille vide) ferait diviser par zero au rendu.
+        // A corrupted entry (zero dimension, empty grid) would cause a division by zero when rendering.
         const bool sane = f.columns > 0 && f.rows > 0 && f.pageWidthMm > 0 && f.pageHeightMm > 0
                        && f.labelWidthMm > 0 && f.labelHeightMm > 0;
         if (!f.id.isEmpty() && !f.name.isEmpty() && sane) formats.append(f);
@@ -82,8 +82,8 @@ QVector<LabelFormat> customFormats() {
 
 void saveCustomFormats(const QVector<LabelFormat>& formats) {
     QSettings settings("morfredus", "ComponentHub");
-    // beginWriteArray n'efface pas les anciennes entrees : sans remove(), supprimer un format
-    // laisserait l'ancien dernier element dans les QSettings.
+    // beginWriteArray does not clear old entries: without remove(), deleting a format
+    // would leave the old last element in QSettings.
     settings.remove("labels/formats");
     settings.beginWriteArray("labels/formats");
     for (int i = 0; i < formats.size(); ++i) {
@@ -99,15 +99,15 @@ void saveCustomFormats(const QVector<LabelFormat>& formats) {
     settings.endArray();
 }
 
-// Formats livres avec le logiciel, puis formats personnalises (QSettings). Un identifiant
-// inconnu (format supprime entre-temps) renvoie std::nullopt : l'appelant previent l'utilisateur
-// au lieu d'imprimer avec des valeurs par defaut.
+// Formats shipped with the software, then custom formats (QSettings). An unknown identifier
+// (format deleted in the meantime) returns std::nullopt: the caller warns the user
+// instead of printing with default values.
 std::optional<LabelFormat> findFormat(const QString& id) {
     LabelFormat f;
     f.builtin = true;
     f.id = id;
     if (id == "avery8728") {
-        f.name = "Avery No. 8728";  // les valeurs par defaut de LabelFormat sont celles de l'Avery 8728
+        f.name = "Avery No. 8728";  // the default values of LabelFormat are those of the Avery 8728
         return f;
     }
     if (id == "avery8790") {
@@ -175,8 +175,8 @@ QStringList componentSpecifications(const domain::Component& component) {
     return specifications;
 }
 
-// Source unique des lignes d'une etiquette : l'apercu et l'impression l'appellent tous les
-// deux, pour que l'ecran montre exactement ce qui sort sur le papier.
+// Single source of the lines of a label: the preview and the printing both call it,
+// so that the screen shows exactly what comes out on paper.
 QVector<Line> buildLines(const domain::Component& c, const QVector<LabelField>& fields) {
     QVector<Line> lines;
     auto enabled = [&fields](int i) { return i < fields.size() && fields.at(i).enabled; };
@@ -185,9 +185,9 @@ QVector<Line> buildLines(const domain::Component& c, const QVector<LabelField>& 
             lines.append({prefix + QString::fromStdString(value), fields.at(i).size});
     };
     if (enabled(0)) lines.append({QString::fromStdString(c.name), fields.at(0).size});
-    add(1, chui::tr("Référence") + ": ", c.reference);
-    add(2, chui::tr("Catégorie") + ": ", c.category);
-    add(3, chui::tr("Sous-catégorie") + ": ", c.subcategory);
+    add(1, chui::tr("Reference") + ": ", c.reference);
+    add(2, chui::tr("Category") + ": ", c.category);
+    add(3, chui::tr("Subcategory") + ": ", c.subcategory);
     add(4, chui::tr("Type") + ": ", c.type);
     if (enabled(5)) {
         const QStringList specifications = componentSpecifications(c);
@@ -208,11 +208,11 @@ int fittingPixelSize(const QString& text, int requested, const QFont& base, int 
     return size;
 }
 
-// Dessine les lignes centrees verticalement dans `label`, jamais en dehors : si le bloc est
-// trop haut (petite etiquette, beaucoup de champs), toutes les polices sont reduites d'un cran
-// jusqu'a ce qu'il tienne, et le dessin est rogne au rectangle de l'etiquette par securite.
-// Les tailles sont proportionnelles a la largeur de l'etiquette, ce qui donne le meme rendu
-// a l'ecran (apercu) et sur papier (300 dpi).
+// Draws the lines vertically centered in `label`, never outside it: if the block is
+// too tall (small label, many fields), all fonts are reduced one step at a time
+// until it fits, and the drawing is clipped to the label rectangle as a safeguard.
+// Sizes are proportional to the label width, which gives the same rendering
+// on screen (preview) and on paper (300 dpi).
 void drawLabelText(QPainter& painter, const QRectF& label, const QVector<Line>& lines) {
     if (lines.isEmpty()) return;
     const int padX = static_cast<int>(label.width() * 0.05);
@@ -348,8 +348,8 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
     auto* options = new QGroupBox(chui::tr("Label fields"));
     auto* optionLayout = new QVBoxLayout(options);
     const QStringList labels = {
-        chui::tr("Nom"), chui::tr("Référence"), chui::tr("Catégorie"),
-        chui::tr("Sous-catégorie"), chui::tr("Type"), chui::tr("Caractéristiques")
+        chui::tr("Name"), chui::tr("Reference"), chui::tr("Category"),
+        chui::tr("Subcategory"), chui::tr("Type"), chui::tr("Specifications")
     };
     const QVector<bool> defaults{true, true, false, false, false, true};
     QVector<QCheckBox*> checks;
@@ -374,8 +374,8 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
 
     auto* previewBox = new QGroupBox(chui::tr("Preview"));
     auto* previewLayout = new QVBoxLayout(previewBox);
-    // components_ est un membre : les pointeurs donnes a l'apercu restent valides tant que le
-    // dialogue existe, et il n'est jamais modifie apres la construction.
+    // components_ is a member: the pointers given to the preview stay valid as long as the
+    // dialog exists, and it is never modified after construction.
     auto* preview = new LabelPreview(components_.empty() ? nullptr : &components_.front());
     preview->setLabelSize(30.5, 16.9);
     previewLayout->addWidget(preview);
@@ -466,7 +466,7 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
             const QSignalBlocker checkBlocker(checks.at(i));
             const QSignalBlocker sizeBlocker(sizes.at(i));
             checks.at(i)->setChecked(settings.value(QStringLiteral("enabled%1").arg(i), defaults.at(i)).toBool());
-            // Un index enregistre hors plage (fichier edite a la main) retomberait sur -1 : on borne.
+            // A saved index out of range (hand-edited file) would fall back to -1: it is clamped.
             const int saved = settings.value(QStringLiteral("size%1").arg(i), i == 0 ? 0 : 1).toInt();
             sizes.at(i)->setCurrentIndex(std::clamp(saved, 0, sizes.at(i)->count() - 1));
         }
@@ -504,8 +504,8 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
                 saveCustomFormats(formats);
                 const int index = paperBox->currentIndex();
                 paperBox->setItemText(index, format.name);
-                // Meme index : currentIndexChanged ne part pas tout seul, or l'apercu et les
-                // bornes de depart dependent des nouvelles dimensions.
+                // Same index: currentIndexChanged does not fire by itself, yet the preview and the
+                // starting bounds depend on the new dimensions.
                 emit paperBox->currentIndexChanged(index);
                 return;
             }
@@ -539,7 +539,7 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         QSettings("morfredus", "ComponentHub").value("labels/lastFormat", "avery8728").toString());
     const int initialFormat = savedFormat >= 0 ? savedFormat : 0;
     if (paperBox->currentIndex() == initialFormat) {
-        // Deja sur cet index : le signal ne partira pas, on applique l'etat a la main.
+        // Already on this index: the signal will not fire, so the state is applied by hand.
         emit paperBox->currentIndexChanged(initialFormat);
     } else {
         paperBox->setCurrentIndex(initialFormat);
@@ -556,7 +556,7 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         close->setText(chui::tr("Close"));
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
-    // Format choisi + premier emplacement, ou std::nullopt (avec message) si le format n'existe plus.
+    // Chosen format + first position, or std::nullopt (with a message) if the format no longer exists.
     struct Job { LabelFormat format; int firstSlot; };
     auto currentJob = [paperBox, startRow, startColumn, this]() -> std::optional<Job> {
         const auto format = findFormat(paperBox->currentData().toString());
@@ -598,7 +598,7 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         writer.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Millimeter);
         writer.setResolution(300);
         QPainter painter(&writer);
-        // Chemin non inscriptible : le painter reste inactif, on le dit au lieu d'annoncer un succes.
+        // Path not writable: the painter stays inactive, so we say so instead of announcing success.
         if (!painter.isActive()) {
             QMessageBox::warning(this, chui::tr("Generate PDF"), chui::tr("Unable to write the PDF file."));
             return;

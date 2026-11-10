@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-# Version lue depuis le fichier VERSION à la racine.
+# Version read from the VERSION file at the repository root.
 set(CH_VERSION_FILE "${CMAKE_SOURCE_DIR}/VERSION")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CH_VERSION_FILE}")
 file(STRINGS "${CH_VERSION_FILE}" CH_VERSION LIMIT_COUNT 1)
@@ -9,12 +9,12 @@ string(STRIP "${CH_VERSION}" CH_VERSION)
 project(ComponentHub VERSION "${CH_VERSION}" LANGUAGES CXX)
 
 
-# --- Enregistrement des compilations (best-effort) ------------------------
-# Chronometre le vrai travail des compilateurs et signale la duree a
-# morfAnalytics (POST /api/monitor/activity), QUEL QUE SOIT le declencheur :
-# `cmake --build` direct, `morf upgrade` ou un deploiement morfDeploy (un
-# marqueur evite le double comptage cote morfDeploy). Sans URL configuree
-# (machine hors parc), c'est un no-op silencieux. A appeler AVANT les cibles.
+# --- Build recording (best-effort) ------------------------
+# Times the real work of the compilers and reports the duration to
+# morfAnalytics (POST /api/monitor/activity), WHATEVER the trigger:
+# a direct `cmake --build`, `morf upgrade` or a morfDeploy deployment (a
+# marker avoids double counting on the morfDeploy side). Without a configured URL
+# (machine outside the fleet), it is a silent no-op. Call it BEFORE the targets.
 include("${CMAKE_CURRENT_SOURCE_DIR}/third_party/morf/morfdeploy/record_compile.cmake")
 morf_enable_compile_recording()
 set(CMAKE_CXX_STANDARD 17)
@@ -22,22 +22,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CH_DOMAIN "${CMAKE_SOURCE_DIR}/src/domain")
 
-# --- Dépendances ----------------------------------------------------------
+# --- Dependencies ----------------------------------------------------------
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Widgets PrintSupport)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-# --- Modules communs « morf » (copies vendorées dans third_party/) ---------
-# Autonome : aucune dépendance à un dépôt externe, compilé dans l'exécutable.
-# Voir third_party/morf/README.md. Resynchro : scripts/sync-morf.(ps1|sh).
+# --- Shared "morf" modules (vendored copies in third_party/) ---------
+# Standalone: no dependency on an external repository, compiled into the executable.
+# See third_party/morf/README.md. To resync: scripts/sync-morf.(ps1|sh).
 add_subdirectory(third_party/morf/beacon)
 add_subdirectory(third_party/morf/update)
 
 # =====================================================================
-# Cœur portable : le domaine (src/domain/) + le stockage SQLite desktop.
-# Ne dépend NI de Qt NI d'Arduino.
+# Portable core: the domain (src/domain/) + the desktop SQLite storage.
+# Depends on NEITHER Qt NOR Arduino.
 # =====================================================================
 add_library(componenthub_core STATIC
     ${CH_DOMAIN}/csv.cpp
@@ -46,15 +46,15 @@ add_library(componenthub_core STATIC
     ${CH_DOMAIN}/import_export_service.cpp
     src/storage/SQLiteRepositories.cpp
     src/platform/Tar.cpp
-    src/platform/Backup.cpp       # sauvegarde cohérente (VACUUM INTO) + restauration en deux temps
+    src/platform/Backup.cpp       # consistent backup (VACUUM INTO) + two-step restore
     src/net/HttpClient.cpp        # client HTTP minimal (synchro HomeServerHub)
-    src/sync/SyncService.cpp      # orchestration PUSH/PULL vers le hub
+    src/sync/SyncService.cpp      # PUSH/PULL orchestration towards the hub
 )
 target_include_directories(componenthub_core PUBLIC ${CH_DOMAIN} ${CMAKE_SOURCE_DIR}/src)
 find_package(SQLite3 REQUIRED)
-# Nom de la cible SQLite : CMake recent (4.x) fournit SQLite3::SQLite3 et declare l'ancien
-# SQLite::SQLite3 obsolete (avertissement a chaque configuration) ; un CMake plus ancien (Debian
-# des Raspberry Pi) ne connait QUE l'ancien nom. On prend donc celui qui existe.
+# Name of the SQLite target: recent CMake (4.x) provides SQLite3::SQLite3 and declares the old
+# SQLite::SQLite3 obsolete (a warning at every configure); an older CMake (Debian
+# on Raspberry Pi) only knows the old name. We therefore take whichever exists.
 if(TARGET SQLite3::SQLite3)
     set(CH_SQLITE_TARGET SQLite3::SQLite3)
 else()
@@ -70,11 +70,11 @@ if(MSVC)
 endif()
 
 # =====================================================================
-# Application graphique Qt (le SEUL endroit qui dépend de Qt).
+# Qt graphical application (the ONLY place that depends on Qt).
 # =====================================================================
 set(CH_APP_RESOURCES resources/app.qrc)
 if(WIN32)
-    list(APPEND CH_APP_RESOURCES resources/app.rc)   # icône de l'exécutable Windows
+    list(APPEND CH_APP_RESOURCES resources/app.rc)   # icon of the Windows executable
 endif()
 
 add_executable(ComponentHub WIN32
@@ -92,7 +92,7 @@ add_executable(ComponentHub WIN32
     src/ui/ReferentialsPage.cpp
     src/ui/ImportExportPage.cpp
     src/ui/SettingsPage.cpp
-    src/sync/SyncRunner.cpp       # synchro dans un thread de travail dédié (Qt)
+    src/sync/SyncRunner.cpp       # synchronization in a dedicated worker thread (Qt)
     ${CH_APP_RESOURCES}
 )
 target_link_libraries(ComponentHub PRIVATE componenthub_core Qt6::Widgets Qt6::PrintSupport morfBeacon::morfBeacon morfUpdate::morfUpdate morfUpdate::Widgets)
@@ -103,7 +103,16 @@ if(NOT CH_LRELEASE_EXECUTABLE)
     message(FATAL_ERROR "Qt lrelease not found. Install Qt Linguist tools (qt6-l10n-tools on Debian/Ubuntu, qt6-tools on Arch, or mingw-w64-x86_64-qt6-tools on MSYS2).")
 endif()
 set(CH_TRANSLATION_QM_FILES)
-foreach(CH_TS_FILE IN ITEMS componenthub_fr componenthub_en componenthub_es)
+# Every translations/componenthub_<code>.ts is compiled and embedded; the empty template is
+# only a starting point for new languages. A new language needs no change to this file.
+file(GLOB CH_TS_PATHS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/translations/componenthub_*.ts")
+list(FILTER CH_TS_PATHS EXCLUDE REGEX "componenthub_template\.ts$")
+set(CH_TS_NAMES)
+foreach(CH_TS_PATH IN LISTS CH_TS_PATHS)
+    get_filename_component(CH_TS_NAME "${CH_TS_PATH}" NAME_WE)
+    list(APPEND CH_TS_NAMES "${CH_TS_NAME}")
+endforeach()
+foreach(CH_TS_FILE IN LISTS CH_TS_NAMES)
     set(CH_TS_PATH "${CMAKE_SOURCE_DIR}/translations/${CH_TS_FILE}.ts")
     set(CH_QM_PATH "${CMAKE_CURRENT_BINARY_DIR}/${CH_TS_FILE}.qm")
     add_custom_command(
@@ -124,7 +133,7 @@ if(MSVC)
     target_compile_options(ComponentHub PRIVATE /utf-8)
 endif()
 
-# --- Déploiement Windows : DLL Qt (windeployqt) + DLL MinGW (script) -------
+# --- Windows deployment: Qt DLLs (windeployqt) + MinGW DLLs (script) -------
 if(WIN32)
     find_program(WINDEPLOYQT_EXE windeployqt
         HINTS "${Qt6_DIR}/../../../bin" "$ENV{QT_ROOT}/bin")
@@ -168,16 +177,16 @@ if(WIN32)
     endif()
 endif()
 
-# --- Test de fumée headless (optionnel) ----------------------------------
+# --- Headless smoke test (optional) ----------------------------------
 option(CH_BUILD_SMOKE "Construire le test de fumée headless" OFF)
 if(CH_BUILD_SMOKE)
     add_executable(ch_smoke src/smoke_main.cpp)
     target_link_libraries(ch_smoke PRIVATE componenthub_core)
 endif()
 
-# --- Tests ctest du cœur (sans Qt) ----------------------------------------
-# chunked, JSON tolérant, Tar (récursif, archives hostiles), NULL SQLite, enregistrement distant
-# mal typé, sauvegarde/restauration avec pièces jointes, synchro (thread, annulation, concurrence).
+# --- ctest tests of the core (no Qt) ----------------------------------------
+# chunked, tolerant JSON, Tar (recursive, hostile archives), SQLite NULL, remote
+# badly typed record, backup/restore with attachments, synchronization (thread, cancellation, concurrency).
 # Lancer : ctest --output-on-failure
 option(CH_BUILD_TESTS "Construire les tests ctest" ON)
 if(CH_BUILD_TESTS)
@@ -186,16 +195,16 @@ if(CH_BUILD_TESTS)
     add_executable(ch_tests tests/test_core.cpp)
     target_link_libraries(ch_tests PRIVATE componenthub_core)
     add_test(NAME ch_tests COMMAND ch_tests)
-    # Synchronisation : faux hub injecté, deux connexions SQLite (interface + thread de travail),
-    # annulation, enregistrement poison.
+    # Synchronization: injected fake hub, two SQLite connections (interface + worker thread),
+    # cancellation, poison record.
     add_executable(ch_tests_sync tests/test_sync.cpp)
     target_link_libraries(ch_tests_sync PRIVATE componenthub_core Threads::Threads)
     add_test(NAME ch_tests_sync COMMAND ch_tests_sync)
-    # SyncRunner (thread de travail Qt) : cycle de vie, une tâche à la fois, annulation, arrêt borné.
+    # SyncRunner (Qt worker thread): lifecycle, one task at a time, cancellation, bounded shutdown.
     add_executable(ch_tests_runner tests/test_runner.cpp src/sync/SyncRunner.cpp)
     target_link_libraries(ch_tests_runner PRIVATE componenthub_core Qt6::Core)
     add_test(NAME ch_tests_runner COMMAND ch_tests_runner)
 endif()
 
-# Signale la duree de compile a morfAnalytics apres le lien de l'executable.
+# Reports the compile duration to morfAnalytics after the executable is linked.
 morf_record_target_build(ComponentHub "ComponentHub")

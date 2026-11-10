@@ -1,5 +1,5 @@
-// Serveur TCP local qui accepte les connexions (file d'attente du système) mais ne répond jamais :
-// simule un hub figé pour tester les délais et l'annulation du client HTTP.
+// Local TCP server that accepts connections (system backlog) but never answers:
+// simulates a frozen hub to test the timeouts and the cancellation of the HTTP client.
 #pragma once
 #include <string>
 

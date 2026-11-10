@@ -12,10 +12,10 @@ std::vector<std::vector<std::string>> parseCsv(const std::string& text, char del
     size_t i = 0;
     size_t n = text.size();
 
-    // Ignore un BOM UTF-8 en tête de fichier : les tableurs (Excel, LibreOffice)
-    // le rajoutent souvent à l'enregistrement en UTF-8. Sans ce saut, les trois
-    // octets se retrouveraient collés au premier en-tête ("\xEF\xBB\xBFid"),
-    // faisant échouer la reconnaissance de colonnes à la réimportation.
+    // Skips a UTF-8 BOM at the start of the file: spreadsheets (Excel, LibreOffice)
+    // often add one when saving as UTF-8. Without this skip, the three
+    // bytes would stick to the first header ("\xEF\xBB\xBFid"),
+    // making column recognition fail on re-import.
     if (n >= 3 && (unsigned char)text[0] == 0xEF &&
         (unsigned char)text[1] == 0xBB && (unsigned char)text[2] == 0xBF) {
         i = 3;

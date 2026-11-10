@@ -1,12 +1,12 @@
 /**
- * AppConfigIO.h - Sauvegarde / restauration de la configuration applicative.
+ * AppConfigIO.h - Backup / restore of the application configuration.
  *
- * La configuration (adresse du hub, jeton, options de synchro, apparence…) vit
- * dans QSettings (registre Windows / fichier INI), donc HORS du dossier de
- * données. Ces helpers la sérialisent en JSON pour :
- *   - l'inclure dans la sauvegarde complète (app_config.json, SANS le jeton, ajouté
- *     directement à l'archive : aucun fichier de config ne reste dans le dossier de données) ;
- *   - offrir une sauvegarde/restauration de la configuration SEULE.
+ * The configuration (hub address, token, synchronization options, appearance...) lives
+ * in QSettings (Windows registry / INI file), therefore OUTSIDE the data
+ * folder. These helpers serialize it to JSON in order to:
+ *   - include it in the full backup (app_config.json, WITHOUT the token, added
+ *     directly to the archive: no config file stays in the data folder);
+ *   - offer a backup/restore of the configuration ALONE.
  */
 
 #pragma once
@@ -19,14 +19,14 @@
 
 namespace chui {
 
-// Nom fixe du fichier de config déposé dans le dossier de données.
+// Fixed name of the config file placed in the data folder.
 inline QString configPathInDir(const QString& dataDir) { return dataDir + "/app_config.json"; }
 
-// Sérialise toutes les clés de configuration en JSON. Valeurs stockées en texte : la
-// relecture via QVariant::toBool()/toInt()/toString() reste correcte. Le jeton de synchro
-// (sync/token) n'est inclus que sur demande : une sauvegarde archivée puis déposée sur un
-// partage ne doit pas emporter un secret. Rappel : ce jeton circule en HTTP clair vers le hub,
-// à réserver à un LAN de confiance.
+// Serializes every configuration key to JSON. Values are stored as text: reading
+// them back through QVariant::toBool()/toInt()/toString() stays correct. The synchronization token
+// (sync/token) is only included on request: a backup archived and then dropped on a
+// share must not carry a secret. Reminder: this token travels over plain HTTP to the hub,
+// so it should be reserved for a trusted LAN.
 inline QByteArray configJson(bool includeToken) {
     QSettings s("morfredus", "ComponentHub");
     QJsonObject obj;
@@ -37,7 +37,7 @@ inline QByteArray configJson(bool includeToken) {
     return QJsonDocument(obj).toJson(QJsonDocument::Indented);
 }
 
-// Écrit la configuration dans un fichier JSON.
+// Writes the configuration into a JSON file.
 inline bool exportConfig(const QString& path, bool includeToken = true) {
     QFile f(path);
     if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) return false;
@@ -45,7 +45,7 @@ inline bool exportConfig(const QString& path, bool includeToken = true) {
     return true;
 }
 
-// Recharge la configuration depuis un fichier JSON dans QSettings.
+// Reloads the configuration from a JSON file into QSettings.
 inline bool importConfig(const QString& path) {
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly)) return false;
