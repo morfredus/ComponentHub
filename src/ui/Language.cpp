@@ -7,33 +7,32 @@
 
 namespace chui {
 
-Language languageFromCode(const QString& code) {
-    if (code == "fr") return Language::French;
-    if (code == "es") return Language::Spanish;
-    return Language::English;
-}
-
-QString languageCode(Language value) {
-    switch (value) {
-    case Language::French: return QStringLiteral("fr");
-    case Language::Spanish: return QStringLiteral("es");
-    default: return QStringLiteral("en");
-    }
-}
-
 Language language() {
     QSettings settings("morfredus", "ComponentHub");
     if (settings.contains("language"))
         return languageFromCode(settings.value("language").toString());
 
-    // French and Spanish are selected for every regional variant of the
-    // system locale (fr_FR, fr_CA, es_ES, es_MX...). All other system
-    // locales default to English.
+    // Langue du système (toutes variantes régionales : fr_CA, es_MX...) ;
+    // toute autre langue retombe sur l'anglais.
     switch (QLocale::system().language()) {
-    case QLocale::French: return Language::French;
+    case QLocale::French:  return Language::French;
     case QLocale::Spanish: return Language::Spanish;
-    default: return Language::English;
+    default:               return Language::English;
     }
+}
+
+QString languageCode(Language value) {
+    switch (value) {
+    case Language::English: return QStringLiteral("en");
+    case Language::Spanish: return QStringLiteral("es");
+    default:                return QStringLiteral("fr");
+    }
+}
+
+Language languageFromCode(const QString& code) {
+    if (code == "en") return Language::English;
+    if (code == "es") return Language::Spanish;
+    return Language::French;
 }
 
 void setLanguage(Language value) {
@@ -42,9 +41,9 @@ void setLanguage(Language value) {
 
 QString languageName(Language value) {
     switch (value) {
-    case Language::French: return QStringLiteral("Français");
+    case Language::English: return QStringLiteral("English");
     case Language::Spanish: return QStringLiteral("Español");
-    default: return QStringLiteral("English");
+    default:                return QStringLiteral("Français");
     }
 }
 

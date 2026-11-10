@@ -83,8 +83,7 @@
         <location filename="../src/ui/LocationsPage.cpp" line="137"/>
         <source> » existe déjà.
 Choisissez un autre nom ou corrigez la saisie.</source>
-        <translation> » existe déjà.
-Choisissez un autre nom ou corrigez la saisie.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/CategoriesPage.cpp" line="90"/>
@@ -512,7 +511,7 @@ Choisissez un autre nom ou corrigez la saisie.</translation>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="32"/>
         <source>Archive .tar réunissant toutes les tables de données, les fichiers joints ET la configuration (adresse du hub, options…) - un seul fichier pour tout sauvegarder puis tout restaurer.</source>
-        <translation>Archive .tar réunissant toutes les tables de données, les fichiers joints ET la configuration (adresse du hub, options…) - un seul fichier pour tout sauvegarder puis tout restaurer.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="34"/>
@@ -532,7 +531,7 @@ Choisissez un autre nom ou corrigez la saisie.</translation>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="45"/>
         <source>Sauvegarde/restaure uniquement les réglages (adresse du hub, jeton, options de synchro, apparence) - sans les données. Pratique pour déployer les mêmes réglages sur un autre poste.</source>
-        <translation>Sauvegarde/restaure uniquement les réglages (adresse du hub, jeton, options de synchro, apparence) - sans les données. Pratique pour déployer les mêmes réglages sur un autre poste.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="47"/>
@@ -564,17 +563,17 @@ Choisissez un autre nom ou corrigez la saisie.</translation>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="73"/>
         <source>Composants (ComponentHub)</source>
-        <translation>Composants (ComponentHub)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="76"/>
         <source>Composants (Bomist)</source>
-        <translation>Composants (Bomist)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="94"/>
         <source>Exporter en CSV</source>
-        <translation>Exporter en CSV</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="98"/>
@@ -582,118 +581,111 @@ Choisissez un autre nom ou corrigez la saisie.</translation>
         <location filename="../src/ui/ReferentialsPage.cpp" line="334"/>
         <location filename="../src/ui/ReferentialsPage.cpp" line="339"/>
         <source>Export</source>
-        <translation>Export</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="98"/>
         <source>Impossible d&apos;écrire le fichier.</source>
-        <translation>Impossible d&apos;écrire le fichier.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="104"/>
         <source>Export terminé :
 </source>
-        <translation>Export terminé :
-</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="108"/>
         <source>Importer un CSV</source>
-        <translation>Importer un CSV</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="112"/>
         <source>Impossible de lire le fichier.</source>
-        <translation>Impossible de lire le fichier.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="121"/>
         <location filename="../src/ui/ReferentialsPage.cpp" line="367"/>
         <source>Import terminé</source>
-        <translation>Import terminé</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="125"/>
         <source>Sauvegarde complète</source>
-        <translation>Sauvegarde complète</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="131"/>
         <location filename="../src/ui/ImportExportPage.cpp" line="133"/>
         <source>Sauvegarde</source>
-        <translation>Sauvegarde</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="131"/>
         <source>Sauvegarde complète créée (données + configuration) :
 </source>
-        <translation>Sauvegarde complète créée (données + configuration) :
-</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="133"/>
         <source>Échec de la création de l&apos;archive.</source>
-        <translation>Échec de la création de l&apos;archive.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="137"/>
         <source>Restaurer une sauvegarde</source>
-        <translation>Restaurer une sauvegarde</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="140"/>
         <source>Restauration</source>
-        <translation>Restauration</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="140"/>
         <source>Ce fichier n&apos;est pas une sauvegarde ComponentHub (.tar).</source>
-        <translation>Ce fichier n&apos;est pas une sauvegarde ComponentHub (.tar).</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="143"/>
         <source>Restaurer</source>
-        <translation>Restaurer</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="144"/>
         <source>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront ÉCRASÉES par la sauvegarde.
 
 Cette action est irréversible. Continuer ?</source>
-        <translation>Toutes les données actuelles (composants, catégories, emplacements, mouvements de stock, documents, projets) seront ÉCRASÉES par la sauvegarde.
-
-Cette action est irréversible. Continuer ?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="152"/>
         <source>%1 fichier(s) restauré(s).</source>
-        <translation>%1 fichier(s) restauré(s).</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="153"/>
         <source>
 Configuration restaurée.</source>
-        <translation>
-Configuration restaurée.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="155"/>
         <source>
 
 Redémarrez l&apos;application pour recharger les données et la configuration.</source>
-        <translation>
-
-Redémarrez l&apos;application pour recharger les données et la configuration.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="156"/>
         <source>Restauration terminée</source>
-        <translation>Restauration terminée</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="161"/>
         <source>Sauvegarder la configuration</source>
-        <translation>Sauvegarder la configuration</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="164"/>
@@ -701,42 +693,40 @@ Redémarrez l&apos;application pour recharger les données et la configuration.<
         <location filename="../src/ui/ImportExportPage.cpp" line="177"/>
         <location filename="../src/ui/ImportExportPage.cpp" line="180"/>
         <source>Configuration</source>
-        <translation>Configuration</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="164"/>
         <source>Configuration sauvegardée :
 </source>
-        <translation>Configuration sauvegardée :
-</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="166"/>
         <source>Échec de l&apos;écriture du fichier.</source>
-        <translation>Échec de l&apos;écriture du fichier.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="171"/>
         <location filename="../src/ui/ImportExportPage.cpp" line="173"/>
         <source>Restaurer la configuration</source>
-        <translation>Restaurer la configuration</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="174"/>
         <source>Les réglages actuels (adresse du hub, options, apparence) seront remplacés par ceux du fichier. Continuer ?</source>
-        <translation>Les réglages actuels (adresse du hub, options, apparence) seront remplacés par ceux du fichier. Continuer ?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="178"/>
         <source>Configuration restaurée.
 Redémarrez l&apos;application pour l&apos;appliquer entièrement.</source>
-        <translation>Configuration restaurée.
-Redémarrez l&apos;application pour l&apos;appliquer entièrement.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ImportExportPage.cpp" line="180"/>
         <source>Fichier de configuration invalide.</source>
-        <translation>Fichier de configuration invalide.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/InventoryPage.cpp" line="31"/>
@@ -923,8 +913,7 @@ Redémarrez l&apos;application pour l&apos;appliquer entièrement.</translation>
         <location filename="../src/ui/MainWindow.cpp" line="150"/>
         <source>Synchroniser vos données avec morfSync avant de fermer ?
 (Désactivable dans Réglages → Synchronisation.)</source>
-        <translation>Synchroniser vos données avec morfSync avant de fermer ?
-(Désactivable dans Réglages → Synchronisation.)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/MainWindow.cpp" line="176"/>
@@ -1084,7 +1073,7 @@ Redémarrez l&apos;application pour l&apos;appliquer entièrement.</translation>
     <message>
         <location filename="../src/ui/ProjectsPage.cpp" line="106"/>
         <source>Aucun projet</source>
-        <translation>Aucun projet</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ProjectsPage.cpp" line="130"/>
@@ -1179,7 +1168,7 @@ Redémarrez l&apos;application pour l&apos;appliquer entièrement.</translation>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="64"/>
         <source>Listes de valeurs normalisées proposées à la saisie, pour une nomenclature homogène (éviter « Capteur / Capteurs / Sensor »). Renommer ou fusionner une valeur d&apos;un référentiel lié (type, fabricant, fournisseur, état) met à jour les composants concernés.</source>
-        <translation>Listes de valeurs normalisées proposées à la saisie, pour une nomenclature homogène (éviter « Capteur / Capteurs / Sensor »). Renommer ou fusionner une valeur d&apos;un référentiel lié (type, fabricant, fournisseur, état) met à jour les composants concernés.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="80"/>
@@ -1189,95 +1178,92 @@ Redémarrez l&apos;application pour l&apos;appliquer entièrement.</translation>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="215"/>
         <source>Nouvelle valeur</source>
-        <translation>Nouvelle valeur</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="215"/>
         <location filename="../src/ui/ReferentialsPage.cpp" line="247"/>
         <source>Valeur :</source>
-        <translation>Valeur :</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="218"/>
         <location filename="../src/ui/ReferentialsPage.cpp" line="250"/>
         <source> » existe déjà dans ce référentiel.
 Choisissez un autre nom ou corrigez la saisie.</source>
-        <translation> » existe déjà dans ce référentiel.
-Choisissez un autre nom ou corrigez la saisie.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="294"/>
         <source>Fusion</source>
-        <translation>Fusion</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="294"/>
         <source>Sélectionnez au moins deux valeurs à fusionner (Ctrl+clic pour une sélection multiple).</source>
-        <translation>Sélectionnez au moins deux valeurs à fusionner (Ctrl+clic pour une sélection multiple).</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="302"/>
         <source>Fusionner des valeurs</source>
-        <translation>Fusionner des valeurs</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="304"/>
         <source>Les valeurs sélectionnées seront fusionnées en une seule.</source>
-        <translation>Les valeurs sélectionnées seront fusionnées en une seule.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="306"/>
         <source>Valeur conservée</source>
-        <translation>Valeur conservée</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="323"/>
         <source>Fusion terminée</source>
-        <translation>Fusion terminée</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="324"/>
         <source>Valeurs fusionnées en « %1 ».%2</source>
-        <translation>Valeurs fusionnées en « %1 ».%2</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="325"/>
         <source>
 %1 composant(s) réaffecté(s).</source>
-        <translation>
-%1 composant(s) réaffecté(s).</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="330"/>
         <source>Exporter le référentiel</source>
-        <translation>Exporter le référentiel</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="334"/>
         <source>Écriture impossible.</source>
-        <translation>Écriture impossible.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="339"/>
         <source>Référentiel exporté :
 </source>
-        <translation>Référentiel exporté :
-</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="344"/>
         <source>Importer un référentiel</source>
-        <translation>Importer un référentiel</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="347"/>
         <source>Lecture impossible.</source>
-        <translation>Lecture impossible.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/ReferentialsPage.cpp" line="367"/>
         <source>%1 valeur(s) ajoutée(s).</source>
-        <translation>%1 valeur(s) ajoutée(s).</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ui/SettingsPage.cpp" line="46"/>
@@ -1415,38 +1401,6 @@ Choisissez un autre nom ou corrigez la saisie.</translation>
     <message><source>Invalid HTTP response.</source><translation>Réponse HTTP illisible.</translation></message>
     <message><source>Skipped unsafe archive entry: </source><translation>Entrée d&apos;archive non sûre ignorée : </translation></message>
     <message><source>Could not restore file: </source><translation>Impossible de restaurer le fichier : </translation></message>
-    <message><source>Étiquettes</source><translation>Étiquettes</translation></message>
-    <message><source>Label fields</source><translation>Champs de l&apos;étiquette</translation></message>
-    <message><source>Preview</source><translation>Aperçu</translation></message>
-    <message><source>Large</source><translation>Grande</translation></message>
-    <message><source>Medium</source><translation>Moyenne</translation></message>
-    <message><source>Small</source><translation>Petite</translation></message>
-    <message><source>Paper configuration</source><translation>Configuration du papier</translation></message>
-    <message><source>Avery No. 8728 - 30.5 x 16.9 mm - 6 x 16 labels</source><translation>Avery No. 8728 - 30,5 x 16,9 mm - 6 x 16 étiquettes</translation></message>
-    <message><source>Avery No. 8790 - 17.8 x 10 mm - 10 x 27 labels</source><translation>Avery No. 8790 - 17,8 x 10 mm - 10 x 27 étiquettes</translation></message>
-    <message><source>Generate PDF</source><translation>Générer le PDF</translation></message>
-    <message><source>Print</source><translation>Imprimer</translation></message>
-    <message><source>Print labels</source><translation>Imprimer les étiquettes</translation></message>
-    <message><source>PDF created successfully.</source><translation>PDF créé avec succès.</translation></message>
-    <message><source>New custom label format</source><translation>Nouveau format d&apos;étiquette</translation></message>
-    <message><source>New custom format</source><translation>Nouveau format personnalisé</translation></message>
-    <message><source>Name</source><translation>Nom</translation></message>
-    <message><source>Delete format</source><translation>Supprimer le format</translation></message>
-    <message><source>Edit format</source><translation>Modifier le format</translation></message>
-    <message><source>Page width</source><translation>Largeur de page</translation></message>
-    <message><source>Page height</source><translation>Hauteur de page</translation></message>
-    <message><source>Columns</source><translation>Colonnes</translation></message>
-    <message><source>Rows</source><translation>Lignes</translation></message>
-    <message><source>Label width</source><translation>Largeur d&apos;étiquette</translation></message>
-    <message><source>Label height</source><translation>Hauteur d&apos;étiquette</translation></message>
-    <message><source>Left margin</source><translation>Marge gauche</translation></message>
-    <message><source>Top margin</source><translation>Marge supérieure</translation></message>
-    <message><source>Horizontal pitch</source><translation>Pas horizontal</translation></message>
-    <message><source>Vertical pitch</source><translation>Pas vertical</translation></message>
-    <message><source>Start row</source><translation>Ligne de départ</translation></message>
-    <message><source>Start column</source><translation>Colonne de départ</translation></message>
-    <message><source>Show calibration borders</source><translation>Afficher les bordures de calibration</translation></message>
-    <message><source>Supprimer %1 composants sélectionnés ?</source><translation>Supprimer %1 composants sélectionnés ?</translation></message>
     <message><source>HTTP status: </source><translation>Statut HTTP : </translation></message>
     <message><source>Unexpected response.</source><translation>Réponse inattendue.</translation></message>
     <message><source>Hub unreachable (HTTP %1).</source><translation>Hub injoignable (HTTP %1).</translation></message>
@@ -1456,26 +1410,6 @@ Choisissez un autre nom ou corrigez la saisie.</translation>
     <message><source>Invalid PUSH response.</source><translation>Réponse PUSH illisible.</translation></message>
     <message><source>PULL failed (HTTP %1).</source><translation>PULL échoué (HTTP %1).</translation></message>
     <message><source>Invalid PULL response.</source><translation>Réponse PULL illisible.</translation></message>
-    <message><source>Labels</source><translation>Étiquettes</translation></message>
-    <message><source>Close</source><translation>Fermer</translation></message>
-    <message><source>%1 pins</source><translation>%1 broches</translation></message>
-    <message><source>This label format no longer exists.</source><translation>Ce format d&apos;étiquette n&apos;existe plus.</translation></message>
-    <message><source>Unable to start printing.</source><translation>Impossible de lancer l&apos;impression.</translation></message>
-    <message><source>Unable to write the PDF file.</source><translation>Impossible d&apos;écrire le fichier PDF.</translation></message>
-    <message><source>Composant</source><translation>Composant</translation></message>
-    <message><source>Outil</source><translation>Outil</translation></message>
-    <message><source>Consommable</source><translation>Consommable</translation></message>
-    <message><source>(aucun)</source><translation>(aucun)</translation></message>
-    <message><source>YYYY-MM-DD</source><translation>AAAA-MM-JJ</translation></message>
-    <message><source>Suivre le &amp;système</source><translation>Suivre le &amp;système</translation></message>
-    <message><source>&amp;Clair</source><translation>&amp;Clair</translation></message>
-    <message><source>S&amp;ombre</source><translation>S&amp;ombre</translation></message>
-    <message><source>Dossier où sont stockées les tables JSON de l&apos;inventaire.</source><translation>Dossier où sont stockées les tables JSON de l&apos;inventaire.</translation></message>
-    <message><source>Synchronization hub address on the local network. The inventory works without it; it helps keep the same data on your other computers.</source><translation>Adresse du hub de synchronisation sur le réseau local. L&apos;inventaire fonctionne sans lui ; il sert à retrouver les mêmes données sur vos autres ordinateurs.</translation></message>
-    <message><source>Leave empty if the hub does not require a token.</source><translation>Laisser vide si le hub n&apos;exige pas de jeton.</translation></message>
-    <message><source>ComponentHub Desktop - version %1
-Mémoire technique d&apos;atelier. © morfredus.</source><translation>ComponentHub Desktop - version %1
-Mémoire technique d&apos;atelier. © morfredus.</translation></message>
     <message><source>
 
 REDÉMARREZ l&apos;application pour terminer la restauration : les données ne seront remplacées qu&apos;à ce moment-là.</source><translation>
@@ -1529,5 +1463,73 @@ L&apos;ancienne base (componenthub.sqlite.bak) et les anciennes pièces jointes 
     <message><source>The archive does not contain a valid ComponentHub database.</source><translation>L&apos;archive ne contient pas de base ComponentHub valide.</translation></message>
     <message><source>The archive is damaged or incomplete.</source><translation>L&apos;archive est abîmée ou incomplète.</translation></message>
     <message><source>The hub took too long to answer.</source><translation>Le hub a mis trop de temps à répondre.</translation></message>
+    <message>
+        <source>Nouvelle fiche (Ctrl+N)</source>
+        <translation>Nouvelle fiche (Ctrl+N)</translation>
+    </message>
+    <message>
+        <source>Tous les statuts</source>
+        <translation>Tous les statuts</translation>
+    </message>
+    <message>
+        <source>Tous les emplacements</source>
+        <translation>Tous les emplacements</translation>
+    </message>
+    <message>
+        <source>Toutes les catégories</source>
+        <translation>Toutes les catégories</translation>
+    </message>
+    <message>
+        <source>Définir la quantité</source>
+        <translation>Définir la quantité</translation>
+    </message>
+    <message>
+        <source>Quantité :</source>
+        <translation>Quantité :</translation>
+    </message>
+    <message>
+        <source> (copie)</source>
+        <translation> (copie)</translation>
+    </message>
+    <message>
+        <source>Changer d'emplacement</source>
+        <translation>Changer d'emplacement</translation>
+    </message>
+    <message>
+        <source>Nouvel emplacement :</source>
+        <translation>Nouvel emplacement :</translation>
+    </message>
+    <message>
+        <source>Dupliquer</source>
+        <translation>Dupliquer</translation>
+    </message>
+    <message>
+        <source>Ajouter 1 (+)</source>
+        <translation>Ajouter 1 (+)</translation>
+    </message>
+    <message>
+        <source>Retirer 1 (−)</source>
+        <translation>Retirer 1 (−)</translation>
+    </message>
+    <message>
+        <source>Définir la quantité…</source>
+        <translation>Définir la quantité…</translation>
+    </message>
+    <message>
+        <source>Changer d'emplacement…</source>
+        <translation>Changer d'emplacement…</translation>
+    </message>
+    <message>
+        <source>Ouvrir la datasheet</source>
+        <translation>Ouvrir la datasheet</translation>
+    </message>
+    <message>
+        <source>Rechercher un composant (nom, référence, type, catégorie, emplacement)</source>
+        <translation>Rechercher un composant (nom, référence, type, catégorie, emplacement)</translation>
+    </message>
+    <message>
+        <source>Glisser-déposer : déposer un emplacement sur un autre pour en faire un enfant, ou dans le vide pour en faire une racine.</source>
+        <translation>Glisser-déposer : déposer un emplacement sur un autre pour en faire un enfant, ou dans le vide pour en faire une racine.</translation>
+    </message>
 </context>
 </TS>

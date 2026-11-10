@@ -2,6 +2,7 @@
 #include <QWidget>
 #include "ids.h"
 class QTreeWidget;
+class QTreeWidgetItem;
 namespace chdesktop { class AppContext; }
 
 class LocationsPage : public QWidget {
@@ -15,6 +16,7 @@ private:
     void addLocation(bool asChild);
     void renameLocation();
     void deleteLocation();
+    void moveLocation(QTreeWidgetItem* src, QTreeWidgetItem* newParent);
     domain::Id currentId() const;
     chdesktop::AppContext& ctx_;
     QTreeWidget* tree_ = nullptr;

@@ -39,9 +39,10 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, chui::SyncRunner* runner,
     languageLayout->addWidget(languageBox);
     languageLayout->addStretch(1);
     v->addWidget(language);
-    connect(languageBox, &QComboBox::currentIndexChanged, this, [this, languageBox](int) {
+    connect(languageBox, &QComboBox::currentIndexChanged, this, [languageBox](int) {
         chui::setLanguage(chui::languageFromCode(languageBox->currentData().toString()));
-        emit localeChanged();
+        QMessageBox::information(nullptr, "Language / Langue",
+            chui::tr("Redémarrez ComponentHub pour appliquer la langue."));
     });
 
     auto* currency = new QGroupBox(chui::tr("Currency"));
@@ -56,12 +57,11 @@ SettingsPage::SettingsPage(chdesktop::AppContext& ctx, chui::SyncRunner* runner,
     currencyLayout->addWidget(currencyBox);
     currencyLayout->addStretch(1);
     v->addWidget(currency);
-    connect(currencyBox, &QComboBox::currentIndexChanged, this, [this, currencyBox] {
+    connect(currencyBox, &QComboBox::currentIndexChanged, this, [currencyBox] {
         const QString code = currencyBox->currentData().toString();
         chui::setCurrency(code == "GBP" ? chui::Currency::Pound
                          : code == "USD" ? chui::Currency::Dollar
                                          : chui::Currency::Euro);
-        emit localeChanged();
     });
 
     // --- Apparence ---

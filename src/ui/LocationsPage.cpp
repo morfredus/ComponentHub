@@ -7,12 +7,40 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QMap>
+#include <QTimer>
+#include <QDropEvent>
+#include <QTreeWidgetItemIterator>
+#include <functional>
 
 #include "AppContext.h"
 #include "ui/UiKit.h"
 #include "ui/Language.h"
 
 using domain::Location;
+
+namespace {
+// Arbre qui n'applique jamais le déplacement lui-même : le glisser-déposer est
+// délégué à la page (qui écrit en base puis reconstruit l'arbre). Évite que Qt
+// et la base divergent, et ignore l'ordre (les frères ne sont pas ordonnés).
+class DropTree : public QTreeWidget {
+public:
+    // (élément déplacé, nouveau parent ou nullptr = racine)
+    std::function<void(QTreeWidgetItem*, QTreeWidgetItem*)> onMove;
+protected:
+    void dropEvent(QDropEvent* e) override {
+        QTreeWidgetItem* src = currentItem();
+        QTreeWidgetItem* target = itemAt(e->position().toPoint());
+        e->ignore();  // jamais de déplacement natif
+        if (!src || !onMove) return;
+        QTreeWidgetItem* newParent = nullptr;
+        if (target) {
+            // Sur l'élément = enfant ; entre deux éléments = frère de la cible.
+            newParent = (dropIndicatorPosition() == OnItem) ? target : target->parent();
+        }
+        onMove(src, newParent);
+    }
+};
+}  // namespace
 
 LocationsPage::LocationsPage(chdesktop::AppContext& ctx, QWidget* parent)
     : QWidget(parent), ctx_(ctx) {
@@ -21,6 +49,7 @@ LocationsPage::LocationsPage(chdesktop::AppContext& ctx, QWidget* parent)
     v->setSpacing(12);
     v->addWidget(uikit::pageTitle(chui::tr("Emplacements")));
     v->addWidget(uikit::hint(chui::tr("Hiérarchie libre : Atelier › Armoire A › Tiroir A12 › Boîte ESD… « Ajouter un enfant » crée un sous-emplacement sous la sélection.")));
+    v->addWidget(uikit::hint(chui::tr("Glisser-déposer : déposer un emplacement sur un autre pour en faire un enfant, ou dans le vide pour en faire une racine.")));
 
     auto* bar = new QHBoxLayout;
     auto* addRoot  = uikit::button(chui::tr("Ajouter (racine)"), icons::Glyph::Add);
@@ -30,7 +59,11 @@ LocationsPage::LocationsPage(chdesktop::AppContext& ctx, QWidget* parent)
     bar->addWidget(addRoot); bar->addWidget(addChild); bar->addWidget(ren); bar->addWidget(del); bar->addStretch(1);
     v->addLayout(bar);
 
-    tree_ = new QTreeWidget;
+    auto* dt = new DropTree;
+    tree_ = dt;
+    tree_->setDragDropMode(QAbstractItemView::InternalMove);
+    tree_->setDropIndicatorShown(true);
+    dt->onMove = [this](QTreeWidgetItem* s, QTreeWidgetItem* p) { moveLocation(s, p); };
     tree_->setHeaderLabels({chui::tr("Emplacement"), "id"});
     tree_->setColumnHidden(1, true);
     tree_->header()->setStretchLastSection(true);
@@ -143,6 +176,40 @@ void LocationsPage::renameLocation() {
     l.parentId = parentId;
     ctx_.inventory.saveLocation(l);
     refresh();
+}
+
+void LocationsPage::moveLocation(QTreeWidgetItem* src, QTreeWidgetItem* newParent) {
+    if (src->parent() == newParent) return;  // rien à changer
+    // Interdit : se déposer sur soi-même ou sur un de ses descendants (cycle).
+    for (auto* a = newParent; a; a = a->parent())
+        if (a == src) return;
+
+    const domain::Id id = src->text(1).toStdString();
+    const domain::Id parentId = newParent ? newParent->text(1).toStdString() : domain::kNoId;
+    const QString name = src->text(0);
+
+    // Même règle qu'à la création : nom unique seulement à la racine.
+    if (!newParent) {
+        for (const auto& e : ctx_.inventory.listLocations())
+            if (e.id != id && e.parentId == domain::kNoId &&
+                QString::fromStdString(e.name).compare(name, Qt::CaseInsensitive) == 0) {
+                QMessageBox::warning(this, chui::tr("Nom déjà utilisé"),
+                    chui::tr("L'emplacement racine « ") + name + chui::tr(" » existe déjà.\nChoisissez un autre nom ou corrigez la saisie."));
+                return;
+            }
+    }
+
+    Location l;
+    l.id = id;
+    l.name = name.toStdString();
+    l.parentId = parentId;
+    ctx_.inventory.saveLocation(l);
+    // Reconstruction différée : on est encore dans le dropEvent de l'arbre.
+    QTimer::singleShot(0, this, [this, id] {
+        refresh();
+        for (QTreeWidgetItemIterator it(tree_); *it; ++it)
+            if ((*it)->text(1).toStdString() == id) { tree_->setCurrentItem(*it); break; }
+    });
 }
 
 void LocationsPage::deleteLocation() {

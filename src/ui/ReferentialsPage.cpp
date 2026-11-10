@@ -166,8 +166,7 @@ void ReferentialsPage::seedIfEmpty(const QString& key, int bind) {
     if (key == "component_types") {
         const auto lang = chui::language();
         const auto* defaults = lang == chui::Language::English ? kDefaultTypesEn
-                             : lang == chui::Language::Spanish ? kDefaultTypesEs
-                                                               : kDefaultTypesFr;
+                             : lang == chui::Language::Spanish ? kDefaultTypesEs : kDefaultTypesFr;
         for (const char* const* v = defaults; *v; ++v) values.insert(*v);
     }
     if (values.empty()) return;

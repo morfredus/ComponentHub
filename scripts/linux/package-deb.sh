@@ -132,7 +132,7 @@ elif [ "$CROSS_ARM64" = "1" ]; then
     esac
 else
     DEPENDS="$(detect_depends || true)"
-    [ -n "$DEPENDS" ] || DEPENDS="libc6, libqt6core6, libqt6gui6, libqt6widgets6, libqt6printsupport6"
+    [ -n "$DEPENDS" ] || DEPENDS="libc6, libqt6core6, libqt6gui6, libqt6widgets6"
     # Le plugin xcb (chargé par dlopen) exige libxcb-cursor0 depuis Qt 6.5.
     case ", $DEPENDS," in
         *", libxcb-cursor0,"*) : ;;

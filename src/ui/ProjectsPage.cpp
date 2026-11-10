@@ -15,6 +15,9 @@
 #include <QDialogButtonBox>
 #include <QMessageBox>
 
+#include <memory>
+#include <map>
+#include <vector>
 #include "AppContext.h"
 #include "ui/UiKit.h"
 #include "ui/Language.h"
@@ -218,7 +221,7 @@ void ProjectsPage::addBomLine() {
 
     auto* search = new QLineEdit;
     search->setObjectName("search");
-    search->setPlaceholderText(chui::tr("Rechercher un composant (nom, référence, type, marque, fournisseur…)"));
+    search->setPlaceholderText(chui::tr("Rechercher un composant (nom, référence, type, catégorie, emplacement)"));
     search->setClearButtonEnabled(true);
     v->addWidget(new QLabel(chui::tr("Composant de l'inventaire :")));
     v->addWidget(search);
@@ -226,20 +229,55 @@ void ProjectsPage::addBomLine() {
     auto* results = new QListWidget;
     v->addWidget(results, 1);
 
-    // Remplissage/filtrage via la recherche globale (tous les champs).
-    auto repopulate = [this, results](const QString& q) {
-        results->clear();
-        domain::ComponentFilter filter;
-        filter.query = q.trimmed().toStdString();
-        for (const auto& c : ctx_.inventory.listComponents(filter)) {
-            QString label = QString::fromStdString(c.name);
-            if (!c.reference.empty()) label += "  (" + QString::fromStdString(c.reference) + ")";
+    // Filtre strict : chaque mot tapé doit se trouver dans le nom, la référence,
+    // le type, la catégorie ou l'emplacement (n'importe où dans le texte, sans
+    // tenir compte de la casse ni des accents). Les descriptions et notes ne
+    // comptent pas : elles faisaient remonter des résultats sans rapport.
+    struct Entry { QString label, haystack; QString id; };
+    auto fold = [](const QString& t) {
+        QString d = t.normalized(QString::NormalizationForm_D);
+        QString out;
+        for (QChar ch : d) if (ch.category() != QChar::Mark_NonSpacing) out += ch;
+        return out.toLower();
+    };
+    auto entries = std::make_shared<std::vector<Entry>>();
+    {
+        std::map<Id, domain::Location> locs;
+        for (const auto& l : ctx_.inventory.listLocations()) locs[l.id] = l;
+        auto locPath = [&](Id id) {
+            QString p; int guard = 0;
+            while (id != kNoId && guard++ < 64) {
+                auto it = locs.find(id); if (it == locs.end()) break;
+                const QString n = QString::fromStdString(it->second.name);
+                p = p.isEmpty() ? n : n + " › " + p;
+                id = it->second.parentId;
+            }
+            return p;
+        };
+        for (const auto& c : ctx_.inventory.listComponents()) {
+            const QString name = QString::fromStdString(c.name), ref = QString::fromStdString(c.reference),
+                          type = QString::fromStdString(c.type), cat = QString::fromStdString(c.category),
+                          loc = locPath(c.locationId);
+            QString label = name;
+            if (!ref.isEmpty()) label += "  (" + ref + ")";
             QStringList meta;
-            if (!c.type.empty())         meta << QString::fromStdString(c.type);
-            if (!c.manufacturer.empty()) meta << QString::fromStdString(c.manufacturer);
+            if (!type.isEmpty()) meta << type;
+            if (!cat.isEmpty())  meta << cat;
+            if (!loc.isEmpty())  meta << loc;
             if (!meta.isEmpty()) label += "  -  " + meta.join(" · ");
-            auto* it = new QListWidgetItem(label);
-            it->setData(Qt::UserRole, QString::fromStdString(c.id));
+            entries->push_back({label, fold(name + " " + ref + " " + type + " " + cat + " " + loc),
+                                QString::fromStdString(c.id)});
+        }
+    }
+    auto repopulate = [results, entries, fold](const QString& q) {
+        results->clear();
+        const QStringList terms = fold(q).split(' ', Qt::SkipEmptyParts);
+        for (const auto& e : *entries) {
+            bool ok = true;
+            for (const auto& t : terms) if (!e.haystack.contains(t)) { ok = false; break; }
+            if (!ok) continue;
+            auto* it = new QListWidgetItem(e.label);
+            it->setData(Qt::UserRole, e.id);
             results->addItem(it);
         }
     };
