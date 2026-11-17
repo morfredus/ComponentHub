@@ -139,7 +139,9 @@ if(WIN32)
         HINTS "${Qt6_DIR}/../../../bin" "$ENV{QT_ROOT}/bin")
     if(WINDEPLOYQT_EXE)
         add_custom_command(TARGET ComponentHub POST_BUILD
-            COMMAND "${WINDEPLOYQT_EXE}" --no-translations --compiler-runtime "$<TARGET_FILE:ComponentHub>"
+            # --force : sans lui, windeployqt garde une DLL deja presente dont la date est plus recente,
+            # meme si elle vient d'un autre environnement MSYS2 (mingw64 / ucrt64) que le compilateur.
+            COMMAND "${WINDEPLOYQT_EXE}" --no-translations --compiler-runtime --force "$<TARGET_FILE:ComponentHub>"
             COMMENT "Deploiement des DLL Qt a cote de l'executable")
     endif()
     if(NOT MSVC)
@@ -158,6 +160,7 @@ if(WIN32)
             find_program(_componenthub_cxx NAMES "${CMAKE_CXX_COMPILER}" g++.exe)
         endif()
         get_filename_component(COMPONENTHUB_COMPILER_BIN "${_componenthub_cxx}" DIRECTORY)
+        componenthub_msys_path("${COMPONENTHUB_COMPILER_BIN}" COMPONENTHUB_TOOLCHAIN_BIN)
         get_filename_component(COMPONENTHUB_MINGW_ROOT "${COMPONENTHUB_COMPILER_BIN}" DIRECTORY)
         get_filename_component(COMPONENTHUB_MSYS_ROOT "${COMPONENTHUB_MINGW_ROOT}" DIRECTORY)
         find_program(COMPONENTHUB_MSYS_BASH bash.exe
@@ -168,7 +171,7 @@ if(WIN32)
                 COMMAND "${CMAKE_COMMAND}" -E env
                     "PATH=${COMPONENTHUB_MSYS_ROOT}/usr/bin;${COMPONENTHUB_COMPILER_BIN}"
                     --
-                    "${COMPONENTHUB_MSYS_BASH}" "${COMPONENTHUB_DEPLOY_SCRIPT}" "${COMPONENTHUB_TARGET_DIR}"
+                    "${COMPONENTHUB_MSYS_BASH}" "${COMPONENTHUB_DEPLOY_SCRIPT}" "${COMPONENTHUB_TARGET_DIR}" "${COMPONENTHUB_TOOLCHAIN_BIN}"
                 VERBATIM
                 COMMENT "Copie des DLL MinGW a cote de l'executable")
         else()
