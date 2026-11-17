@@ -26,9 +26,9 @@ Spécifique au bureau : le **stockage SQLite** (`storage/`), l'archive
 
 ## Compilation
 
-### Windows (MSYS2 / MinGW)
+### Windows (MSYS2 / UCRT64)
 
-Paquets : `mingw-w64-x86_64-{gcc,cmake,ninja,qt6-base,qt6-tools,sqlite3,nlohmann-json}`.
+Paquets : `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,qt6-base,qt6-tools,sqlite3,nlohmann-json}`.
 
 ```sh
 cmake --preset mingw

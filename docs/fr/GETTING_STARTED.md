@@ -126,19 +126,19 @@ d'installation en haut de la page, gardez le dossier par défaut `C:\msys64`).
 
 ### 2. Ouvrir le bon terminal
 
-Dans le menu Démarrer, lancez **« MSYS2 MINGW64 »** (bien la variante *MINGW64*,
-pas *MSYS* ni *UCRT64*). Une fenêtre de terminal s'ouvre.
+Dans le menu Démarrer, lancez **« MSYS2 UCRT64 »** (bien la variante *UCRT64*,
+pas *MSYS* ni *MINGW64*). Une fenêtre de terminal s'ouvre.
 
 ### 3. Installer les outils (une commande)
 
 ```sh
 pacman -S --needed git \
-  mingw-w64-x86_64-gcc \
-  mingw-w64-x86_64-cmake \
-  mingw-w64-x86_64-ninja \
-  mingw-w64-x86_64-qt6-base \
-  mingw-w64-x86_64-qt6-tools \
-  mingw-w64-x86_64-nlohmann-json
+  mingw-w64-ucrt-x86_64-gcc \
+  mingw-w64-ucrt-x86_64-cmake \
+  mingw-w64-ucrt-x86_64-ninja \
+  mingw-w64-ucrt-x86_64-qt6-base \
+  mingw-w64-ucrt-x86_64-qt6-tools \
+  mingw-w64-ucrt-x86_64-nlohmann-json
 ```
 
 Répondez « oui » (Entrée) aux questions d'installation.
@@ -188,12 +188,12 @@ Linux, y compris sur un Raspberry Pi.
 - **`cmake : command not found` (Linux)** - l'installation des paquets a échoué,
   relancez l'`apt install` de l'étape 1 et lisez les messages.
 - **`cmake` introuvable (Windows)** - vous n'êtes pas dans le terminal **MSYS2
-  MINGW64**, ou l'étape `pacman` a échoué. Rouvrez « MSYS2 MINGW64 » et
+  UCRT64**, ou l'étape `pacman` a échoué. Rouvrez « MSYS2 UCRT64 » et
   recommencez l'étape 3.
 - **`Could NOT find Qt6` pendant `cmake --preset`** - Qt n'est pas installé :
-  vérifiez `qt6-base-dev` (Linux) ou `mingw-w64-x86_64-qt6-base` (Windows).
+  vérifiez `qt6-base-dev` (Linux) ou `mingw-w64-ucrt-x86_64-qt6-base` (Windows).
 - **`Could NOT find nlohmann_json`** - installez `nlohmann-json3-dev` (Linux) ou
-  `mingw-w64-x86_64-nlohmann-json` (Windows).
+  `mingw-w64-ucrt-x86_64-nlohmann-json` (Windows).
 - **La fenêtre ne s'ouvre pas sous Linux (`could not load the Qt platform
   plugin "xcb"`)** - installez la dépendance d'exécution :
   `sudo apt install libxcb-cursor0`.

@@ -8,8 +8,11 @@ behind the shared guards (dry-run, explicit confirmation).
 
 The mapping lives HERE, centrally, not in each project: common build libraries
 (OpenSSL, zlib) have well-known packages, and a project should not have to learn
-`apt install libssl-dev` vs `pacman -S mingw-w64-x86_64-openssl`. It names the
+`apt install libssl-dev` vs `pacman -S mingw-w64-ucrt-x86_64-openssl`. It names the
 need; morfDeploy knows the packages.
+
+MSYS2 on Windows (UCRT64, or the deprecated MINGW64) is recognised from the compiler on
+the PATH: the libraries are then VERIFIED with pacman, never installed by the build.
 
 Where no package manager is available for the current toolchain (the official Qt
 MinGW toolchain on Windows, say), this module does not pretend: it reports that
@@ -48,6 +51,17 @@ BUILD_DEPENDENCY_REGISTRY = {
         "arch": ["zlib"],
     },
 }
+
+
+# MSYS2 : un paquet par environnement, au prefixe de l'environnement. Genere depuis le nom
+# court plutot que ecrit quatre fois deux fois : l'ajout d'une dependance reste une ligne.
+_MSYS2_NAMES = {"openssl": "openssl", "libssh2": "libssh2",
+                "nlohmann-json": "nlohmann-json", "zlib": "zlib"}
+_MSYS2_PREFIX = {"msys2-ucrt64": "mingw-w64-ucrt-x86_64-",
+                 "msys2-mingw64": "mingw-w64-x86_64-"}
+for _dep, _name in _MSYS2_NAMES.items():
+    for _family, _prefix in _MSYS2_PREFIX.items():
+        BUILD_DEPENDENCY_REGISTRY[_dep][_family] = [_prefix + _name]
 
 
 def packages_for(dep_id: str, family: str) -> list:

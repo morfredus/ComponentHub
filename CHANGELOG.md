@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.19.2] - 2026-11-17
+
+### Changed
+
+- Vendored morfDeploy resynchronised to 0.22.0: on Windows, the build libraries are recognised under MSYS2 (UCRT64) and verified with pacman instead of reported as "no package for this platform".
+- Vendored morfUpdate resynchronised to 0.9.3 (no behaviour change).
+- Windows build: MSYS2 `UCRT64` instead of the deprecated `MINGW64` (`vscode-mingw.ps1`, `deploy-mingw.sh`, VS Code note). The build guides and the French getting-started guide now name the `mingw-w64-ucrt-x86_64-*` packages and the UCRT64 shell.
+
 ## [1.19.1] - 2026-11-10
 
 ### Added

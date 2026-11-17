@@ -25,7 +25,8 @@ from pathlib import Path
 from . import builddeps
 from .backends import ServiceBackend, select
 from .manifest import Manifest
-from .sysdeps import detect_package_manager, install_command, resolve
+from .sysdeps import (detect_build_package_manager, detect_package_manager,
+                      install_command, resolve)
 
 
 class DeployError(RuntimeError):
@@ -904,7 +905,7 @@ class Deployer:
         if not deps:
             return True
 
-        family, manager = detect_package_manager()
+        family, manager = detect_build_package_manager()
         statuses = builddeps.resolve(deps, family, manager)
         missing = [s for s in statuses if s.resolvable and s.missing]
         gaps = [s for s in statuses
@@ -930,6 +931,16 @@ class Deployer:
                 if cmd:
                     print(f"      would run: {' '.join(cmd)}")
             print("\nNo package was installed (--dry-run).")
+            return True
+
+        # MSYS2 (Windows) : verification seule. Le build ne lance jamais pacman : il annonce
+        # ce qui manque, avec la commande exacte a copier dans un shell MSYS2, et le
+        # find_package de CMake garde le dernier mot.
+        if family and family.startswith("msys2-"):
+            if missing:
+                wanted = [p for s in missing for p in s.missing]
+                print("  to install, in an MSYS2 shell: pacman -S --needed "
+                      + " ".join(wanted))
             return True
 
         # No package manager for this toolchain: announce, do not block. The

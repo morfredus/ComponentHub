@@ -17,7 +17,7 @@ catalog.
    `language="de_DE"` on the `<TS>` line.
 
 2. Open the file in **Qt Linguist** (free, ships with Qt; on Windows with MSYS2:
-   `pacman -S mingw-w64-x86_64-qt6-tools`) and translate. Each line shows the English text,
+   `pacman -S mingw-w64-ucrt-x86_64-qt6-tools`) and translate. Each line shows the English text,
    and sometimes a short comment telling two meanings of the same word apart. Any text
    editor works too: fill the `<translation>` element and remove `type="unfinished"`.
 

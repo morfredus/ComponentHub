@@ -15,7 +15,7 @@ from pathlib import Path
 from .backends import select
 from .core import DeployError, Deployer
 from .manifest import Manifest, ManifestError
-from .sysdeps import detect_package_manager, resolve
+from .sysdeps import detect_build_package_manager, detect_package_manager, resolve
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -231,7 +231,7 @@ def main(argv: list | None = None) -> int:
     if args.action == "build-deps" and args.list_categories:
         import json
         from . import builddeps
-        family, manager = detect_package_manager()
+        family, manager = detect_build_package_manager()
         statuses = builddeps.resolve(manifest.build_dependencies, family, manager)
         catalog = {
             "service": manifest.service_name,
