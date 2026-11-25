@@ -2,7 +2,7 @@
 
 *Read in another language: **English** (this document) · [Français](README.fr.md).*
 
-[![Version](https://img.shields.io/badge/version-1.19.3-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.20.0-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -146,6 +146,21 @@ scripts/linux/install.sh
 
 Artifacts are produced in `dist/`.
 
+## Continuous integration
+
+Two GitHub Actions workflows live in `.github/workflows/`:
+
+- **`ci.yml`**: on every pull request (and push to `main`/`dev`), builds with the `linux`
+  preset on Ubuntu 24.04 and runs `ctest`. Ubuntu 24.04 ships Qt 6.4.2, the project's
+  minimum, so a green run also proves no newer Qt API crept in. Documentation-only
+  changes skip it and an outdated run is cancelled by a newer commit.
+- **`packages.yml`**: on a `vX.Y.Z` tag or a manual run (*Actions > Packages > Run workflow*),
+  builds the `.deb` amd64 and arm64 (native builds in Debian Trixie containers, arm64 on
+  GitHub's arm64 runner, with `scripts/ci/build-deb-container.sh`) and the Windows ZIP and installer
+  (MSYS2 UCRT64, preset `mingw`). Packages are workflow artifacts kept 14 days; releases
+  are still published by the morfSystem tooling. arm64 and Windows can be switched off
+  in the manual run form.
+
 ## Repository layout
 
 ```
@@ -154,6 +169,8 @@ ComponentHub/
 ├── CMakePresets.json       presets: mingw / linux / linux-arm64 / cross
 ├── cmake/toolchains/       ARM64 cross-compilation toolchain
 ├── scripts/{windows,linux}/ VS Code build + packaging (zip, deb, AppImage)
+├── scripts/ci/             container build script used by the GitHub workflows
+├── .github/workflows/      CI (pull requests) and package builds
 ├── resources/              app.qrc, themes (light/dark), icon (logo.png, app.ico)
 ├── src/
 │   ├── domain/             business core (no Qt/Arduino dependency)

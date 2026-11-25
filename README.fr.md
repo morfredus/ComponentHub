@@ -2,7 +2,7 @@
 
 *Lire dans une autre langue : [English](README.md) · **Français** (ce document).*
 
-[![Version](https://img.shields.io/badge/version-1.19.3-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.20.0-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -125,6 +125,22 @@ scripts/linux/install.sh
 
 Les artefacts sont produits dans `dist/`.
 
+## Intégration continue
+
+Deux workflows GitHub Actions vivent dans `.github/workflows/` :
+
+- **`ci.yml`** : à chaque pull request (et push sur `main`/`dev`), compile avec le preset `linux`
+  sous Ubuntu 24.04 et lance `ctest`. Ubuntu 24.04 fournit Qt 6.4.2, le minimum du projet :
+  un run vert prouve aussi qu'aucune API Qt plus récente ne s'est glissée dans le code. Les
+  changements de documentation seule l'ignorent et un run périmé est annulé par un commit plus
+  récent.
+- **`packages.yml`** : sur un tag `vX.Y.Z` ou en lancement manuel (*Actions > Packages > Run
+  workflow*), construit les `.deb` amd64 et arm64 (builds natifs dans des conteneurs Debian
+  Trixie, arm64 sur le runner arm64 de GitHub, via `scripts/ci/build-deb-container.sh`) et le ZIP et l'installeur
+  Windows (MSYS2 UCRT64, preset `mingw`). Les paquets sont des artefacts du workflow conservés
+  14 jours ; les releases restent publiées par l'outillage morfSystem. arm64 et Windows se
+  désactivent dans le formulaire du lancement manuel.
+
 ## Structure du dépôt
 
 ```
@@ -133,6 +149,8 @@ ComponentHub/
 ├── CMakePresets.json       presets mingw / linux / linux-arm64 / cross
 ├── cmake/toolchains/       toolchain de cross-compilation ARM64
 ├── scripts/{windows,linux}/ compilation VS Code + packaging (zip, deb, AppImage)
+├── scripts/ci/             script de build en conteneur utilisé par les workflows GitHub
+├── .github/workflows/      CI (pull requests) et construction des paquets
 ├── resources/              app.qrc, thèmes (light/dark), icône (logo.png, app.ico)
 ├── src/
 │   ├── domain/             cœur métier (aucune dépendance Qt/Arduino)

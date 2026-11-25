@@ -1,0 +1,121 @@
+# Builds the distributable packages as workflow artifacts.
+#
+#   deb-amd64   .deb amd64   (native build in a Debian Trixie container)
+#   deb-arm64   .deb arm64   (native build in a Trixie arm64 container, arm64 runner)
+#   windows     ZIP + Inno Setup installer (MSYS2 UCRT64, preset "mingw")
+#
+# Triggers: a version tag (vX.Y.Z) or a manual run. NOT on every push or pull request:
+# a full package set is not needed for each commit. Pull requests are covered by ci.yml.
+#
+# The GitHub release itself is still published by the morfSystem tooling
+# (publish-releases): these artifacts are build proofs and test packages, kept 14 days.
+#
+# arm64 note: the standard arm64 runner (free for public repositories) builds natively, so
+# no sysroot cross-build and no emulation (the local preset linux-arm64-cross is not used).
+name: Packages
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      arm64:
+        description: "Build the arm64 .deb"
+        type: boolean
+        default: true
+      windows:
+        description: "Build the Windows ZIP and installer"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deb-amd64:
+    name: .deb amd64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build, test and package in Debian Trixie
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src debian:trixie \
+            bash scripts/ci/build-deb-container.sh linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: componenthub-deb-amd64
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 14
+
+  deb-arm64:
+    name: .deb arm64
+    if: github.event_name != 'workflow_dispatch' || inputs.arm64
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build, test and package in Debian Trixie arm64
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src debian:trixie \
+            bash scripts/ci/build-deb-container.sh linux-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: componenthub-deb-arm64
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    name: Windows ZIP + installer
+    if: github.event_name != 'workflow_dispatch' || inputs.windows
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: MSYS2 UCRT64 toolchain
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-qt6-base
+            mingw-w64-ucrt-x86_64-qt6-tools
+            mingw-w64-ucrt-x86_64-sqlite3
+            mingw-w64-ucrt-x86_64-nlohmann-json
+
+      - name: Build and test (preset mingw)
+        shell: msys2 {0}
+        run: |
+          export QT_ROOT="$(cygpath -m /ucrt64)"
+          export QT_QPA_PLATFORM=offscreen
+          cmake --preset mingw
+          cmake --build --preset mingw --parallel
+          ctest --test-dir build-mingw --output-on-failure
+
+      - name: Package (ZIP, and installer when Inno Setup is present)
+        shell: pwsh
+        run: |
+          if (-not (Get-Command ISCC.exe -ErrorAction SilentlyContinue) -and
+              -not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup --no-progress -y
+          }
+          ./scripts/windows/package-win.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: componenthub-windows
+          path: |
+            dist/ComponentHub-*-win64.zip
+            dist/ComponentHub-*-win64-setup.exe
+          if-no-files-found: error
+          retention-days: 14

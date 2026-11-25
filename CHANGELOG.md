@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.20.0] - 2026-11-26
+
+### Added
+
+- **GitHub Actions CI.** `.github/workflows/ci.yml` builds the `linux` preset on Ubuntu 24.04 (Qt 6.4.2, the project's minimum) and runs `ctest` on every pull request and on pushes to `main` and `dev`; the result appears as a check on the PR and in the run summary. Documentation-only changes are skipped and superseded runs are cancelled.
+- **Package workflow.** `.github/workflows/packages.yml` (tag `v*` or manual run) builds the amd64 and arm64 `.deb` (native builds in Debian Trixie containers, arm64 on GitHub's arm64 runner) and the Windows ZIP and installer (MSYS2 UCRT64, preset `mingw`) as 14-day workflow artifacts. arm64 and Windows can be switched off in the manual run. The repository is public, so runner minutes are not a constraint.
+- `scripts/ci/build-deb-container.sh`: configure, build, test and package a `.deb` inside a Debian container.
+
 ## [1.19.3] - 2026-11-18
 
 ### Fixed
