@@ -33,6 +33,7 @@
 #include <optional>
 
 #include "ui/Language.h"
+#include "ui/LabelPrinting.h"
 
 namespace {
 
@@ -598,11 +599,12 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         const auto job = currentJob();
         if (!job) return;
         QPrinter printer(QPrinter::HighResolution);
-        printer.setPageSize(QPageSize(QSizeF(job->format.pageWidthMm, job->format.pageHeightMm), QPageSize::Millimeter));
-        printer.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Millimeter);
+        const QSizeF paperSizeMm(job->format.pageWidthMm, job->format.pageHeightMm);
+        chui::configureLabelPrinter(printer, paperSizeMm);
         QPrintDialog dialog(&printer, this);
         dialog.setWindowTitle(chui::tr("Print labels"));
         if (dialog.exec() != QDialog::Accepted) return;
+        chui::configureLabelPrinter(printer, paperSizeMm);
         QPainter painter(&printer);
         if (!painter.isActive()) {
             QMessageBox::warning(this, chui::tr("Print labels"), chui::tr("Unable to start printing."));

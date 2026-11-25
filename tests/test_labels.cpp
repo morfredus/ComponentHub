@@ -7,6 +7,7 @@
 #include <QTranslator>
 
 #include "ui/LabelDialog.h"
+#include "ui/LabelPrinting.h"
 #include "test_util.h"
 
 // A translator independent of installed catalogs, exercising the same chui context.
@@ -26,8 +27,34 @@ static QComboBox* paperBox(LabelDialog& dialog) {
     return nullptr;
 }
 
+static void testPrinterMargins() {
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setResolution(300);
+    const QSizeF paperSize(210, 297);
+    chui::configureLabelPrinter(printer, paperSize);
+
+    // Simulate the print dialog replacing the layout and adding printer margins.
+    printer.setFullPage(false);
+    printer.setPageSize(QPageSize(QPageSize::Letter));
+    printer.setPageOrientation(QPageLayout::Landscape);
+    printer.setPageMargins(QMarginsF(12, 15, 12, 15), QPageLayout::Millimeter);
+    CHECK(!printer.fullPage());
+    CHECK(printer.pageRect(QPrinter::DevicePixel) != printer.paperRect(QPrinter::DevicePixel));
+
+    chui::configureLabelPrinter(printer, paperSize);
+    CHECK(printer.fullPage());
+    CHECK(printer.pageLayout().orientation() == QPageLayout::Portrait);
+    CHECK(printer.pageLayout().pageSize().size(QPageSize::Millimeter) == paperSize);
+    CHECK(printer.pageLayout().margins(QPageLayout::Millimeter) == QMarginsF());
+    CHECK(printer.pageRect(QPrinter::DevicePixel) == printer.paperRect(QPrinter::DevicePixel));
+    // The renderer derives mm from device.width(): it must cover the full sheet.
+    CHECK(printer.width() == printer.pageLayout().fullRectPixels(printer.resolution()).width());
+}
+
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+    testPrinterMargins();
     QTemporaryDir settingsDir;
     CHECK(settingsDir.isValid());
     QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope, settingsDir.path());
