@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.20.1] - 2026-11-26
+
+### Changed
+
+- The pull-request CI (`ci.yml`) now also builds and tests on Linux arm64 (native `ubuntu-24.04-arm` runner) and Windows (MSYS2 UCRT64, preset `mingw`), in parallel with the Ubuntu 24.04 / Qt 6.4 job. `packages.yml` is unchanged.
+
 ## [1.20.0] - 2026-11-26
 
 ### Added

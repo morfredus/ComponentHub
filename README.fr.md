@@ -2,7 +2,7 @@
 
 *Lire dans une autre langue : [English](README.md) · **Français** (ce document).*
 
-[![Version](https://img.shields.io/badge/version-1.20.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.20.1-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -129,8 +129,8 @@ Les artefacts sont produits dans `dist/`.
 
 Deux workflows GitHub Actions vivent dans `.github/workflows/` :
 
-- **`ci.yml`** : à chaque pull request (et push sur `main`/`dev`), compile avec le preset `linux`
-  sous Ubuntu 24.04 et lance `ctest`. Ubuntu 24.04 fournit Qt 6.4.2, le minimum du projet :
+- **`ci.yml`** : à chaque pull request (et push sur `main`/`dev`), compile et lance `ctest` sous
+  Ubuntu 24.04 (preset `linux`), Linux arm64 (`linux-arm64`) et Windows (`mingw`, MSYS2 UCRT64). Ubuntu 24.04 fournit Qt 6.4.2, le minimum du projet :
   un run vert prouve aussi qu'aucune API Qt plus récente ne s'est glissée dans le code. Les
   changements de documentation seule l'ignorent et un run périmé est annulé par un commit plus
   récent.

@@ -1,10 +1,11 @@
-# Pull-request check: compile and run the ctest suite on the oldest supported Qt.
+# Pull-request check: compile and run the ctest suite on Linux x86_64, Linux arm64 and
+# Windows (MSYS2 UCRT64).
 #
-# Why Ubuntu 24.04: it ships Qt 6.4.2, the project's minimum. A green run here proves the
+# Why Ubuntu 24.04: it ships Qt 6.4.2, the project's minimum. A green run there proves the
 # code does not use a newer Qt API. The result shows as a check on the PR; the ctest
 # output is also written to the run summary.
 #
-# One Linux job of a few minutes; an older run of the same ref is cancelled when a new
+# The repository is public, so runner minutes are not a constraint. Jobs run in parallel; an older run of the same ref is cancelled when a new
 # commit arrives, and documentation-only changes do not trigger it. Packages are NOT built here
 # (see packages.yml).
 name: CI
@@ -34,41 +35,50 @@ concurrency:
 
 jobs:
   build-test:
-    name: Build and test (Ubuntu 24.04, Qt 6.4)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    name: Build and test (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86_64, Qt 6.4
+            os: ubuntu-24.04
+            preset: linux
+            build_dir: build
+          - name: Linux arm64
+            os: ubuntu-24.04-arm
+            preset: linux-arm64
+            build_dir: build-arm64
     steps:
       - uses: actions/checkout@v4
 
       - name: Install build dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends \
-            cmake ninja-build g++ pkg-config \
-            qt6-base-dev qt6-tools-dev qt6-tools-dev-tools qt6-l10n-tools \
-            libsqlite3-dev nlohmann-json3-dev libgl1-mesa-dev libxkbcommon-dev
+          sudo apt-get install -y -qq --no-install-recommends             cmake ninja-build g++ pkg-config             qt6-base-dev qt6-tools-dev qt6-tools-dev-tools qt6-l10n-tools             libsqlite3-dev nlohmann-json3-dev libgl1-mesa-dev libxkbcommon-dev
 
       - name: Show the Qt version in use
         run: dpkg-query -W qt6-base-dev
 
       - name: Configure
-        run: cmake --preset linux
+        run: cmake --preset ${{ matrix.preset }}
 
       - name: Build
-        run: cmake --build --preset linux --parallel
+        run: cmake --build --preset ${{ matrix.preset }} --parallel
 
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
           set -o pipefail
-          ctest --test-dir build --output-on-failure | tee ctest.log
+          ctest --test-dir ${{ matrix.build_dir }} --output-on-failure | tee ctest.log
 
       - name: Summarise tests in the run summary
         if: always()
         run: |
           {
-            echo '### ctest'
+            echo '### ctest (${{ matrix.name }})'
             echo '```'
             tail -n 40 ctest.log 2>/dev/null || echo 'no ctest output (build failed?)'
             echo '```'
@@ -78,9 +88,39 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ctest-log
+          name: ctest-log-${{ matrix.preset }}
           path: |
             ctest.log
-            build/Testing/Temporary/LastTest.log
+            ${{ matrix.build_dir }}/Testing/Temporary/LastTest.log
           if-no-files-found: ignore
           retention-days: 7
+
+  build-test-windows:
+    name: Build and test (Windows, MSYS2 UCRT64)
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: MSYS2 UCRT64 toolchain
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-qt6-base
+            mingw-w64-ucrt-x86_64-qt6-tools
+            mingw-w64-ucrt-x86_64-sqlite3
+            mingw-w64-ucrt-x86_64-nlohmann-json
+
+      - name: Build and test (preset mingw)
+        shell: msys2 {0}
+        run: |
+          export QT_ROOT="$(cygpath -m /ucrt64)"
+          export QT_QPA_PLATFORM=offscreen
+          cmake --preset mingw
+          cmake --build --preset mingw --parallel
+          ctest --test-dir build-mingw --output-on-failure
