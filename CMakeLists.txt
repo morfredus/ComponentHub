@@ -207,6 +207,11 @@ if(CH_BUILD_TESTS)
     add_executable(ch_tests_runner tests/test_runner.cpp src/sync/SyncRunner.cpp)
     target_link_libraries(ch_tests_runner PRIVATE componenthub_core Qt6::Core)
     add_test(NAME ch_tests_runner COMMAND ch_tests_runner)
+    # Label field preferences: legacy settings, empty captions, per-paper isolation and i18n.
+    add_executable(ch_tests_labels tests/test_labels.cpp src/ui/LabelDialog.cpp src/ui/Language.cpp)
+    target_link_libraries(ch_tests_labels PRIVATE componenthub_core Qt6::Widgets Qt6::PrintSupport)
+    add_test(NAME ch_tests_labels COMMAND ch_tests_labels)
+    set_tests_properties(ch_tests_labels PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
 
 # Reports the compile duration to morfAnalytics after the executable is linked.
