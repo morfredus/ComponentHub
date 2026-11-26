@@ -807,6 +807,10 @@ Redémarrez l'application pour l'appliquer entièrement.</translation>
         <translation>Petite</translation>
     </message>
     <message>
+        <source>Extra Large</source>
+        <translation>Très grande</translation>
+    </message>
+    <message>
         <source>Preview</source>
         <translation>Aperçu</translation>
     </message>

@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.21.0] - 2026-11-26
+
+### Added
+
+- Editable label field captions, saved independently for each paper format and shared by the preview, PDF export and direct printing. Captions can be shortened or left empty to omit the prefix and colon; empty fields show the original localized name as a gray placeholder. Existing settings remain supported, with an empty Name caption by default.
+- **Extra Large** label font size (32 points), with English, French and Spanish text. Existing Small (12), Medium (16) and Large (24) sizes and saved preferences are preserved.
+
+### Changed
+
+- Label font sizes are displayed in descending order (Extra Large, Large, Medium, Small), using stable settings IDs independent of their visual positions. The size selector is wider to accommodate the new option.
+
+### Fixed
+
+- Direct label printing could shift or scale labels relative to PDF output because of printer margins or layout changes made by the print dialog. Printing now uses coordinates from the physical paper edge and reapplies the selected paper size, orientation and zero margins after the dialog is accepted. Physical unprintable areas still apply.
+
 ## [1.20.7] - 2026-11-26
 
 ### Fixed

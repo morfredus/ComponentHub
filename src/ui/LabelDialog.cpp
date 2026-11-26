@@ -33,8 +33,11 @@
 #include <optional>
 
 #include "ui/Language.h"
+#include "ui/LabelPrinting.h"
 
 namespace {
+
+constexpr int SizeSettingsRole = Qt::UserRole + 1;
 
 struct LabelFormat {
     QString id;
@@ -154,12 +157,13 @@ bool editFormat(QWidget* parent, LabelFormat& f) {
 
 struct LabelField {
     bool enabled;
-    int size;
+    double size;
+    QString caption;
 };
 
 struct Line {
     QString text;
-    int size;
+    double size;
 };
 
 QStringList componentSpecifications(const domain::Component& component) {
@@ -180,19 +184,18 @@ QStringList componentSpecifications(const domain::Component& component) {
 QVector<Line> buildLines(const domain::Component& c, const QVector<LabelField>& fields) {
     QVector<Line> lines;
     auto enabled = [&fields](int i) { return i < fields.size() && fields.at(i).enabled; };
-    auto add = [&](int i, const QString& prefix, const std::string& value) {
-        if (enabled(i) && !value.empty())
-            lines.append({prefix + QString::fromStdString(value), fields.at(i).size});
+    auto add = [&](int i, const QString& value) {
+        if (!enabled(i) || value.isEmpty()) return;
+        const auto& field = fields.at(i);
+        const QString prefix = field.caption.isEmpty() ? QString() : field.caption + ": ";
+        lines.append({prefix + value, field.size});
     };
-    if (enabled(0)) lines.append({QString::fromStdString(c.name), fields.at(0).size});
-    add(1, chui::tr("Reference") + ": ", c.reference);
-    add(2, chui::tr("Category") + ": ", c.category);
-    add(3, chui::tr("Subcategory") + ": ", c.subcategory);
-    add(4, chui::tr("Type") + ": ", c.type);
-    if (enabled(5)) {
-        const QStringList specifications = componentSpecifications(c);
-        if (!specifications.isEmpty()) lines.append({specifications.join(" "), fields.at(5).size});
-    }
+    add(0, QString::fromStdString(c.name));
+    add(1, QString::fromStdString(c.reference));
+    add(2, QString::fromStdString(c.category));
+    add(3, QString::fromStdString(c.subcategory));
+    add(4, QString::fromStdString(c.type));
+    add(5, componentSpecifications(c).join(" "));
     return lines;
 }
 
@@ -334,8 +337,6 @@ private:
     double labelAspect_ = 30.5 / 16.9;
 };
 
-int pointSizeFor(int comboIndex) { return comboIndex == 0 ? 24 : comboIndex == 1 ? 16 : 12; }
-
 } // namespace
 
 LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidget* parent)
@@ -351,22 +352,45 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         chui::tr("Name"), chui::tr("Reference"), chui::tr("Category"),
         chui::tr("Subcategory"), chui::tr("Type"), chui::tr("Specifications")
     };
+    QStringList defaultCaptions = labels;
+    // Older versions printed the component name without a caption.
+    defaultCaptions[0].clear();
     const QVector<bool> defaults{true, true, false, false, false, true};
     QVector<QCheckBox*> checks;
     QVector<QComboBox*> sizes;
-    const QStringList sizeLabels = {chui::tr("Large"), chui::tr("Medium"), chui::tr("Small")};
+    QVector<QLineEdit*> captions;
+    // Display sizes in descending order while preserving their existing settings IDs.
+    const QStringList sizeLabels = {chui::tr("Extra Large"), chui::tr("Large"), chui::tr("Medium"), chui::tr("Small")};
+    const QVector<double> pointSizes{32, 24, 16, 12};
+    const QVector<int> sizeSettingsIds{3, 0, 1, 2};
     for (int i = 0; i < labels.size(); ++i) {
         auto* row = new QWidget(options);
         auto* rowLayout = new QHBoxLayout(row);
         rowLayout->setContentsMargins(0, 0, 0, 0);
-        auto* check = new QCheckBox(labels.at(i));
+        auto* check = new QCheckBox;
+        check->setObjectName(QStringLiteral("labelFieldEnabled%1").arg(i));
+        check->setAccessibleName(labels.at(i));
+        auto* caption = new QLineEdit(defaultCaptions.at(i));
+        caption->setObjectName(QStringLiteral("labelFieldCaption%1").arg(i));
+        caption->setAccessibleName(labels.at(i));
+        caption->setPlaceholderText(labels.at(i));
+        caption->setToolTip(labels.at(i));
+        captions.append(caption);
         check->setChecked(defaults.at(i));
         checks.append(check);
         auto* size = new QComboBox;
+        size->setObjectName(QStringLiteral("labelFieldSize%1").arg(i));
         size->addItems(sizeLabels);
-        size->setCurrentIndex(i == 0 ? 0 : 1);
+        for (int j = 0; j < pointSizes.size(); ++j) {
+            size->setItemData(j, pointSizes.at(j));
+            size->setItemData(j, sizeSettingsIds.at(j), SizeSettingsRole);
+        }
+        size->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+        size->setMinimumWidth(size->sizeHint().width() + 12);
+        size->setCurrentIndex(size->findData(i == 0 ? 0 : 1, SizeSettingsRole));
         sizes.append(size);
-        rowLayout->addWidget(check, 1);
+        rowLayout->addWidget(check);
+        rowLayout->addWidget(caption, 1);
         rowLayout->addWidget(size);
         optionLayout->addWidget(row);
     }
@@ -440,10 +464,10 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
     paperLayout->addLayout(optionsRow);
     root->addWidget(paper);
 
-    auto selectedFields = [checks, sizes] {
+    auto selectedFields = [checks, sizes, captions] {
         QVector<LabelField> fields;
         for (int i = 0; i < sizes.size(); ++i)
-            fields.append({checks.at(i)->isChecked(), pointSizeFor(sizes.at(i)->currentIndex())});
+            fields.append({checks.at(i)->isChecked(), sizes.at(i)->currentData().toDouble(), captions.at(i)->text()});
         return fields;
     };
     auto updatePreview = [preview, selectedFields] { preview->setFields(selectedFields()); };
@@ -454,21 +478,26 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         settings.beginGroup("labels/fields/" + id);
         for (int i = 0; i < checks.size(); ++i) {
             settings.setValue(QStringLiteral("enabled%1").arg(i), checks.at(i)->isChecked());
-            settings.setValue(QStringLiteral("size%1").arg(i), sizes.at(i)->currentIndex());
+            settings.setValue(QStringLiteral("size%1").arg(i), sizes.at(i)->currentData(SizeSettingsRole));
         }
         settings.endGroup();
     };
-    auto loadFields = [checks, sizes, paperBox, defaults, updatePreview] {
+    auto loadFields = [checks, sizes, captions, defaultCaptions, paperBox, defaults, updatePreview] {
         const QString id = paperBox->currentData().toString();
         QSettings settings("morfredus", "ComponentHub");
         settings.beginGroup("labels/fields/" + id);
         for (int i = 0; i < checks.size(); ++i) {
             const QSignalBlocker checkBlocker(checks.at(i));
             const QSignalBlocker sizeBlocker(sizes.at(i));
+            const QSignalBlocker captionBlocker(captions.at(i));
+            // Missing keys use the defaults, including the empty Name caption for
+            // compatibility. Saved captions (even empty ones) take precedence.
+            captions.at(i)->setText(settings.value(QStringLiteral("caption%1").arg(i), defaultCaptions.at(i)).toString());
             checks.at(i)->setChecked(settings.value(QStringLiteral("enabled%1").arg(i), defaults.at(i)).toBool());
-            // A saved index out of range (hand-edited file) would fall back to -1: it is clamped.
+            // Saved IDs are independent of the visual order (legacy: 0=Large, 1=Medium, 2=Small).
             const int saved = settings.value(QStringLiteral("size%1").arg(i), i == 0 ? 0 : 1).toInt();
-            sizes.at(i)->setCurrentIndex(std::clamp(saved, 0, sizes.at(i)->count() - 1));
+            sizes.at(i)->setCurrentIndex(sizes.at(i)->findData(
+                std::clamp(saved, 0, sizes.at(i)->count() - 1), SizeSettingsRole));
         }
         settings.endGroup();
         updatePreview();
@@ -535,6 +564,17 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
             saveFields();
         });
 
+    for (int i = 0; i < captions.size(); ++i)
+        connect(captions.at(i), &QLineEdit::textChanged, this, [paperBox, i, updatePreview](const QString& text) {
+            updatePreview();
+            const QString id = paperBox->currentData().toString();
+            if (id.isEmpty()) return;
+            // Save captions only when edited: toggling a field or changing its size
+            // must not freeze an untouched translated default in the settings.
+            QSettings("morfredus", "ComponentHub").setValue(
+                QStringLiteral("labels/fields/%1/caption%2").arg(id).arg(i), text);
+        });
+
     const int savedFormat = paperBox->findData(
         QSettings("morfredus", "ComponentHub").value("labels/lastFormat", "avery8728").toString());
     const int initialFormat = savedFormat >= 0 ? savedFormat : 0;
@@ -572,11 +612,12 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         const auto job = currentJob();
         if (!job) return;
         QPrinter printer(QPrinter::HighResolution);
-        printer.setPageSize(QPageSize(QSizeF(job->format.pageWidthMm, job->format.pageHeightMm), QPageSize::Millimeter));
-        printer.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Millimeter);
+        const QSizeF paperSizeMm(job->format.pageWidthMm, job->format.pageHeightMm);
+        chui::configureLabelPrinter(printer, paperSizeMm);
         QPrintDialog dialog(&printer, this);
         dialog.setWindowTitle(chui::tr("Print labels"));
         if (dialog.exec() != QDialog::Accepted) return;
+        chui::configureLabelPrinter(printer, paperSizeMm);
         QPainter painter(&printer);
         if (!painter.isActive()) {
             QMessageBox::warning(this, chui::tr("Print labels"), chui::tr("Unable to start printing."));
