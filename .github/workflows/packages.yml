@@ -4,11 +4,14 @@
 #   deb-arm64   .deb arm64   (native build in a Trixie arm64 container, arm64 runner)
 #   windows     ZIP + Inno Setup installer (MSYS2 UCRT64, preset "mingw")
 #
-# Triggers: a version tag (vX.Y.Z) or a manual run. NOT on every push or pull request:
-# a full package set is not needed for each commit. Pull requests are covered by ci.yml.
+# Triggers: every push to main (like ci.yml, so the run of the commit that a release tags
+# already exists and is finished when the release is prepared), a version tag (vX.Y.Z) and
+# a manual run. Pull requests are covered by ci.yml, not here.
 #
 # The GitHub release itself is still published by the morfSystem tooling
-# (publish-releases): these artifacts are build proofs and test packages, kept 14 days.
+# (publish-releases): its package-all step looks for the successful run of this workflow
+# for the released commit and takes the packages from it, building locally only what is
+# missing. Artifacts are kept 14 days.
 #
 # arm64 note: the standard arm64 runner (free for public repositories) builds natively, so
 # no sysroot cross-build and no emulation (the local preset linux-arm64-cross is not used).
@@ -16,7 +19,13 @@ name: Packages
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".github/FUNDING.yml"
+      - ".github/ISSUE_TEMPLATE/**"
   workflow_dispatch:
     inputs:
       arm64:
@@ -33,7 +42,7 @@ permissions:
 
 concurrency:
   group: packages-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deb-amd64:

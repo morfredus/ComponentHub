@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.20.4] - 2026-11-26
+
+### Changed
+
+- `packages.yml` also runs on every push to `main` (documentation-only changes excepted), not only on tags and manual runs. The run of the commit that a release tags therefore already exists and is finished when the release is prepared, so `package-all.py` takes its packages instead of compiling them locally. A newer push cancels a run still in progress.
+
 ## [1.20.3] - 2026-11-26
 
 ### Added

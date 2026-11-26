@@ -2,7 +2,7 @@
 
 *Lire dans une autre langue : [English](README.md) · **Français** (ce document).*
 
-[![Version](https://img.shields.io/badge/version-1.20.3-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.20.4-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -134,11 +134,11 @@ Deux workflows GitHub Actions vivent dans `.github/workflows/` :
   un run vert prouve aussi qu'aucune API Qt plus récente ne s'est glissée dans le code. Les
   changements de documentation seule l'ignorent et un run périmé est annulé par un commit plus
   récent.
-- **`packages.yml`** : sur un tag `vX.Y.Z` ou en lancement manuel (*Actions > Packages > Run
+- **`packages.yml`** : à chaque push sur `main`, sur un tag `vX.Y.Z` ou en lancement manuel (*Actions > Packages > Run
   workflow*), construit les `.deb` amd64 et arm64 (builds natifs dans des conteneurs Debian
   Trixie, arm64 sur le runner arm64 de GitHub, via `scripts/ci/build-deb-container.sh`) et le ZIP et l'installeur
   Windows (MSYS2 UCRT64, preset `mingw`). Les paquets sont des artefacts du workflow conservés
-  14 jours ; les releases restent publiées par l'outillage morfSystem. arm64 et Windows se
+  14 jours ; les releases restent publiées par l'outillage morfSystem, qui prend les paquets du run du commit publié et ne compile en local que ce qui manque. arm64 et Windows se
   désactivent dans le formulaire du lancement manuel.
 
 ## Structure du dépôt
