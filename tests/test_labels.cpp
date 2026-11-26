@@ -76,26 +76,45 @@ int main(int argc, char** argv) {
         CHECK(captions.at(0)->placeholderText() == "Name");
         CHECK(captions.at(1)->text() == "Reference");
         CHECK(!dialog.findChild<QCheckBox*>("labelFieldEnabled1")->isChecked());
-        CHECK(dialog.findChild<QComboBox*>("labelFieldSize1")->currentIndex() == 2);
+        CHECK(dialog.findChild<QComboBox*>("labelFieldSize1")->currentData().toDouble() == 12);
+        auto* nameSize = dialog.findChild<QComboBox*>("labelFieldSize0");
+        CHECK(nameSize->count() == 4);
+        CHECK(nameSize->currentData().toDouble() == 24);
+        CHECK(nameSize->itemText(0) == "Extra Large");
+        CHECK(nameSize->itemData(0).toDouble() == 32);
+        CHECK(nameSize->itemText(1) == "Large");
+        CHECK(nameSize->itemData(1).toDouble() == 24);
+        CHECK(nameSize->itemText(2) == "Medium");
+        CHECK(nameSize->itemData(2).toDouble() == 16);
+        CHECK(nameSize->itemText(3) == "Small");
+        CHECK(nameSize->itemData(3).toDouble() == 12);
+        nameSize->setCurrentIndex(0);
         captions.at(1)->setText("Ref");
         captions.at(0)->setText("Part");
         captions.at(0)->clear();
         auto* paper = paperBox(dialog);
         CHECK(paper != nullptr);
         paper->setCurrentIndex(paper->findData("avery8790"));
+        CHECK(nameSize->currentData().toDouble() == 24);
+        CHECK(dialog.findChild<QComboBox*>("labelFieldSize1")->currentData().toDouble() == 16);
         CHECK(captions.at(0)->text().isEmpty());
         CHECK(captions.at(1)->text() == "Reference");
         captions.at(0)->setText("Component");
         captions.at(1)->setText("R");
         paper->setCurrentIndex(paper->findData("avery8728"));
+        CHECK(nameSize->currentData().toDouble() == 32);
         CHECK(captions.at(0)->text().isEmpty());
         CHECK(captions.at(1)->text() == "Ref");
         CHECK(!dialog.findChild<QCheckBox*>("labelFieldEnabled1")->isChecked());
     }
+    settings.sync();
+    CHECK(settings.value("labels/fields/avery8728/size0").toInt() == 3);
+    CHECK(settings.value("labels/fields/avery8728/size1").toInt() == 2);
     TestTranslator translator;
     app.installTranslator(&translator);
     {
         LabelDialog dialog({});
+        CHECK(dialog.findChild<QComboBox*>("labelFieldSize0")->currentData().toDouble() == 32);
         QList<QLineEdit*> captions;
         for (int i = 0; i < 6; ++i)
             captions.append(dialog.findChild<QLineEdit*>(QStringLiteral("labelFieldCaption%1").arg(i)));

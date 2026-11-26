@@ -793,6 +793,10 @@ Restart the application to apply it fully.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Extra Large</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Preview</source>
         <translation type="unfinished"></translation>
     </message>

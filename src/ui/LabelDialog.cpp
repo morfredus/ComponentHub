@@ -37,6 +37,8 @@
 
 namespace {
 
+constexpr int SizeSettingsRole = Qt::UserRole + 1;
+
 struct LabelFormat {
     QString id;
     QString name;
@@ -335,8 +337,6 @@ private:
     double labelAspect_ = 30.5 / 16.9;
 };
 
-double pointSizeFor(int comboIndex) { return comboIndex == 0 ? 24 : comboIndex == 1 ? 16 : 12; }
-
 } // namespace
 
 LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidget* parent)
@@ -359,7 +359,10 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
     QVector<QCheckBox*> checks;
     QVector<QComboBox*> sizes;
     QVector<QLineEdit*> captions;
-    const QStringList sizeLabels = {chui::tr("Large"), chui::tr("Medium"), chui::tr("Small")};
+    // Display sizes in descending order while preserving their existing settings IDs.
+    const QStringList sizeLabels = {chui::tr("Extra Large"), chui::tr("Large"), chui::tr("Medium"), chui::tr("Small")};
+    const QVector<double> pointSizes{32, 24, 16, 12};
+    const QVector<int> sizeSettingsIds{3, 0, 1, 2};
     for (int i = 0; i < labels.size(); ++i) {
         auto* row = new QWidget(options);
         auto* rowLayout = new QHBoxLayout(row);
@@ -378,7 +381,13 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         auto* size = new QComboBox;
         size->setObjectName(QStringLiteral("labelFieldSize%1").arg(i));
         size->addItems(sizeLabels);
-        size->setCurrentIndex(i == 0 ? 0 : 1);
+        for (int j = 0; j < pointSizes.size(); ++j) {
+            size->setItemData(j, pointSizes.at(j));
+            size->setItemData(j, sizeSettingsIds.at(j), SizeSettingsRole);
+        }
+        size->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+        size->setMinimumWidth(size->sizeHint().width() + 12);
+        size->setCurrentIndex(size->findData(i == 0 ? 0 : 1, SizeSettingsRole));
         sizes.append(size);
         rowLayout->addWidget(check);
         rowLayout->addWidget(caption, 1);
@@ -458,7 +467,7 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
     auto selectedFields = [checks, sizes, captions] {
         QVector<LabelField> fields;
         for (int i = 0; i < sizes.size(); ++i)
-            fields.append({checks.at(i)->isChecked(), pointSizeFor(sizes.at(i)->currentIndex()), captions.at(i)->text()});
+            fields.append({checks.at(i)->isChecked(), sizes.at(i)->currentData().toDouble(), captions.at(i)->text()});
         return fields;
     };
     auto updatePreview = [preview, selectedFields] { preview->setFields(selectedFields()); };
@@ -469,7 +478,7 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         settings.beginGroup("labels/fields/" + id);
         for (int i = 0; i < checks.size(); ++i) {
             settings.setValue(QStringLiteral("enabled%1").arg(i), checks.at(i)->isChecked());
-            settings.setValue(QStringLiteral("size%1").arg(i), sizes.at(i)->currentIndex());
+            settings.setValue(QStringLiteral("size%1").arg(i), sizes.at(i)->currentData(SizeSettingsRole));
         }
         settings.endGroup();
     };
@@ -485,9 +494,10 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
             // compatibility. Saved captions (even empty ones) take precedence.
             captions.at(i)->setText(settings.value(QStringLiteral("caption%1").arg(i), defaultCaptions.at(i)).toString());
             checks.at(i)->setChecked(settings.value(QStringLiteral("enabled%1").arg(i), defaults.at(i)).toBool());
-            // A saved index out of range (hand-edited file) would fall back to -1: it is clamped.
+            // Saved IDs are independent of the visual order (legacy: 0=Large, 1=Medium, 2=Small).
             const int saved = settings.value(QStringLiteral("size%1").arg(i), i == 0 ? 0 : 1).toInt();
-            sizes.at(i)->setCurrentIndex(std::clamp(saved, 0, sizes.at(i)->count() - 1));
+            sizes.at(i)->setCurrentIndex(sizes.at(i)->findData(
+                std::clamp(saved, 0, sizes.at(i)->count() - 1), SizeSettingsRole));
         }
         settings.endGroup();
         updatePreview();
