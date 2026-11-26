@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.20.7] - 2026-11-26
+
+### Fixed
+
+- Vendored morfUpdate resynchronised to 0.10.1 (version file only; no behaviour change).
+
 ## [1.20.6] - 2026-11-26
 
 ### Changed
