@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.20.2] - 2026-11-26
+
+### Fixed
+
+- Windows CI: a test forcing `QT_QPA_PLATFORM=offscreen` hung the job, because `windeployqt` does not deploy the `offscreen` plugin and Qt then waits on an error dialog. The workflows copy `qoffscreen.dll` next to the executable before `ctest`, install `diffutils` (`deploy-mingw.sh` needs `cmp`) and run `ctest` with a 120 s per-test timeout.
+
 ## [1.20.1] - 2026-11-26
 
 ### Changed

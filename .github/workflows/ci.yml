@@ -72,7 +72,7 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: |
           set -o pipefail
-          ctest --test-dir ${{ matrix.build_dir }} --output-on-failure | tee ctest.log
+          ctest --test-dir ${{ matrix.build_dir }} --output-on-failure --timeout 120 | tee ctest.log
 
       - name: Summarise tests in the run summary
         if: always()
@@ -115,6 +115,7 @@ jobs:
             mingw-w64-ucrt-x86_64-qt6-tools
             mingw-w64-ucrt-x86_64-sqlite3
             mingw-w64-ucrt-x86_64-nlohmann-json
+            diffutils
 
       - name: Build and test (preset mingw)
         shell: msys2 {0}
@@ -123,4 +124,8 @@ jobs:
           export QT_QPA_PLATFORM=offscreen
           cmake --preset mingw
           cmake --build --preset mingw --parallel
-          ctest --test-dir build-mingw --output-on-failure
+          # windeployqt only deploys the "windows" platform plugin. Tests that force
+          # QT_QPA_PLATFORM=offscreen would otherwise raise a modal "no Qt platform plugin"
+          # dialog that nobody closes and hang the job. A timeout turns any hang into a failure.
+          install -D "$MSYSTEM_PREFIX/share/qt6/plugins/platforms/qoffscreen.dll"             build-mingw/platforms/qoffscreen.dll
+          ctest --test-dir build-mingw --output-on-failure --timeout 120
