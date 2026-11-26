@@ -5,8 +5,9 @@
 #   windows     ZIP + Inno Setup installer (MSYS2 UCRT64, preset "mingw")
 #
 # Triggers: every push to main (like ci.yml, so the run of the commit that a release tags
-# already exists and is finished when the release is prepared), a version tag (vX.Y.Z) and
-# a manual run. Pull requests are covered by ci.yml, not here.
+# already exists and is finished when the release is prepared) and a manual run. There is
+# no tag trigger on purpose: the tag points at a commit already built by its push to main,
+# and a tag run would only repeat it. Pull requests are covered by ci.yml, not here.
 #
 # The GitHub release itself is still published by the morfSystem tooling
 # (publish-releases): its package-all step looks for the successful run of this workflow
@@ -20,7 +21,6 @@ name: Packages
 on:
   push:
     branches: [main]
-    tags: ["v*"]
     paths-ignore:
       - "**.md"
       - "docs/**"

@@ -2,7 +2,7 @@
 
 *Read in another language: **English** (this document) · [Français](README.fr.md).*
 
-[![Version](https://img.shields.io/badge/version-1.20.4-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.20.5-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -154,7 +154,7 @@ Two GitHub Actions workflows live in `.github/workflows/`:
   Ubuntu 24.04 (`linux` preset), Linux arm64 (`linux-arm64`) and Windows (`mingw`, MSYS2 UCRT64). Ubuntu 24.04 ships Qt 6.4.2, the project's
   minimum, so a green run also proves no newer Qt API crept in. Documentation-only
   changes skip it and an outdated run is cancelled by a newer commit.
-- **`packages.yml`**: on every push to `main`, on a `vX.Y.Z` tag or a manual run (*Actions > Packages > Run workflow*),
+- **`packages.yml`**: on every push to `main` or a manual run (*Actions > Packages > Run workflow*),
   builds the `.deb` amd64 and arm64 (native builds in Debian Trixie containers, arm64 on
   GitHub's arm64 runner, with `scripts/ci/build-deb-container.sh`) and the Windows ZIP and installer
   (MSYS2 UCRT64, preset `mingw`). Packages are workflow artifacts kept 14 days; releases

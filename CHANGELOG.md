@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.20.5] - 2026-11-26
+
+### Changed
+
+- `packages.yml` no longer runs on `v*` tags: the tagged commit has already been built by its push to `main`, so a tag run only repeated it (and made the release step wait for it). It runs on pushes to `main` and manually.
+
 ## [1.20.4] - 2026-11-26
 
 ### Changed

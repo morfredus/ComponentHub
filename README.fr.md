@@ -2,7 +2,7 @@
 
 *Lire dans une autre langue : [English](README.md) · **Français** (ce document).*
 
-[![Version](https://img.shields.io/badge/version-1.20.4-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.20.5-blue)](CHANGELOG.md)
 
 ![Platform](https://img.shields.io/badge/Plateforme-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi-lightgrey)
 ![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
@@ -134,7 +134,7 @@ Deux workflows GitHub Actions vivent dans `.github/workflows/` :
   un run vert prouve aussi qu'aucune API Qt plus récente ne s'est glissée dans le code. Les
   changements de documentation seule l'ignorent et un run périmé est annulé par un commit plus
   récent.
-- **`packages.yml`** : à chaque push sur `main`, sur un tag `vX.Y.Z` ou en lancement manuel (*Actions > Packages > Run
+- **`packages.yml`** : à chaque push sur `main` ou en lancement manuel (*Actions > Packages > Run
   workflow*), construit les `.deb` amd64 et arm64 (builds natifs dans des conteneurs Debian
   Trixie, arm64 sur le runner arm64 de GitHub, via `scripts/ci/build-deb-container.sh`) et le ZIP et l'installeur
   Windows (MSYS2 UCRT64, preset `mingw`). Les paquets sont des artefacts du workflow conservés
