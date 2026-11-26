@@ -331,11 +331,11 @@ protected:
 
 private:
     const domain::Component* component_;
-    QVector<LabelField> fields_{{true, 26.4}, {true, 16}, {false, 16}, {false, 16}, {false, 16}, {true, 16}};
+    QVector<LabelField> fields_{{true, 24}, {true, 16}, {false, 16}, {false, 16}, {false, 16}, {true, 16}};
     double labelAspect_ = 30.5 / 16.9;
 };
 
-double pointSizeFor(int comboIndex) { return comboIndex == 0 ? 26.4 : comboIndex == 1 ? 16 : 12; }
+double pointSizeFor(int comboIndex) { return comboIndex == 0 ? 24 : comboIndex == 1 ? 16 : 12; }
 
 } // namespace
 
