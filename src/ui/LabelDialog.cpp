@@ -352,6 +352,9 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         chui::tr("Name"), chui::tr("Reference"), chui::tr("Category"),
         chui::tr("Subcategory"), chui::tr("Type"), chui::tr("Specifications")
     };
+    QStringList defaultCaptions = labels;
+    // Older versions printed the component name without a caption.
+    defaultCaptions[0].clear();
     const QVector<bool> defaults{true, true, false, false, false, true};
     QVector<QCheckBox*> checks;
     QVector<QComboBox*> sizes;
@@ -364,7 +367,7 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         auto* check = new QCheckBox;
         check->setObjectName(QStringLiteral("labelFieldEnabled%1").arg(i));
         check->setAccessibleName(labels.at(i));
-        auto* caption = new QLineEdit(labels.at(i));
+        auto* caption = new QLineEdit(defaultCaptions.at(i));
         caption->setObjectName(QStringLiteral("labelFieldCaption%1").arg(i));
         caption->setAccessibleName(labels.at(i));
         caption->setPlaceholderText(labels.at(i));
@@ -470,7 +473,7 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
         }
         settings.endGroup();
     };
-    auto loadFields = [checks, sizes, captions, labels, paperBox, defaults, updatePreview] {
+    auto loadFields = [checks, sizes, captions, defaultCaptions, paperBox, defaults, updatePreview] {
         const QString id = paperBox->currentData().toString();
         QSettings settings("morfredus", "ComponentHub");
         settings.beginGroup("labels/fields/" + id);
@@ -478,9 +481,9 @@ LabelDialog::LabelDialog(const std::vector<domain::Component>& components, QWidg
             const QSignalBlocker checkBlocker(checks.at(i));
             const QSignalBlocker sizeBlocker(sizes.at(i));
             const QSignalBlocker captionBlocker(captions.at(i));
-            // Missing keys (older settings) use the current translation. An explicitly
-            // saved empty caption is valid and suppresses the prefix, including ": ".
-            captions.at(i)->setText(settings.value(QStringLiteral("caption%1").arg(i), labels.at(i)).toString());
+            // Missing keys use the defaults, including the empty Name caption for
+            // compatibility. Saved captions (even empty ones) take precedence.
+            captions.at(i)->setText(settings.value(QStringLiteral("caption%1").arg(i), defaultCaptions.at(i)).toString());
             checks.at(i)->setChecked(settings.value(QStringLiteral("enabled%1").arg(i), defaults.at(i)).toBool());
             // A saved index out of range (hand-edited file) would fall back to -1: it is clamped.
             const int saved = settings.value(QStringLiteral("size%1").arg(i), i == 0 ? 0 : 1).toInt();

@@ -72,17 +72,20 @@ int main(int argc, char** argv) {
         for (int i = 0; i < 6; ++i)
             captions.append(dialog.findChild<QLineEdit*>(QStringLiteral("labelFieldCaption%1").arg(i)));
         CHECK(captions.size() == 6);
-        CHECK(captions.at(0)->text() == "Name");
+        CHECK(captions.at(0)->text().isEmpty());
+        CHECK(captions.at(0)->placeholderText() == "Name");
         CHECK(captions.at(1)->text() == "Reference");
         CHECK(!dialog.findChild<QCheckBox*>("labelFieldEnabled1")->isChecked());
         CHECK(dialog.findChild<QComboBox*>("labelFieldSize1")->currentIndex() == 2);
         captions.at(1)->setText("Ref");
+        captions.at(0)->setText("Part");
         captions.at(0)->clear();
         auto* paper = paperBox(dialog);
         CHECK(paper != nullptr);
         paper->setCurrentIndex(paper->findData("avery8790"));
-        CHECK(captions.at(0)->text() == "Name");
+        CHECK(captions.at(0)->text().isEmpty());
         CHECK(captions.at(1)->text() == "Reference");
+        captions.at(0)->setText("Component");
         captions.at(1)->setText("R");
         paper->setCurrentIndex(paper->findData("avery8728"));
         CHECK(captions.at(0)->text().isEmpty());
@@ -100,6 +103,7 @@ int main(int argc, char** argv) {
         CHECK(captions.at(1)->text() == "Ref"); // User text survives a language change.
         auto* paper = paperBox(dialog);
         paper->setCurrentIndex(paper->findData("avery8790"));
+        CHECK(captions.at(0)->text() == "Component");
         CHECK(captions.at(1)->text() == "R");
     }
     // Untouched defaults must remain translated defaults after other preferences change.
