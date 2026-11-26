@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project follows [Semantic Versioning](https://semver.org/) (the `VERSION`
 file at the repository root).
 
+## [1.20.3] - 2026-11-26
+
+### Added
+
+- `morfproject.json`: every packaging target except the AppImage declares the `packages.yml` artifact it comes from (`package.ci`), so the morfTools publication (`package-all.py`, morfTools 0.40.0) takes the `.deb`, ZIP and installer of the CI run for the released commit and only builds locally what is missing.
+
 ## [1.20.2] - 2026-11-26
 
 ### Fixed
